@@ -5,7 +5,7 @@ import SecondColumn from './components/SecondColumn';
 import ThirdColumn from './components/ThirdColumn';
 import './App.css';
 
-const Hello = () => {
+const Main = () => {
   const connect = async () => {
     const detect = new Detector('omni-enterprise');
     await detect.connect('westend');
@@ -26,7 +26,7 @@ export default function App() {
   return (
     <Router>
       <Switch>
-        <Route path="/" component={Hello} />
+        <Route path="/" component={Main} />
       </Switch>
     </Router>
   );
