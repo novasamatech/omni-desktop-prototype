@@ -16,7 +16,7 @@ import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
-import { registerAccountStoreHandlers } from './accountStore'
+import { registerAccountStoreHandlers } from './accountStore';
 
 export default class AppUpdater {
   constructor() {

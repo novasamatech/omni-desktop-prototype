@@ -1,6 +1,6 @@
-import React from 'react'
-import Accounts from './Accounts'
-import AddAccount from './AddAccount'
+import React from 'react';
+import Accounts from './Accounts';
+import AddAccount from './AddAccount';
 
 const FirstColumn: React.FC = () => {
   return (
@@ -9,7 +9,7 @@ const FirstColumn: React.FC = () => {
       <Accounts />
       <AddAccount />
     </div>
-  )
-}
+  );
+};
 
-export default FirstColumn
+export default FirstColumn;

@@ -7,23 +7,8 @@ import './App.css';
 
 const Hello = () => {
   const connect = async () => {
-    const detect = new Detector('my cool unstoppable app');
-    console.log(1);
-    console.log(detect.hasExtension());
-    const api = detect.connect('westend');
-    console.log(2, api);
-    api
-      .then((...args) => {
-        console.log(4);
-        console.log(args);
-
-        return null;
-      })
-      .catch(() => {});
-    // const now = await api.query.timestamp.now()
-    console.log(3);
-
-    // console.log(now)
+    const detect = new Detector('omni-enterprise');
+    await detect.connect('westend');
   };
 
   connect();
