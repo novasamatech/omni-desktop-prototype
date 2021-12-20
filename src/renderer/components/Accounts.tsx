@@ -10,8 +10,8 @@ const Accounts: React.FC = () => {
     setAccounts(tempAccounts);
   };
 
-  const removeAccount = async (accountId: string) => {
-    const tempAccounts = await window.electron.accountStore.remove(accountId);
+  const removeAccount = async (address: string) => {
+    const tempAccounts = await window.electron.accountStore.remove(address);
     setAccounts(tempAccounts);
   };
 
@@ -22,7 +22,11 @@ const Accounts: React.FC = () => {
   return (
     <ul className="divide-y-2 divide-gray-100">
       {accounts.map((account: AccountType) => (
-        <Account account={account} onRemove={removeAccount} />
+        <Account
+          key={account.address}
+          account={account}
+          onRemove={removeAccount}
+        />
       ))}
     </ul>
   );

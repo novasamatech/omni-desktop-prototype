@@ -1,22 +1,22 @@
 import React, { ChangeEvent, useState } from 'react';
 
 const AddAccount: React.FC = () => {
-  const [accountId, setAccountId] = useState('');
+  const [address, setAddress] = useState('');
   const [accountName, setAccountName] = useState('');
 
   const addAccount = async () => {
-    if (accountId.length > 0) {
+    if (address.length > 0) {
       await window.electron.accountStore.add({
-        accountId,
+        address,
         accountName,
       });
-      setAccountId('');
+      setAddress('');
       setAccountName('');
     }
   };
 
-  const onChangeAccountId = (event: ChangeEvent<HTMLInputElement>) => {
-    setAccountId(event.target.value);
+  const onChangeAddress = (event: ChangeEvent<HTMLInputElement>) => {
+    setAddress(event.target.value);
   };
 
   const onChangeAccountName = (event: ChangeEvent<HTMLInputElement>) => {
@@ -37,8 +37,8 @@ const AddAccount: React.FC = () => {
         <input
           className="w-full p-2"
           placeholder="Account Id"
-          value={accountId}
-          onChange={onChangeAccountId}
+          value={address}
+          onChange={onChangeAddress}
         />
       </div>
       <div className="p-2">

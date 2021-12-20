@@ -1,26 +1,35 @@
 import React from 'react';
+import Identicon from '@polkadot/react-identicon';
+// import { SingleAddress } from '@polkadot/ui-keyring/observable/types';
 import { Account as AccountType } from '../../common/types';
 
-type Prop = {
+type Props = {
   account: AccountType;
-  onRemove: (accountId: string) => void;
+  onRemove: (address: string) => void;
 };
 
-const Account: React.FC<Prop> = ({
-  account: { accountId, accountName },
+const shortAddress = (address: string): string => {
+  return address.length < 9
+    ? address
+    : `${address.substring(0, 4)}...${address.substring(address.length - 4)}`;
+};
+
+const Account: React.FC<Props> = ({
+  account: { address, accountName },
   onRemove,
-}: Prop) => {
+}: Props) => {
+  const theme = 'polkadot';
+  const size = 32;
+
   return (
-    <li
-      className="account p-3 flex whitespace-nowrap overflow-x-auto justify-between"
-      key={accountId}
-    >
+    <li className="account p-3 whitespace-nowrap overflow-x-auto" key={address}>
+      <Identicon value={address} size={size} theme={theme} />
       <div>{accountName}</div>
-      <div>{accountId}</div>
+      <div>{shortAddress(address)}</div>
       <button
         type="button"
         className="account-remove"
-        onClick={() => onRemove(accountId)}
+        onClick={() => onRemove(address)}
       >
         x
       </button>

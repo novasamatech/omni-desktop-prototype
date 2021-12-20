@@ -3,7 +3,7 @@ import { IpcMainHandler, registerIpcHandler } from './ipc';
 import { Account } from '../common/types';
 
 const store = new Store();
-const ACCOUNTS_KEY = 'OMNI-ACCOUNT-2';
+const ACCOUNTS_KEY = 'OMNI-ACCOUNT-3';
 
 export const accountStoreIpcHandler = (): IpcMainHandler => ({
   'account-store-all': () => {
@@ -16,10 +16,10 @@ export const accountStoreIpcHandler = (): IpcMainHandler => ({
     store.set(ACCOUNTS_KEY, newAccounts);
     return accounts;
   },
-  'account-store-remove': async (accountId: string) => {
+  'account-store-remove': async (address: string) => {
     const accounts = store.get(ACCOUNTS_KEY) || [];
     const newAccounts = (accounts as Account[]).filter(
-      (a: Account) => a.accountId !== accountId
+      (a: Account) => a.address !== address
     );
 
     store.set(ACCOUNTS_KEY, newAccounts);

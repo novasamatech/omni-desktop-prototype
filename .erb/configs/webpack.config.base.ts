@@ -4,7 +4,7 @@
 
 import webpack from 'webpack';
 import webpackPaths from './webpack.paths';
-import { dependencies as externals } from '../../release/app/package.json';
+import { dependencies as externals, version } from '../../release/app/package.json';
 
 export default {
   externals: [...Object.keys(externals || {})],
@@ -40,12 +40,22 @@ export default {
     fallback: {
       "crypto": require.resolve("crypto-browserify"),
       "stream": require.resolve("stream-browserify"),
-    }
+    },
+    alias: {
+      'react/jsx-runtime': require.resolve('react/jsx-runtime')
+    },
   },
 
   plugins: [
     new webpack.EnvironmentPlugin({
       NODE_ENV: 'production',
     }),
+    new webpack.DefinePlugin({
+      'process.env': {
+        VERSION: JSON.stringify(version),
+        WS_URL: JSON.stringify(process.env.WS_URL)
+      }
+    }),
+
   ],
 };
