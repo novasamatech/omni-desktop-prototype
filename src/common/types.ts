@@ -3,6 +3,12 @@ export type Account = {
   accountName: string;
 };
 
+export type TransactionData = {
+  address: string;
+  type: string;
+  payload?: any;
+};
+
 export interface ElectronApi {
   accountStore: {
     all: () => Promise<Account[]>;

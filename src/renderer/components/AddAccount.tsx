@@ -44,7 +44,7 @@ const AddAccount: React.FC = () => {
       <div className="p-2">
         <button
           type="button"
-          className="w-full p-2 rounded border-solid border-2 border-gray-200"
+          className="w-full p-2 rounded-lg text-white bg-black"
           onClick={addAccount}
         >
           Add account

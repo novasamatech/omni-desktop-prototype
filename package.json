@@ -219,6 +219,7 @@
     "webpack-merge": "^5.8.0"
   },
   "dependencies": {
+    "@headlessui/react": "^1.4.2",
     "@polkadot/react-identicon": "^0.87.5",
     "@polkadot/react-qr": "^0.87.5",
     "@polkadot/types": "^6.12.1",
