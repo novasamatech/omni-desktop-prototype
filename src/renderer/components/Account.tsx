@@ -33,7 +33,7 @@ const Account: React.FC<Props> = ({ account, onRemove, onSelect }: Props) => {
             size={size}
             theme={theme}
           />
-          <div>{shortAddress(address)}</div>
+          <div className="text-gray-500">{shortAddress(address)}</div>
         </div>
         <button
           type="button"

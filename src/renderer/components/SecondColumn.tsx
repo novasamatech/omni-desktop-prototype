@@ -14,7 +14,7 @@ const routes = [
 
 const SecondColumn: React.FC = () => {
   return (
-    <div className="w-60 bg-gray-200">
+    <div className="w-60 border-r border-gray-200">
       <h2 className="font-bold text-xl p-4">Actions</h2>
 
       <ul className="divide-y-2 divide-gray-100">

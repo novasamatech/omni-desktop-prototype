@@ -1,4 +1,5 @@
 import React, { ChangeEvent, useState } from 'react';
+import InputText from '../ui/Input';
 import Button from '../ui/Button';
 
 const AddAccount: React.FC = () => {
@@ -27,16 +28,16 @@ const AddAccount: React.FC = () => {
   return (
     <>
       <div className="p-2">
-        <input
-          className="w-full p-2"
+        <InputText
+          className="w-full"
           placeholder="Account Name"
           value={accountName}
           onChange={onChangeAccountName}
         />
       </div>
       <div className="p-2">
-        <input
-          className="w-full p-2"
+        <InputText
+          className="w-full"
           placeholder="Account Id"
           value={address}
           onChange={onChangeAddress}

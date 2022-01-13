@@ -9,6 +9,7 @@ import { apiState } from '../../store/api';
 import { selectedAccountsState } from '../../store/selectedAccounts';
 import { transactionBusketState } from '../../store/transactionBusket';
 import Button from '../../ui/Button';
+import InputText from '../../ui/Input';
 
 // import { QrScanSignature } from '@polkadot/react-qr';
 // import { ApiPromise } from '@polkadot/api';
@@ -46,16 +47,19 @@ const Transfer: React.FC = () => {
   return (
     <>
       <div className="p-2">
-        <input
-          className="w-full p-2"
+        <InputText
+          label="Account name"
+          className="w-full"
           placeholder="Account Name"
           value={address}
           onChange={(event) => setAddress(event.target.value)}
         />
       </div>
       <div className="p-2">
-        <input
-          className="w-full p-2"
+        <InputText
+          disabled
+          label="Amount"
+          className="w-full"
           placeholder="Amount"
           value={amount}
           type="number"

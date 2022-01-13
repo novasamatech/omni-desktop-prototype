@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { createKeyMulti, encodeAddress } from '@polkadot/util-crypto';
 import Button from '../../ui/Button';
+import InputText from '../../ui/Input';
 
 const SS58Prefix = 0;
 
@@ -36,8 +37,9 @@ const Transfer: React.FC = () => {
   return (
     <>
       <div className="p-2">
-        <input
-          className="w-full p-2"
+        <InputText
+          label="Account name"
+          className="w-full"
           placeholder="Account name"
           value={accountName}
           onChange={(event) => setAccountName(event.target.value)}
@@ -45,8 +47,9 @@ const Transfer: React.FC = () => {
       </div>
       <div className="p-2">
         {addresses.map((address, index) => (
-          <input
-            className="w-full p-2 mt-2 mb-2"
+          <InputText
+            label={`Account address ${index + 1}`}
+            className="w-full mt-2 mb-2"
             placeholder="Account address"
             value={address}
             onChange={(event) => setAddress(event.target.value, index)}
@@ -57,9 +60,10 @@ const Transfer: React.FC = () => {
         <Button onClick={addAddress}>Add address</Button>
       </div>
       <div className="p-2">
-        <input
-          className="w-full p-2"
+        <InputText
+          className="w-full"
           placeholder="Threshold"
+          label="Threshold"
           value={threshold}
           type="number"
           onChange={(event) => setThreshold(parseInt(event.target.value, 10))}

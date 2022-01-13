@@ -5,7 +5,7 @@ import Transfer from './Actions/Transfer';
 
 const ThirdColumn: React.FC = () => {
   return (
-    <div className="flex-auto bg-gray-300 overflow-auto">
+    <div className="flex-auto overflow-auto">
       <h2 className="font-bold text-xl p-4">Content</h2>
 
       <Switch>
