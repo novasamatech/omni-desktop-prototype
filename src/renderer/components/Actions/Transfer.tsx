@@ -6,8 +6,9 @@ import { useRecoilValue, useSetRecoilState } from 'recoil';
 // import { methods } from '@substrate/txwrapper-polkadot';
 // import { TypeRegistry } from '@polkadot/types';
 import { apiState } from '../../store/api';
-import { accountsState } from '../../store/accounts';
+import { selectedAccountsState } from '../../store/selectedAccounts';
 import { transactionBusketState } from '../../store/transactionBusket';
+import Button from '../../ui/Button';
 
 // import { QrScanSignature } from '@polkadot/react-qr';
 // import { ApiPromise } from '@polkadot/api';
@@ -21,7 +22,7 @@ const Transfer: React.FC = () => {
   const [amount, setAmount] = useState(0);
 
   const api = useRecoilValue(apiState);
-  const accounts = useRecoilValue(accountsState);
+  const accounts = useRecoilValue(selectedAccountsState);
   const setTransactions = useSetRecoilState(transactionBusketState);
 
   const addTransaction = async () => {
@@ -62,14 +63,9 @@ const Transfer: React.FC = () => {
         />
       </div>
       <div className="p-2">
-        <button
-          type="button"
-          className="w-full p-2 rounded-lg text-white bg-black"
-          onClick={addTransaction}
-          disabled={accounts.length === 0}
-        >
+        <Button onClick={addTransaction} fat disabled={accounts.length === 0}>
           Add transaction
-        </button>
+        </Button>
       </div>
     </>
   );

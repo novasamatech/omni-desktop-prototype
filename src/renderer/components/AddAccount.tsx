@@ -1,4 +1,5 @@
 import React, { ChangeEvent, useState } from 'react';
+import Button from '../ui/Button';
 
 const AddAccount: React.FC = () => {
   const [address, setAddress] = useState('');
@@ -42,13 +43,7 @@ const AddAccount: React.FC = () => {
         />
       </div>
       <div className="p-2">
-        <button
-          type="button"
-          className="w-full p-2 rounded-lg text-white bg-black"
-          onClick={addAccount}
-        >
-          Add account
-        </button>
+        <Button onClick={addAccount}>Add account</Button>
       </div>
     </>
   );

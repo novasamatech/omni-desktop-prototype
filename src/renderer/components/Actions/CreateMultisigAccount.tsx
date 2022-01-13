@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { createKeyMulti, encodeAddress } from '@polkadot/util-crypto';
+import Button from '../../ui/Button';
 
 const SS58Prefix = 0;
 
 const Transfer: React.FC = () => {
-  const [addresses, setAddresses] = useState<string[]>(['']);
+  const [addresses, setAddresses] = useState<string[]>(['', '']);
   const [threshold, setThreshold] = useState(0);
   const [accountName, setAccountName] = useState('');
 
@@ -29,6 +30,7 @@ const Transfer: React.FC = () => {
     });
 
     setAccountName('');
+    setAddresses(['', '']);
   };
 
   return (
@@ -36,7 +38,7 @@ const Transfer: React.FC = () => {
       <div className="p-2">
         <input
           className="w-full p-2"
-          placeholder="Account address"
+          placeholder="Account name"
           value={accountName}
           onChange={(event) => setAccountName(event.target.value)}
         />
@@ -52,13 +54,7 @@ const Transfer: React.FC = () => {
         ))}
       </div>
       <div className="p-2">
-        <button
-          type="button"
-          className="w-full p-2 rounded-lg text-white bg-black"
-          onClick={addAddress}
-        >
-          Add address
-        </button>
+        <Button onClick={addAddress}>Add address</Button>
       </div>
       <div className="p-2">
         <input
@@ -70,13 +66,9 @@ const Transfer: React.FC = () => {
         />
       </div>
       <div className="p-2">
-        <button
-          type="button"
-          className="w-full p-2 rounded-lg text-white bg-black"
-          onClick={addTransaction}
-        >
+        <Button fat onClick={addTransaction}>
           Add transaction
-        </button>
+        </Button>
       </div>
     </>
   );

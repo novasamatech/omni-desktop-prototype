@@ -1,10 +1,17 @@
+import { Dialog } from '@headlessui/react';
 import React from 'react';
-import { useRecoilState } from 'recoil';
+import { useRecoilState, useRecoilValue } from 'recoil';
+import { QrDisplayPayload } from '@polkadot/react-qr';
+import useToggle from '../hooks/toggle';
 import { transactionBusketState } from '../store/transactionBusket';
 import Transaction from './Transaction';
+import { apiState } from '../store/api';
+import Button from '../ui/Button';
 
 const ThirdColumn: React.FC = () => {
   const [transactions] = useRecoilState(transactionBusketState);
+  const [isDialogVisible, toggleIsDialogVisible] = useToggle(false);
+  const api = useRecoilValue(apiState);
 
   // const transactionsAmount = useRecoilValue(transactionBusketDataState);
   return (
@@ -20,36 +27,25 @@ const ThirdColumn: React.FC = () => {
         ))}
       </div>
       <div>
-        <button
-          type="button"
-          className="w-full p-2 rounded-lg text-white bg-black"
-          onClick={() => console.log(1)}
-        >
+        <Button fat onClick={() => console.log(1)}>
           Show QR Code
-        </button>
+        </Button>
       </div>
 
-      {/* <Dialog
-        open={!!currentTransaction}
-        onClose={() => setCurrentTransaction(undefined)}
-      >
+      <Dialog open={isDialogVisible} onClose={() => toggleIsDialogVisible()}>
         <Dialog.Overlay />
 
         <Dialog.Title>Transaction QR code</Dialog.Title>
 
-        {currentTransaction && (
-          <QrDisplayPayload
-            address={currentTransaction.address}
-            cmd={1}
-            genesisHash={api?.genesisHash.toHex() || ''}
-            payload={currentTransaction.payload.toU8a()}
-          />
-        )}
+        <QrDisplayPayload
+          address={transactions[0].address}
+          cmd={1}
+          genesisHash={api?.genesisHash.toHex() || ''}
+          payload={transactions[0].payload.toU8a()}
+        />
 
-        <button type="button" onClick={() => setCurrentTransaction(undefined)}>
-          Close
-        </button>
-      </Dialog> */}
+        <Button onClick={() => toggleIsDialogVisible()}>Close</Button>
+      </Dialog>
     </>
   );
 };
