@@ -46,6 +46,8 @@ const Transfer: React.FC = () => {
 
   return (
     <>
+      <h2 className="font-light text-xl p-4">Transfer</h2>
+
       <div className="p-2">
         <InputText
           label="Account name"
@@ -57,7 +59,6 @@ const Transfer: React.FC = () => {
       </div>
       <div className="p-2">
         <InputText
-          disabled
           label="Amount"
           className="w-full"
           placeholder="Amount"

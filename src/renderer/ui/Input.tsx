@@ -33,7 +33,7 @@ const InputText: React.FC<Props> = ({
   return (
     <div
       className={`relative border border-gray-500 rounded-lg pt-2 pl-3 pr-3 pb-3 ${
-        disabled ? 'opacity-50 bg-gray-200 pointer-events-none' : ''
+        disabled ? 'bg-gray-200 pointer-events-none' : ''
       } ${className}`}
     >
       {label && (

@@ -7,6 +7,7 @@ export type TransactionData = {
   address: string;
   type: string;
   payload?: any;
+  signature?: string;
 };
 
 export interface ElectronApi {
