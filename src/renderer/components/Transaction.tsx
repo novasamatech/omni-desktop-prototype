@@ -1,9 +1,11 @@
-import React from 'react';
-import { useSetRecoilState } from 'recoil';
+import React, { useEffect, useState } from 'react';
+import { useSetRecoilState, useRecoilValue } from 'recoil';
 import { Link } from 'react-router-dom';
 import Button from '../ui/Button';
-import { TransactionData } from '../../common/types';
+import { Connection, TransactionData } from '../../common/types';
 import { currentTransactionState } from '../store/currentTransaction';
+import { transactionBusketState } from '../store/transactionBusket';
+import { apiState } from '../store/api';
 import Address from '../ui/Address';
 
 type Props = {
@@ -12,8 +14,34 @@ type Props = {
 
 const Transaction: React.FC<Props> = ({ transaction }: Props) => {
   const setCurrentTransaction = useSetRecoilState(currentTransactionState);
+  const setTransactions = useSetRecoilState(transactionBusketState);
+  const networks = useRecoilValue(apiState);
+
+  const [transactionNetwork, setNetwork] = useState<Connection>();
+  const [tokenSymbol, setTokenSymbol] = useState('');
+
+  useEffect(() => {
+    const getTokenSymbol = async () => {
+      const chainProperties =
+        await transactionNetwork?.api.registry.getChainProperties();
+      const symbol = chainProperties?.tokenSymbol.unwrap()[0].toString();
+      setTokenSymbol(symbol || '');
+    };
+
+    const network = networks.find(
+      (n) => n.network.name === transaction.network
+    );
+
+    if (network) {
+      setNetwork(network);
+      getTokenSymbol();
+    }
+  }, [networks, transactionNetwork, transaction]);
+
   const sendTransaction = () => {
-    console.log('send transaction');
+    setTransactions((trxs) => {
+      return trxs.filter((t) => t !== transaction);
+    });
   };
 
   return (
@@ -21,11 +49,21 @@ const Transaction: React.FC<Props> = ({ transaction }: Props) => {
       <div className="flex">
         From: <Address address={transaction.address} />
       </div>
-      <div>Type: {transaction.type}</div>
-      <div className="flex">
-        Destination: <Address address={transaction.payload.address} />
-      </div>
-      <div>Value: {transaction.payload.amount}</div>
+      {transaction.type === 'transfer' ? (
+        <div>
+          Transfer {transaction.payload.amount} {tokenSymbol} to{' '}
+          <Address address={transaction.payload.address} />
+        </div>
+      ) : (
+        <div>
+          <div>Type: {transaction.type}</div>
+          {Object.entries(transaction.payload).map((type, value) => (
+            <div>
+              {type}: {value}
+            </div>
+          ))}
+        </div>
+      )}
 
       {transaction.signature ? (
         <Button onClick={() => sendTransaction()}>

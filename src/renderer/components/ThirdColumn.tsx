@@ -1,6 +1,9 @@
 import React from 'react';
 import { Switch, Route } from 'react-router-dom';
+import AddAccount from './Actions/AddAccount';
+import Balances from './Actions/Balances';
 import CreateMultisigAccount from './Actions/CreateMultisigAccount';
+import NetworkList from './Actions/NetworkList';
 import Transfer from './Actions/Transfer';
 
 const ThirdColumn: React.FC = () => {
@@ -8,10 +11,13 @@ const ThirdColumn: React.FC = () => {
     <div className="flex-auto overflow-auto">
       <Switch>
         <Route path="/transfer" component={Transfer} />
+        <Route path="/add-account" component={AddAccount} />
         <Route
           path="/create-multisig-account"
           component={CreateMultisigAccount}
         />
+        <Route path="/network-list" component={NetworkList} />
+        <Route path="/balances" component={Balances} />
       </Switch>
     </div>
   );

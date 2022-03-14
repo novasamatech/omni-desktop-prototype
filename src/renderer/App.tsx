@@ -1,6 +1,7 @@
 import { MemoryRouter as Router, Switch, Route, Link } from 'react-router-dom';
 import { RecoilRoot, useRecoilState, useRecoilValue } from 'recoil';
-import { Detector } from '@substrate/connect';
+import { ApiPromise } from '@polkadot/api';
+import { createPolkadotJsScClient } from '@substrate/connect';
 import FirstColumn from './components/FirstColumn';
 import SecondColumn from './components/SecondColumn';
 import ThirdColumn from './components/ThirdColumn';
@@ -11,19 +12,72 @@ import './App.css';
 import Button from './ui/Button';
 import ShowCode from './components/ShowCode';
 import ScanCode from './components/ScanCode';
+import { Network, Connection } from '../common/types';
+import Networks from '../common/networks';
 
 const Main = () => {
   const [api, setApi] = useRecoilState(apiState);
   const { transactionsAmount } = useRecoilValue(transactionBusketDataState);
 
-  const connect = async () => {
-    const detect = new Detector('omni-enterprise');
-    const apiObject = await detect.connect('westend');
+  const connectToParachain = async (
+    network: Network,
+    relay: Network
+  ): Promise<Connection> => {
+    const scClient = createPolkadotJsScClient();
+    await scClient.addWellKnownChain(relay.chainName);
+    console.log(network.name);
+    const provider = await scClient.addChain(network.chainSpec || '');
 
-    setApi(apiObject);
+    const apiObject = await ApiPromise.create({ provider });
+
+    return {
+      network,
+      provider,
+      api: apiObject,
+    };
   };
 
-  if (!api) {
+  const connectToNetwork = async (network: Network): Promise<Connection[]> => {
+    const scClient = createPolkadotJsScClient();
+    const provider = await scClient.addWellKnownChain(network.chainName);
+
+    const apiObject = await ApiPromise.create({ provider });
+
+    if (network.parachains) {
+      const parachains = await Promise.all(
+        network.parachains.map((parachain) =>
+          connectToParachain(parachain, network)
+        )
+      );
+
+      return [
+        {
+          network,
+          provider,
+          api: apiObject,
+        },
+        ...parachains,
+      ];
+    }
+
+    return [
+      {
+        network,
+        provider,
+        api: apiObject,
+      },
+    ];
+  };
+
+  const connect = async () => {
+    const apiObjects = await Promise.all(
+      Networks.map((network) => connectToNetwork(network))
+    );
+
+    setApi(apiObjects.flat());
+  };
+
+  if (api.length === 0) {
     connect();
   }
 
@@ -33,7 +87,7 @@ const Main = () => {
       <SecondColumn />
       <ThirdColumn />
 
-      {!api && (
+      {api.length === 0 && (
         <div className="flex justify-center items-center fixed bottom-0 w-screen h-16 bg-red-100">
           Connecting
         </div>

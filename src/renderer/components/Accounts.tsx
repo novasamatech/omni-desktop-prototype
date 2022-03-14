@@ -11,10 +11,6 @@ const Accounts: React.FC = () => {
     selectedAccountsState
   );
 
-  useEffect(() => {
-    console.log(selectedAccounts);
-  }, [selectedAccounts]);
-
   const selectAccount = (account: AccountType) => {
     const isExist = selectedAccounts.find((a) => a.address === account.address);
     setSelectedAccounts(
@@ -36,7 +32,7 @@ const Accounts: React.FC = () => {
 
   useEffect(() => {
     getAccounts();
-  });
+  }, []);
 
   return (
     <ul className="divide-y-2 divide-gray-100">

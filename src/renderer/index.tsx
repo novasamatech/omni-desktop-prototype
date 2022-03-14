@@ -1,3 +1,4 @@
+import '@polkadot/api-augment';
 import { render } from 'react-dom';
 import App from './App';
 

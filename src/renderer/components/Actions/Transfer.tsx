@@ -1,38 +1,42 @@
-import React, { useState } from 'react';
+import { Connection } from 'common/types';
+import React, { useEffect, useState } from 'react';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
-// import { QrDisplayPayload, QrScanSignature } from '@polkadot/react-qr';
-// import { createType } from '@polkadot/types';
-// import type { HexString } from '@polkadot/util/types';
-// import { methods } from '@substrate/txwrapper-polkadot';
-// import { TypeRegistry } from '@polkadot/types';
 import { apiState } from '../../store/api';
 import { selectedAccountsState } from '../../store/selectedAccounts';
 import { transactionBusketState } from '../../store/transactionBusket';
 import Button from '../../ui/Button';
 import InputText from '../../ui/Input';
-
-// import { QrScanSignature } from '@polkadot/react-qr';
-// import { ApiPromise } from '@polkadot/api';
-// import { Keyring } from '@polkadot/keyring';
-// type ScanType = {
-//   signature: HexString;
-// };
+import Select, { OptionType } from '../../ui/Select';
 
 const Transfer: React.FC = () => {
   const [address, setAddress] = useState('');
   const [amount, setAmount] = useState(0);
+  const [currentNetwork, setCurrentNetwork] = useState<Connection | undefined>(
+    undefined
+  );
+  const [networkOptions, setNetworkOptions] = useState<OptionType[]>([]);
 
-  const api = useRecoilValue(apiState);
+  const networks = useRecoilValue(apiState);
   const accounts = useRecoilValue(selectedAccountsState);
   const setTransactions = useSetRecoilState(transactionBusketState);
 
+  useEffect(() => {
+    setNetworkOptions(
+      networks.map((n) => ({
+        label: n.network.name,
+        value: n.network.name,
+      }))
+    );
+  }, [networks]);
+
   const addTransaction = async () => {
-    if (api) {
+    if (currentNetwork) {
       setTransactions((transactions) => {
         return [
           ...transactions,
           ...accounts.map((a) => ({
             type: 'transfer',
+            network: currentNetwork.network.name,
             address: a.address,
             payload: {
               address,
@@ -44,15 +48,32 @@ const Transfer: React.FC = () => {
     }
   };
 
+  const setNetwork = (value: string) => {
+    const tempNetwork = networks.find((n) => n.network.name === value);
+
+    if (tempNetwork) {
+      setCurrentNetwork(tempNetwork);
+    }
+  };
+
   return (
     <>
       <h2 className="font-light text-xl p-4">Transfer</h2>
-
+      <div className="p-2">
+        <Select
+          label="Network"
+          className="w-full"
+          placeholder="Account id"
+          value={currentNetwork?.network.name}
+          options={networkOptions}
+          onChange={(event) => setNetwork(event.target.value)}
+        />
+      </div>
       <div className="p-2">
         <InputText
-          label="Account name"
+          label="Account id"
           className="w-full"
-          placeholder="Account Name"
+          placeholder="Account id"
           value={address}
           onChange={(event) => setAddress(event.target.value)}
         />

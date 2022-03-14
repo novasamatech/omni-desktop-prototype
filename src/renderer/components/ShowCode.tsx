@@ -1,20 +1,31 @@
-import React from 'react';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import React, { useEffect, useState } from 'react';
+import { useRecoilValue } from 'recoil';
 import { QrDisplayPayload } from '@polkadot/react-qr';
 import { Link } from 'react-router-dom';
+import { ApiPromise } from '@polkadot/api';
 import { apiState } from '../store/api';
-import { transactionBusketState } from '../store/transactionBusket';
+import { currentTransactionState } from '../store/currentTransaction';
 import Button from '../ui/Button';
 
 const ShowCode: React.FC = () => {
-  const api = useRecoilValue(apiState);
+  const [api, setApi] = useState<ApiPromise>();
+  const [tx, setTx] = useState<any>();
+  const networks = useRecoilValue(apiState);
+  const transaction = useRecoilValue(currentTransactionState);
 
-  const [transactions] = useRecoilState(transactionBusketState);
-  const transaction = transactions[0];
-  const tx = api?.tx.balances.transfer(
-    transaction.payload.address,
-    transaction.payload.amount
-  );
+  useEffect(() => {
+    if (transaction && networks.length) {
+      const network = networks.find(
+        (n) => n.network.name === transaction.network
+      );
+      setApi(network?.api);
+      const tempTx = network?.api?.tx.balances.transfer(
+        transaction.payload.address,
+        transaction.payload.amount
+      );
+      setTx(tempTx);
+    }
+  }, [networks, transaction]);
 
   return (
     <div className="h-screen flex flex-col">
@@ -28,7 +39,7 @@ const ShowCode: React.FC = () => {
         {tx && (
           <div className="w-80 h-80 m-4">
             <QrDisplayPayload
-              address={transaction.address}
+              address={transaction?.address || ''}
               cmd={1}
               genesisHash={api?.genesisHash.toHex() || ''}
               payload={tx.toU8a()}

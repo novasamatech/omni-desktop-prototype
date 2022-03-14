@@ -1,6 +1,6 @@
 import React, { ChangeEvent, useState } from 'react';
-import InputText from '../ui/Input';
-import Button from '../ui/Button';
+import InputText from '../../ui/Input';
+import Button from '../../ui/Button';
 
 const AddAccount: React.FC = () => {
   const [address, setAddress] = useState('');
@@ -27,9 +27,12 @@ const AddAccount: React.FC = () => {
 
   return (
     <>
+      <h2 className="font-light text-xl p-4">Add account</h2>
+
       <div className="p-2">
         <InputText
           className="w-full"
+          label="Account Name"
           placeholder="Account Name"
           value={accountName}
           onChange={onChangeAccountName}
@@ -38,13 +41,16 @@ const AddAccount: React.FC = () => {
       <div className="p-2">
         <InputText
           className="w-full"
+          label="Account Id"
           placeholder="Account Id"
           value={address}
           onChange={onChangeAddress}
         />
       </div>
       <div className="p-2">
-        <Button onClick={addAccount}>Add account</Button>
+        <Button fat onClick={addAccount}>
+          Add account
+        </Button>
       </div>
     </>
   );

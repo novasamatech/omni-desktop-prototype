@@ -14,9 +14,15 @@ import path from 'path';
 import { app, BrowserWindow, shell, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
+// import { Connection, Network } from '../common/types';
+// import Networks from '../common/networks';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import { registerAccountStoreHandlers } from './accountStore';
+import { registerNetworkStoreHandlers } from './networkStore';
+
+// const { createPolkadotJsScClient } = require('@substrate/connect');
+// const { ApiPromise } = require('@polkadot/api');
 
 export default class AppUpdater {
   constructor() {
@@ -125,11 +131,32 @@ app.on('window-all-closed', () => {
   }
 });
 
+// const connectToNetwork = async (network: Network): Promise<Connection> => {
+//   const scClient = createPolkadotJsScClient();
+//   let provider;
+//   if (network.chainName) {
+//     provider = await scClient.addWellKnownChain(network.chainName);
+//   } else if (network.chainSpec) {
+//     provider = await scClient.addChain(network.chainSpec);
+//   }
+
+//   const apiObject = await ApiPromise.create({ provider });
+
+//   return {
+//     network,
+//     provider,
+//     api: apiObject,
+//   };
+// };
+
 app
   .whenReady()
   .then(() => {
     createWindow();
     registerAccountStoreHandlers();
+    registerNetworkStoreHandlers();
+
+    // Networks.map((network) => connectToNetwork(network));
 
     app.on('activate', () => {
       // On macOS it's common to re-create a window in the app when the

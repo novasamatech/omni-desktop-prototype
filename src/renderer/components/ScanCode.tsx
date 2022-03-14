@@ -1,37 +1,34 @@
 import React from 'react';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { useSetRecoilState, useRecoilValue } from 'recoil';
 import { useHistory } from 'react-router-dom';
 import { QrScanSignature } from '@polkadot/react-qr';
 import { apiState } from '../store/api';
 import { transactionBusketState } from '../store/transactionBusket';
+import { currentTransactionState } from '../store/currentTransaction';
 
 const ScanCode: React.FC = () => {
   const api = useRecoilValue(apiState);
   const history = useHistory();
 
-  const [transactions, setTransactions] = useRecoilState(
-    transactionBusketState
-  );
-  const transaction = transactions[0];
-  const tx = api?.tx.balances.transfer(
-    transaction.payload.address,
-    transaction.payload.amount
+  const setTransactions = useSetRecoilState(transactionBusketState);
+
+  const transaction = useRecoilValue(currentTransactionState);
+  const tx = api[0].api?.tx.balances.transfer(
+    transaction?.payload.address,
+    transaction?.payload.amount
   );
 
   const onGetSignature = (payload: any) => {
     const signature = payload.signature || '';
 
     if (signature) {
-      setTransactions((trxs) => {
-        trxs.filter((t) => t !== transaction);
+      tx.addSignature(transaction?.address || '', signature, tx.toU8a());
+      tx.send();
+    }
 
-        return [
-          ...trxs,
-          {
-            ...transaction,
-            signature,
-          },
-        ];
+    if (signature && transaction) {
+      setTransactions((trxs) => {
+        return trxs.filter((t) => t !== transaction);
       });
 
       history.push('/busket');

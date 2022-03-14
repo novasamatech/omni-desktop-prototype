@@ -36,6 +36,8 @@ const Transfer: React.FC = () => {
 
   return (
     <>
+      <h2 className="font-light text-xl p-4">Create multisig account</h2>
+
       <div className="p-2">
         <InputText
           label="Account name"
@@ -49,6 +51,7 @@ const Transfer: React.FC = () => {
         {addresses.map((address, index) => (
           <InputText
             label={`Account address ${index + 1}`}
+            key={`Account address ${index + 1}`}
             className="w-full mt-2 mb-2"
             placeholder="Account address"
             value={address}

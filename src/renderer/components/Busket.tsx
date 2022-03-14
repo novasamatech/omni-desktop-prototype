@@ -15,7 +15,7 @@ const ThirdColumn: React.FC = () => {
       </div>
       <div className="m-auto w-1/2">
         {transactions.map((t) => (
-          <Transaction transaction={t} />
+          <Transaction key={`${t.address}_${t.type}`} transaction={t} />
         ))}
       </div>
     </>

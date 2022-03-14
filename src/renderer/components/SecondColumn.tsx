@@ -7,8 +7,20 @@ const routes = [
     address: '/transfer',
   },
   {
+    title: 'Add account',
+    address: '/add-account',
+  },
+  {
     title: 'Create multisig account',
     address: '/create-multisig-account',
+  },
+  {
+    title: 'Network list',
+    address: '/network-list',
+  },
+  {
+    title: 'Balances',
+    address: '/balances',
   },
 ];
 
