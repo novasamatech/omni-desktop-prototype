@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useRecoilValue } from 'recoil';
 import { formatBalance } from '@polkadot/util';
-import { apiState } from '../../store/api';
+import { connectionState } from '../../store/api';
 import Address from '../../ui/Address';
+import List from '../../ui/List';
+import ListItem from '../../ui/ListItem';
 
 type Balance = {
   free: any;
@@ -19,12 +21,12 @@ type Props = {
 };
 
 const BalanceComponent: React.FC<Props> = ({ address }: Props) => {
-  const networks = useRecoilValue(apiState);
+  const networks = useRecoilValue(connectionState);
   const [balances, setBalances] = useState<Record<string, Balance>>({});
   const [properties, setProperties] = useState<Record<string, Properties>>({});
 
   useEffect(() => {
-    networks.forEach(async ({ api, network }) => {
+    Object.values(networks).forEach(async ({ api, network }) => {
       const chainProperties = await api.registry.getChainProperties();
 
       const decimals = chainProperties?.tokenDecimals.unwrap()[0].toNumber();
@@ -43,7 +45,7 @@ const BalanceComponent: React.FC<Props> = ({ address }: Props) => {
   }, [networks]);
 
   useEffect(() => {
-    networks.forEach(async ({ api, network }) => {
+    Object.values(networks).forEach(async ({ api, network }) => {
       const account = await api.query.system.account(address);
       const decimals = properties[network.name]?.decimals;
 
@@ -70,17 +72,20 @@ const BalanceComponent: React.FC<Props> = ({ address }: Props) => {
   }, [address, networks, properties]);
 
   return (
-    <>
-      <h3 className="font-light text-base p-4">
+    <div>
+      <div className="mt-2 mb-2">
         <Address address={address} />
-      </h3>
-      {networks.map(({ network }) => (
-        <div key={network.name}>
-          {network.name}: {balances[network.name]?.free}{' '}
-          {properties[network.name]?.symbol}
-        </div>
-      ))}
-    </>
+      </div>
+
+      <List>
+        {Object.values(networks).map(({ network }) => (
+          <ListItem key={network.name}>
+            {network.name}: {balances[network.name]?.free}{' '}
+            {properties[network.name]?.symbol}
+          </ListItem>
+        ))}
+      </List>
+    </div>
   );
 };
 

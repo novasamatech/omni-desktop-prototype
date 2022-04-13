@@ -3,19 +3,19 @@ import { useRecoilValue } from 'recoil';
 import { QrDisplayPayload } from '@polkadot/react-qr';
 import { Link } from 'react-router-dom';
 import { ApiPromise } from '@polkadot/api';
-import { apiState } from '../store/api';
+import { connectionState } from '../store/api';
 import { currentTransactionState } from '../store/currentTransaction';
 import Button from '../ui/Button';
 
 const ShowCode: React.FC = () => {
   const [api, setApi] = useState<ApiPromise>();
   const [tx, setTx] = useState<any>();
-  const networks = useRecoilValue(apiState);
+  const networks = useRecoilValue(connectionState);
   const transaction = useRecoilValue(currentTransactionState);
 
   useEffect(() => {
     if (transaction && networks.length) {
-      const network = networks.find(
+      const network = Object.values(networks).find(
         (n) => n.network.name === transaction.network
       );
       setApi(network?.api);
@@ -29,9 +29,14 @@ const ShowCode: React.FC = () => {
 
   return (
     <div className="h-screen flex flex-col">
-      <h2 className="flex justify-center items-center h-16 p-4 font-light text-lg">
-        Sign your operations using Parity Signer
-      </h2>
+      <div className="flex justify-center items-center">
+        <Link className="ml-2" to="/busket">
+          <Button>Back</Button>
+        </Link>
+        <h2 className="h-16 p-4 font-light text-lg">
+          Sign your operations using Parity Signer
+        </h2>
+      </div>
       <div className="flex flex-1 flex-col justify-center items-center">
         <div className="font-normal text-base">
           Scan QR code with Parity Signer
@@ -46,7 +51,7 @@ const ShowCode: React.FC = () => {
             />
           </div>
         )}
-        <Link to="scan-code">
+        <Link to="/scan-code">
           <Button fat>Done, upload signed operations</Button>
         </Link>
       </div>

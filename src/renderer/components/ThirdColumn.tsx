@@ -2,9 +2,12 @@ import React from 'react';
 import { Switch, Route } from 'react-router-dom';
 import AddAccount from './Actions/AddAccount';
 import Balances from './Actions/Balances';
+import Chat from './Actions/Chat';
 import CreateMultisigAccount from './Actions/CreateMultisigAccount';
 import NetworkList from './Actions/NetworkList';
 import Transfer from './Actions/Transfer';
+import WalletList from './Actions/WalletList';
+import Wallet from './Actions/Wallet';
 
 const ThirdColumn: React.FC = () => {
   return (
@@ -18,6 +21,9 @@ const ThirdColumn: React.FC = () => {
         />
         <Route path="/network-list" component={NetworkList} />
         <Route path="/balances" component={Balances} />
+        <Route path="/chat" component={Chat} />
+        <Route path="/wallets" component={WalletList} />
+        <Route path="/wallet/:walletId" component={Wallet} />
       </Switch>
     </div>
   );

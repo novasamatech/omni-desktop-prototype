@@ -10,9 +10,12 @@ const Balances: React.FC = () => {
   return (
     <>
       <h2 className="font-light text-xl p-4">Balances</h2>
-      {selectedAccounts.map(({ address }) => (
-        <Balance key={address} address={address} />
-      ))}
+
+      <div className="m-2">
+        {selectedAccounts.map(({ address }) => (
+          <Balance key={address} address={address} />
+        ))}
+      </div>
     </>
   );
 };

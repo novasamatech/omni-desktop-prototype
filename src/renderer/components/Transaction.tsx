@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useSetRecoilState, useRecoilValue } from 'recoil';
 import { Link } from 'react-router-dom';
 import Button from '../ui/Button';
-import { Connection, TransactionData } from '../../common/types';
+import { TransactionData } from '../../common/types';
 import { currentTransactionState } from '../store/currentTransaction';
 import { transactionBusketState } from '../store/transactionBusket';
-import { apiState } from '../store/api';
+import { connectionState, Connection } from '../store/api';
 import Address from '../ui/Address';
 
 type Props = {
@@ -15,7 +15,7 @@ type Props = {
 const Transaction: React.FC<Props> = ({ transaction }: Props) => {
   const setCurrentTransaction = useSetRecoilState(currentTransactionState);
   const setTransactions = useSetRecoilState(transactionBusketState);
-  const networks = useRecoilValue(apiState);
+  const networks = useRecoilValue(connectionState);
 
   const [transactionNetwork, setNetwork] = useState<Connection>();
   const [tokenSymbol, setTokenSymbol] = useState('');
@@ -28,8 +28,8 @@ const Transaction: React.FC<Props> = ({ transaction }: Props) => {
       setTokenSymbol(symbol || '');
     };
 
-    const network = networks.find(
-      (n) => n.network.name === transaction.network
+    const network = Object.values(networks).find(
+      (n: Connection) => n.network.name === transaction.network
     );
 
     if (network) {

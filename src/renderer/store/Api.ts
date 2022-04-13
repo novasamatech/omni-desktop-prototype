@@ -1,13 +1,17 @@
 /* eslint-disable import/prefer-default-export */
+import { ApiPromise } from '@polkadot/api';
+import { ProviderInterface } from '@polkadot/rpc-provider/types';
 import { atom } from 'recoil';
-import { Connection } from '../../common/types';
+import { Chain } from '../db/db';
 
-export const apiState = atom<Connection[]>({
-  key: 'apiState',
-  default: [],
-});
+export type Connection = {
+  network: Chain;
+  api: ApiPromise;
+  provider?: ProviderInterface;
+};
 
-export const activeApiState = atom<Connection[]>({
-  key: 'activeApiState',
-  default: [],
+export const connectionState = atom<Record<string, Connection>>({
+  key: 'connectionState',
+  default: {},
+  dangerouslyAllowMutability: true,
 });

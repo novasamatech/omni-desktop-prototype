@@ -19,7 +19,6 @@ import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import { registerAccountStoreHandlers } from './accountStore';
-import { registerNetworkStoreHandlers } from './networkStore';
 
 // const { createPolkadotJsScClient } = require('@substrate/connect');
 // const { ApiPromise } = require('@polkadot/api');
@@ -154,7 +153,6 @@ app
   .then(() => {
     createWindow();
     registerAccountStoreHandlers();
-    registerNetworkStoreHandlers();
 
     // Networks.map((network) => connectToNetwork(network));
 

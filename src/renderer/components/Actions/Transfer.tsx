@@ -1,7 +1,6 @@
-import { Connection } from 'common/types';
 import React, { useEffect, useState } from 'react';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
-import { apiState } from '../../store/api';
+import { Connection, connectionState } from '../../store/api';
 import { selectedAccountsState } from '../../store/selectedAccounts';
 import { transactionBusketState } from '../../store/transactionBusket';
 import Button from '../../ui/Button';
@@ -16,13 +15,13 @@ const Transfer: React.FC = () => {
   );
   const [networkOptions, setNetworkOptions] = useState<OptionType[]>([]);
 
-  const networks = useRecoilValue(apiState);
+  const networks = useRecoilValue(connectionState);
   const accounts = useRecoilValue(selectedAccountsState);
   const setTransactions = useSetRecoilState(transactionBusketState);
 
   useEffect(() => {
     setNetworkOptions(
-      networks.map((n) => ({
+      Object.values(networks).map((n) => ({
         label: n.network.name,
         value: n.network.name,
       }))
@@ -49,7 +48,9 @@ const Transfer: React.FC = () => {
   };
 
   const setNetwork = (value: string) => {
-    const tempNetwork = networks.find((n) => n.network.name === value);
+    const tempNetwork = Object.values(networks).find(
+      (n) => n.network.name === value
+    );
 
     if (tempNetwork) {
       setCurrentNetwork(tempNetwork);
