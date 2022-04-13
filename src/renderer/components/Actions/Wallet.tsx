@@ -14,8 +14,37 @@ import Select, { OptionType } from '../../ui/Select';
 import { Account, ChainAccount, Chain, db } from '../../db/db';
 import Address from '../../ui/Address';
 
+enum AccountTypes {
+  CHAIN = 'CHAIN',
+  MAIN = 'MAIN',
+}
+
+const AccountTypeOptions = [
+  {
+    label: 'Chain',
+    value: AccountTypes.CHAIN,
+  },
+  {
+    label: 'Main',
+    value: AccountTypes.MAIN,
+  },
+];
+
 const Wallet: React.FC = () => {
   const params = useParams<{ walletId: string }>();
+
+  const [address, setAddress] = useState('');
+  const [networkOptions, setNetworkOptions] = useState<OptionType[]>([]);
+  const [accountNetwork, setAccountNetwork] = useState<string>();
+  // const [networkType, setNetworkType] = useState<string>();
+  const [accountType, setAccountType] = useState(AccountTypes.CHAIN);
+  const [accounts, setAccounts] = useState<
+    Array<{
+      account: Account | ChainAccount | null;
+      network: Chain;
+    }>
+  >();
+
   const networks = useLiveQuery(async () => {
     const networkList = await db.chains.toArray();
 
@@ -27,22 +56,6 @@ const Wallet: React.FC = () => {
 
     return w;
   });
-
-  enum AccountTypes {
-    CHAIN = 'CHAIN',
-    MAIN = 'MAIN',
-  }
-
-  const AccountTypeOptions = [
-    {
-      label: 'Chain',
-      value: AccountTypes.CHAIN,
-    },
-    {
-      label: 'Main',
-      value: AccountTypes.MAIN,
-    },
-  ];
 
   // const NetworkTypeOptions = [
   //   {
@@ -63,17 +76,62 @@ const Wallet: React.FC = () => {
   //   },
   // ];
 
-  const [address, setAddress] = useState('');
-  const [networkOptions, setNetworkOptions] = useState<OptionType[]>([]);
-  const [accountNetwork, setAccountNetwork] = useState<string>();
-  // const [networkType, setNetworkType] = useState<string>();
-  const [accountType, setAccountType] = useState(AccountTypes.CHAIN);
-  const [accounts, setAccounts] = useState<
-    Array<{
-      account: Account | ChainAccount | null;
-      network: Chain;
-    }>
-  >();
+  useEffect(() => {
+    const options =
+      networks
+        ?.filter(
+          (n) => !wallet?.chainAccounts.find((c) => c.chainId === n.chainId)
+        )
+        .map((n) => ({
+          label: n.name,
+          value: n.chainId,
+        })) || [];
+
+    setNetworkOptions(options);
+    setAccountNetwork(options[0]?.value);
+  }, [networks, wallet]);
+
+  useEffect(() => {
+    const accountList = networks
+      ?.map((n) => {
+        // find chainAccount by chainId
+        const chainAccount = wallet?.chainAccounts.find(
+          (c) => c.chainId === n.chainId
+        );
+
+        if (chainAccount) {
+          return {
+            account: chainAccount,
+            network: n,
+          };
+        }
+
+        const mainAccount = wallet?.mainAccounts[0];
+
+        if (mainAccount) {
+          const updatedAccountId = encodeAddress(
+            decodeAddress(mainAccount.accountId),
+            n.addressPrefix
+          );
+          const updatedMainAccount = {
+            ...mainAccount,
+            accountId: updatedAccountId,
+          };
+          return {
+            account: updatedMainAccount,
+            network: n,
+          };
+        }
+
+        return {
+          account: null,
+          network: n,
+        };
+      })
+      .filter((n) => n.account);
+
+    setAccounts(accountList);
+  }, [networks, wallet]);
 
   const addAccount = async () => {
     // const keyring = new Keyring();
@@ -127,62 +185,6 @@ const Wallet: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    const options =
-      networks
-        ?.filter(
-          (n) => !wallet?.chainAccounts.find((c) => c.chainId === n.chainId)
-        )
-        .map((n) => ({
-          label: n.name,
-          value: n.chainId,
-        })) || [];
-
-    setNetworkOptions(options);
-  }, [networks, wallet]);
-
-  useEffect(() => {
-    const accountList = networks
-      ?.map((n) => {
-        // find chainAccount by chainId
-        const chainAccount = wallet?.chainAccounts.find(
-          (c) => c.chainId === n.chainId
-        );
-
-        if (chainAccount) {
-          return {
-            account: chainAccount,
-            network: n,
-          };
-        }
-
-        const mainAccount = wallet?.mainAccounts[0];
-
-        if (mainAccount) {
-          const updatedAccountId = encodeAddress(
-            decodeAddress(mainAccount.accountId),
-            n.addressPrefix
-          );
-          const updatedMainAccount = {
-            ...mainAccount,
-            accountId: updatedAccountId,
-          };
-          return {
-            account: updatedMainAccount,
-            network: n,
-          };
-        }
-
-        return {
-          account: null,
-          network: n,
-        };
-      })
-      .filter((n) => n.account);
-
-    setAccounts(accountList);
-  }, [networks, wallet]);
-
   const onChangeAccountAddress = (event: ChangeEvent<HTMLInputElement>) => {
     setAddress(event.target.value);
   };
@@ -228,7 +230,7 @@ const Wallet: React.FC = () => {
             className="w-full"
             label="Network"
             placeholder="Network"
-            value={accountNetwork || networkOptions[0]?.value || ''}
+            value={accountNetwork}
             options={networkOptions}
             onChange={onChangeAccountNetwork}
           />
@@ -238,7 +240,7 @@ const Wallet: React.FC = () => {
             className="w-full"
             label="Network type"
             placeholder="Network type"
-            value={networkType || NetworkTypeOptions[0]?.value || ''}
+            value={networkType}
             options={networkOptions}
             onChange={onChangeNetworkType}
           />

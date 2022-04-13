@@ -14,11 +14,13 @@ const ShowCode: React.FC = () => {
   const transaction = useRecoilValue(currentTransactionState);
 
   useEffect(() => {
-    if (transaction && networks.length) {
+    if (transaction && Object.values(networks).length) {
       const network = Object.values(networks).find(
         (n) => n.network.name === transaction.network
       );
+
       setApi(network?.api);
+
       const tempTx = network?.api?.tx.balances.transfer(
         transaction.payload.address,
         transaction.payload.amount

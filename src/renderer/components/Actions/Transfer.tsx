@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
+import { decodeAddress, encodeAddress } from '@polkadot/keyring';
 import { Connection, connectionState } from '../../store/api';
-import { selectedAccountsState } from '../../store/selectedAccounts';
+import { selectedWalletsState } from '../../store/selectedWallets';
 import { transactionBusketState } from '../../store/transactionBusket';
 import Button from '../../ui/Button';
 import InputText from '../../ui/Input';
@@ -16,7 +17,7 @@ const Transfer: React.FC = () => {
   const [networkOptions, setNetworkOptions] = useState<OptionType[]>([]);
 
   const networks = useRecoilValue(connectionState);
-  const accounts = useRecoilValue(selectedAccountsState);
+  const wallets = useRecoilValue(selectedWalletsState);
   const setTransactions = useSetRecoilState(transactionBusketState);
 
   useEffect(() => {
@@ -28,32 +29,45 @@ const Transfer: React.FC = () => {
     );
   }, [networks]);
 
+  const setNetwork = (value: string) => {
+    const network = Object.values(networks).find(
+      (n) => n.network.name === value
+    );
+
+    if (network) {
+      setCurrentNetwork(network);
+    }
+  };
+
   const addTransaction = async () => {
     if (currentNetwork) {
       setTransactions((transactions) => {
         return [
           ...transactions,
-          ...accounts.map((a) => ({
-            type: 'transfer',
-            network: currentNetwork.network.name,
-            address: a.address,
-            payload: {
-              address,
-              amount,
-            },
-          })),
+          ...wallets.map((w) => {
+            const account =
+              w.chainAccounts.find(
+                (a) => a.chainId === currentNetwork.network.chainId
+              ) || w.mainAccounts[0];
+
+            const addressFrom =
+              encodeAddress(
+                decodeAddress(account.accountId),
+                currentNetwork.network.addressPrefix
+              ) || '';
+
+            return {
+              type: 'transfer',
+              network: currentNetwork.network.name,
+              address: addressFrom,
+              payload: {
+                address,
+                amount,
+              },
+            };
+          }),
         ];
       });
-    }
-  };
-
-  const setNetwork = (value: string) => {
-    const tempNetwork = Object.values(networks).find(
-      (n) => n.network.name === value
-    );
-
-    if (tempNetwork) {
-      setCurrentNetwork(tempNetwork);
     }
   };
 
@@ -90,7 +104,7 @@ const Transfer: React.FC = () => {
         />
       </div>
       <div className="p-2">
-        <Button onClick={addTransaction} fat disabled={accounts.length === 0}>
+        <Button onClick={addTransaction} fat disabled={wallets.length === 0}>
           Add transaction
         </Button>
       </div>
