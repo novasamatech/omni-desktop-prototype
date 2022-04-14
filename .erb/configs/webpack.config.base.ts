@@ -40,6 +40,7 @@ export default {
     fallback: {
       "crypto": require.resolve("crypto-browserify"),
       "stream": require.resolve("stream-browserify"),
+      "url": false,
     },
     alias: {
       'react/jsx-runtime': require.resolve('react/jsx-runtime')

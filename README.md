@@ -2,6 +2,12 @@
 
 Polkadot Enterprise Desktop app
 
+## Requirements
+
+Minimum version of `Node.js` is `v14`.
+
+Tested with `v14` and `v16` LTS releases.
+
 ## Install dependencies
 
 To install all dependencies:
