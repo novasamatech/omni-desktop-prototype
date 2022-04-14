@@ -88,8 +88,10 @@ const Wallet: React.FC = () => {
         })) || [];
 
     setNetworkOptions(options);
-    setAccountNetwork(options[0]?.value);
-  }, [networks, wallet]);
+    if (!accountNetwork) {
+      setAccountNetwork(options[0]?.value);
+    }
+  }, [networks, wallet, accountNetwork]);
 
   useEffect(() => {
     const accountList = networks

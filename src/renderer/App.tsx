@@ -86,8 +86,8 @@ const Main = () => {
       {transactionsAmount > 0 && (
         <div className="flex justify-center items-center fixed bottom-0 w-screen h-20 bg-gray-100">
           <div className="mr-12 w-36">
-            View your {transactionsAmount} pending MST
-            {transactionsAmount > 1 ? 'operations' : 'operation'}:
+            View your {transactionsAmount} pending{' '}
+            {transactionsAmount > 1 ? 'operations' : 'operation'}
           </div>
           <Link to="/busket">
             <Button fat>
