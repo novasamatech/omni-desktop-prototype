@@ -1,19 +1,18 @@
 import React from 'react';
 import { useRecoilValue } from 'recoil';
-import '@polkadot/api-augment';
-import { selectedAccountsState } from '../../store/selectedAccounts';
 import Balance from './Balance';
+import { selectedWalletsState } from '../../store/selectedWallets';
 
 const Balances: React.FC = () => {
-  const selectedAccounts = useRecoilValue(selectedAccountsState);
+  const selectedWallets = useRecoilValue(selectedWalletsState);
 
   return (
     <>
       <h2 className="font-light text-xl p-4">Balances</h2>
 
       <div className="m-2">
-        {selectedAccounts.map(({ address }) => (
-          <Balance key={address} address={address} />
+        {selectedWallets.map((wallet) => (
+          <Balance key={wallet.id} wallet={wallet} />
         ))}
       </div>
     </>
