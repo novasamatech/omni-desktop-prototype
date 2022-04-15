@@ -27,7 +27,11 @@ const Transfer: React.FC = () => {
         value: n.network.name,
       }))
     );
-  }, [networks]);
+
+    if (!currentNetwork) {
+      setCurrentNetwork(networks[Object.keys(networks)[0]]);
+    }
+  }, [networks, currentNetwork, setCurrentNetwork]);
 
   const setNetwork = (value: string) => {
     const network = Object.values(networks).find(

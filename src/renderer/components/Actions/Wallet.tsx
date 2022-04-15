@@ -136,6 +136,7 @@ const Wallet: React.FC = () => {
   }, [networks, wallet]);
 
   const addAccount = async () => {
+    // TODO: Add validation for account address
     // const keyring = new Keyring();
     // const pair = keyring.addFromAddress(address);
     const publicKey = decodeAddress(address);
@@ -162,9 +163,9 @@ const Wallet: React.FC = () => {
           ],
         });
       } else if (accountType === AccountTypes.MAIN) {
+        // TODO: add support for main accounts of different types
         await db.wallets.update(wallet.id, {
           mainAccounts: [
-            ...wallet.mainAccounts,
             {
               accountId: address,
               publicKey: publicKeyHex,

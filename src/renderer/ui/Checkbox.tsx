@@ -5,11 +5,13 @@ import React, { ChangeEvent } from 'react';
 interface Props {
   label?: string;
   className?: string;
+  checked?: boolean;
   onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
 }
 
 const Checkbox: React.FC<Props> = ({
   label,
+  checked,
   onChange,
   className = '',
 }: Props) => {
@@ -19,6 +21,7 @@ const Checkbox: React.FC<Props> = ({
         <input
           type="checkbox"
           name="checked-demo"
+          checked={checked}
           onChange={onChange}
           className="form-tick appearance-none  bg-white h-5 w-5 border border-gray-300 rounded-md checked:bg-black checked:border-transparent focus:outline-none"
         />

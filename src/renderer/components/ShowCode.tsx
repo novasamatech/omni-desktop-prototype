@@ -43,11 +43,15 @@ const ShowCode: React.FC = () => {
         <div className="font-normal text-base">
           Scan QR code with Parity Signer
         </div>
+        <div>{api?.genesisHash.toHex()}</div>
+        <div>{transaction?.address}</div>
+        <div>{tx.toHex()}</div>
+
         {tx && (
           <div className="w-80 h-80 m-4">
             <QrDisplayPayload
               address={transaction?.address || ''}
-              cmd={1}
+              cmd={0}
               genesisHash={api?.genesisHash.toHex() || ''}
               payload={tx.toU8a()}
             />

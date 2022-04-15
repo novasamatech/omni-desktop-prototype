@@ -28,6 +28,8 @@ const WalletList: React.FC = () => {
     }
   };
 
+  // TODO: Add remove wallet functionality
+
   const onChangeWalletName = (event: ChangeEvent<HTMLInputElement>) => {
     setWalletName(event.target.value);
   };
