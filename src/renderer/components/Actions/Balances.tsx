@@ -1,6 +1,6 @@
 import React from 'react';
 import { useRecoilValue } from 'recoil';
-import Balance from './Balance';
+import AccountBalances from './AccountBalances';
 import { selectedWalletsState } from '../../store/selectedWallets';
 
 const Balances: React.FC = () => {
@@ -12,7 +12,7 @@ const Balances: React.FC = () => {
 
       <div className="m-2">
         {selectedWallets.map((wallet) => (
-          <Balance key={wallet.id} wallet={wallet} />
+          <AccountBalances key={wallet.id} wallet={wallet} />
         ))}
       </div>
     </>

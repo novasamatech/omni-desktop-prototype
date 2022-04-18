@@ -19,6 +19,8 @@ import ScanCode from './components/ScanCode';
 // import { getChainSpec, getKnownChainId } from '../common/networks';
 
 const Main = () => {
+  // TODO: Connect to the chain on app start
+
   // const [connections, setConnections] = useRecoilState(connectionState);
   // const [inited, setInited] = useState(false);
 

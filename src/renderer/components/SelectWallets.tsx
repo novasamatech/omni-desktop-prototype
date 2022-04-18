@@ -7,6 +7,7 @@ import { selectedWalletsState } from '../store/selectedWallets';
 import { db, Wallet } from '../db/db';
 
 const SelectWallets: React.FC = () => {
+  // TODO: select wallets after hot update on interface
   const [selectedWallets, setSelectedWallets] =
     useRecoilState(selectedWalletsState);
 

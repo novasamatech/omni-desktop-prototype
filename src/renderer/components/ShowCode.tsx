@@ -25,9 +25,7 @@ const ShowCode: React.FC = () => {
         transaction.payload.address,
         transaction.payload.amount
       );
-      console.log(tempTx?.nonce.toHex());
-      console.log(tempTx?.data);
-      console.log(tempTx?.era.toHex());
+
       setTx(tempTx);
     }
   }, [networks, transaction]);

@@ -3,8 +3,6 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useParams } from 'react-router-dom';
 import { decodeAddress, encodeAddress } from '@polkadot/keyring';
 import { u8aToHex } from '@polkadot/util';
-// import { useRecoilValue } from 'recoil';
-
 import InputText from '../../ui/Input';
 import Button from '../../ui/Button';
 import List from '../../ui/List';
@@ -179,6 +177,7 @@ const Wallet: React.FC = () => {
   };
 
   const removeAccount = async (accountId: string) => {
+    // TODO: Add possibility to remove main accounts
     if (wallet?.id) {
       await db.wallets.update(wallet.id, {
         chainAccounts: wallet.chainAccounts.filter(
