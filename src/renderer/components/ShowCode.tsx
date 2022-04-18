@@ -25,6 +25,9 @@ const ShowCode: React.FC = () => {
         transaction.payload.address,
         transaction.payload.amount
       );
+      console.log(tempTx?.nonce.toHex());
+      console.log(tempTx?.data);
+      console.log(tempTx?.era.toHex());
       setTx(tempTx);
     }
   }, [networks, transaction]);
@@ -32,7 +35,7 @@ const ShowCode: React.FC = () => {
   return (
     <div className="h-screen flex flex-col">
       <div className="flex justify-center items-center">
-        <Link className="ml-2" to="/busket">
+        <Link className="ml-2 absolute left-0" to="/busket">
           <Button>Back</Button>
         </Link>
         <h2 className="h-16 p-4 font-light text-lg">
@@ -43,16 +46,13 @@ const ShowCode: React.FC = () => {
         <div className="font-normal text-base">
           Scan QR code with Parity Signer
         </div>
-        <div>{api?.genesisHash.toHex()}</div>
-        <div>{transaction?.address}</div>
-        <div>{tx.toHex()}</div>
 
-        {tx && (
+        {api && tx && (
           <div className="w-80 h-80 m-4">
             <QrDisplayPayload
               address={transaction?.address || ''}
-              cmd={0}
-              genesisHash={api?.genesisHash.toHex() || ''}
+              cmd={2}
+              genesisHash={api.genesisHash.toU8a() || ''}
               payload={tx.toU8a()}
             />
           </div>

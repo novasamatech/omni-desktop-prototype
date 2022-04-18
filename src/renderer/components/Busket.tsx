@@ -10,15 +10,15 @@ const ThirdColumn: React.FC = () => {
 
   return (
     <>
-      <div className="flex justify-between items-center">
-        <Link className="ml-2" to="/">
+      <div className="flex justify-center items-center">
+        <Link className="ml-2 absolute left-0" to="/">
           <Button>Back</Button>
         </Link>
         <h2 className="h-16 p-4 font-light text-lg">
-          Upload signed operations via Parity Signer
+          Review your operations before signing
         </h2>
-        <div />
       </div>
+
       <div className="m-auto w-1/2">
         {transactions.map((t) => (
           <Transaction key={`${t.address}_${t.type}`} transaction={t} />

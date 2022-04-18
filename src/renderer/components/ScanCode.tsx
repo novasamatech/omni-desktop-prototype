@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSetRecoilState, useRecoilValue } from 'recoil';
 import { Link, useHistory } from 'react-router-dom';
 import { QrScanSignature } from '@polkadot/react-qr';
@@ -8,16 +8,29 @@ import { currentTransactionState } from '../store/currentTransaction';
 import Button from '../ui/Button';
 
 const ScanCode: React.FC = () => {
-  const connections = useRecoilValue(connectionState);
+  const networks = useRecoilValue(connectionState);
+  const [tx, setTx] = useState<any>();
+
   const history = useHistory();
 
   const setTransactions = useSetRecoilState(transactionBusketState);
 
   const transaction = useRecoilValue(currentTransactionState);
-  const tx = connections[0].api?.tx.balances.transfer(
-    transaction?.payload.address,
-    transaction?.payload.amount
-  );
+
+  useEffect(() => {
+    if (transaction && Object.values(networks).length) {
+      const network = Object.values(networks).find(
+        (n) => n.network.name === transaction.network
+      );
+
+      const tempTx = network?.api?.tx.balances.transfer(
+        transaction.payload.address,
+        transaction.payload.amount
+      );
+
+      setTx(tempTx);
+    }
+  }, [networks, transaction]);
 
   const onGetSignature = (payload: any) => {
     const signature = payload.signature || '';
@@ -38,14 +51,13 @@ const ScanCode: React.FC = () => {
 
   return (
     <div className="h-screen flex flex-col">
-      <div className="flex justify-between items-center">
-        <Link className="ml-2" to="/show-code">
+      <div className="flex justify-center items-center">
+        <Link className="ml-2 absolute left-0" to="/show-code">
           <Button>Back</Button>
         </Link>
         <h2 className="h-16 p-4 font-light text-lg">
           Upload signed operations via Parity Signer
         </h2>
-        <div />
       </div>
 
       <div className="flex flex-1 flex-col justify-center items-center">

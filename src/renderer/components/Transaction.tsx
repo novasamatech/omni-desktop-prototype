@@ -46,11 +46,15 @@ const Transaction: React.FC<Props> = ({ transaction }: Props) => {
 
   return (
     <div className="bg-gray-100 p-4 m-4 rounded-lg">
-      <div className="flex">
-        From: <Address address={transaction.address} />
-      </div>
-      {transaction.type === 'transfer' ? (
+      <div>
+        <div className="text-gray-500">Selected account</div>
         <div>
+          <Address address={transaction.address} />
+        </div>
+      </div>
+      <div className="text-gray-500">Operations details:</div>
+      {transaction.type === 'transfer' ? (
+        <div className="flex">
           Transfer {transaction.payload.amount} {tokenSymbol} to{' '}
           <Address address={transaction.payload.address} />
         </div>
