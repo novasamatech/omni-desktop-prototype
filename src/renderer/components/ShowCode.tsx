@@ -25,8 +25,7 @@ const ShowCode: React.FC = () => {
   const [payload, setPayload] = useState<Uint8Array>();
   const networks = useRecoilValue(connectionState);
   const transaction = useRecoilValue(currentTransactionState);
-  const [transactionPayload, setUnsigned] =
-    useRecoilState(currentUnsignedState);
+  const [, setUnsigned] = useRecoilState(currentUnsignedState);
 
   useEffect(() => {
     // TODO: Refactor setup transaction flow
