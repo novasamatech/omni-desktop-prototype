@@ -29,6 +29,7 @@ const ShowCode: React.FC = () => {
     useRecoilState(currentUnsignedState);
 
   useEffect(() => {
+    // TODO: Refactor setup transaction flow
     const setupTransaction = async () => {
       if (transaction && Object.values(networks).length) {
         const network = Object.values(networks).find(

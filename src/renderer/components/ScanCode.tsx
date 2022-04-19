@@ -18,6 +18,7 @@ import {
 } from '../store/currentTransaction';
 import Button from '../ui/Button';
 
+// TODO: Move this function to utils
 function createSignedTx(
   unsigned: UnsignedTransaction,
   signature: `0x${string}`,
@@ -54,6 +55,7 @@ const ScanCode: React.FC = () => {
   const transaction = useRecoilValue(currentTransactionState);
   const unsigned = useRecoilValue(currentUnsignedState);
 
+  // TODO: Refactor sign and send transaction flow
   const onGetSignature = async (payload: any) => {
     const signature = payload.signature || '';
     if (transaction && unsigned && Object.values(networks).length) {
