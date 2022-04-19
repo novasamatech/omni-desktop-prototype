@@ -9,6 +9,7 @@ export type TransactionData = {
   address: string;
   type: string;
   payload?: any;
+  extrinsicPayload?: any;
   signature?: string;
   network: string;
 };

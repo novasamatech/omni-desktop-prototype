@@ -227,6 +227,7 @@
     "@polkadot/rpc-provider": "^8.0.2",
     "@polkadot/types": "^8.0.2",
     "@substrate/connect": "^0.7.2",
+    "@substrate/txwrapper-polkadot": "^2.0.2",
     "autoprefixer": "^10.4.0",
     "crypto-browserify": "^3.12.0",
     "dexie": "^3.2.1",

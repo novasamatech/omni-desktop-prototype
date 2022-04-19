@@ -1,51 +1,92 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useSetRecoilState, useRecoilValue } from 'recoil';
 import { Link, useHistory } from 'react-router-dom';
 import { QrScanSignature } from '@polkadot/react-qr';
+import { GenericExtrinsic } from '@polkadot/types';
+import {
+  getRegistry,
+  GetRegistryOpts,
+  createMetadata,
+  OptionsWithMeta,
+  UnsignedTransaction,
+} from '@substrate/txwrapper-polkadot';
 import { connectionState } from '../store/api';
 import { transactionBusketState } from '../store/transactionBusket';
-import { currentTransactionState } from '../store/currentTransaction';
+import {
+  currentTransactionState,
+  currentUnsignedState,
+} from '../store/currentTransaction';
 import Button from '../ui/Button';
+
+function createSignedTx(
+  unsigned: UnsignedTransaction,
+  signature: `0x${string}`,
+  options: OptionsWithMeta
+): GenericExtrinsic {
+  const {
+    metadataRpc,
+    registry,
+    asCallsOnlyArg,
+    signedExtensions,
+    userExtensions,
+  } = options;
+  const metadata = createMetadata(registry, metadataRpc, asCallsOnlyArg);
+
+  registry.setMetadata(metadata, signedExtensions, userExtensions);
+
+  const extrinsic = registry.createType(
+    'Extrinsic',
+    { method: unsigned.method },
+    { version: unsigned.version }
+  );
+
+  extrinsic.addSignature(unsigned.address, signature, unsigned);
+
+  return extrinsic;
+}
 
 const ScanCode: React.FC = () => {
   const networks = useRecoilValue(connectionState);
-  const [tx, setTx] = useState<any>();
-
   const history = useHistory();
 
   const setTransactions = useSetRecoilState(transactionBusketState);
 
   const transaction = useRecoilValue(currentTransactionState);
+  const unsigned = useRecoilValue(currentUnsignedState);
 
-  useEffect(() => {
-    if (transaction && Object.values(networks).length) {
+  const onGetSignature = async (payload: any) => {
+    const signature = payload.signature || '';
+    if (transaction && unsigned && Object.values(networks).length) {
       const network = Object.values(networks).find(
         (n) => n.network.name === transaction.network
       );
 
-      const tempTx = network?.api?.tx.balances.transfer(
-        transaction.payload.address,
-        transaction.payload.amount
-      );
+      if (network && network.api) {
+        const metadataRpc = await network.api.rpc.state.getMetadata();
+        const { specVersion, specName } =
+          await network.api.rpc.state.getRuntimeVersion();
 
-      setTx(tempTx);
-    }
-  }, [networks, transaction]);
+        const registry = getRegistry({
+          chainName: network?.network.name || '',
+          specName: specName.toString() as GetRegistryOpts['specName'],
+          specVersion: specVersion.toNumber(),
+          metadataRpc: metadataRpc.toHex(),
+        });
 
-  const onGetSignature = (payload: any) => {
-    const signature = payload.signature || '';
+        const tx = createSignedTx(unsigned, signature, {
+          metadataRpc: metadataRpc.toHex(),
+          registry,
+        });
 
-    if (signature) {
-      tx.addSignature(transaction?.address || '', signature, tx.toU8a());
-      tx.send();
-    }
+        const actualTxHash = await network.api.rpc.author.submitExtrinsic(tx);
 
-    if (signature && transaction) {
-      setTransactions((trxs) => {
-        return trxs.filter((t) => t !== transaction);
-      });
-
-      history.push('/busket');
+        if (actualTxHash) {
+          setTransactions((trxs) => {
+            return trxs.filter((t) => t !== transaction);
+          });
+          history.push('/busket');
+        }
+      }
     }
   };
 
@@ -64,7 +105,7 @@ const ScanCode: React.FC = () => {
         <div className="font-normal text-base">
           Scan QR code from Parity Signer with Omni
         </div>
-        {tx && (
+        {transaction && (
           <div className="w-80 h-80 m-4">
             <QrScanSignature onScan={onGetSignature} />
           </div>
