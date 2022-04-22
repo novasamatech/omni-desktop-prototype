@@ -1,5 +1,5 @@
 /* eslint-disable react/require-default-props */
-import React, { ChangeEvent } from 'react';
+import { ChangeEvent } from 'react';
 
 interface Props {
   type?: string;

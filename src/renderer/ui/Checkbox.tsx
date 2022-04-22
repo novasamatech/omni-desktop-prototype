@@ -1,6 +1,6 @@
 /* eslint-disable react/require-default-props */
 /* eslint-disable jsx-a11y/label-has-associated-control */
-import React, { ChangeEvent } from 'react';
+import { ChangeEvent } from 'react';
 
 interface Props {
   label?: string;
