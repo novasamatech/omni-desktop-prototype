@@ -106,7 +106,7 @@ const Chat: React.FC = () => {
         accessToken: userLoginResult.access_token,
         deviceId: userLoginResult.device_id,
         sessionStore: new WebStorageSessionStore(window.localStorage),
-        // cryptoStore: new sdk.MemoryCryptoStore(),
+        cryptoStore: new sdk.MemoryCryptoStore(),
       });
 
       extendMatrixClient(client);
@@ -121,6 +121,10 @@ const Chat: React.FC = () => {
 
       if (roomId) {
         client.sendTextMessage(roomId, 'Hello');
+        client.sendEvent(roomId, 'm.room.message', {
+          body: 'Hello',
+          msgtype: 'm.text',
+        });
       }
 
       // client.on('sync', async (state: any) => {
