@@ -1,8 +1,10 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable guard-for-in */
 /* eslint-disable no-restricted-syntax */
-import React, { useEffect } from 'react';
+import React, { ChangeEvent, useState } from 'react';
 import * as sdk from 'matrix-js-sdk';
+import InputText from '../../ui/Input';
+import Button from '../../ui/Button';
 import WebStorageSessionStore from '../../../common/utils/webstorage';
 
 enum Visibility {
@@ -10,12 +12,15 @@ enum Visibility {
   Private = 'private',
 }
 
-const LOGIN = '';
+const LOGIN = 'asmadek';
 const ROOM_CRYPTO_CONFIG = { algorithm: 'm.megolm.v1.aes-sha2' };
-const PASSWORD = '';
+const PASSWORD = 'Flymc1020!';
 
 const Chat: React.FC = () => {
-  useEffect(() => {
+  const [login, setLogin] = useState('');
+  const [password, setPassword] = useState('');
+
+  const onLoginClick = () => {
     const extendMatrixClient = (matrixClient: sdk.MatrixClient) => {
       // automatic join
       matrixClient.on(sdk.RoomMemberEvent.Membership, async (_, member) => {
@@ -110,13 +115,13 @@ const Chat: React.FC = () => {
       });
 
       extendMatrixClient(client);
-      console.log(3);
+      console.log(1);
 
       await client.initCrypto();
       await window.Olm.init();
       console.log(2);
       await client.startClient({ initialSyncLimit: 10 });
-      console.log(1);
+      console.log(3);
       const roomId = await createEncryptedRoom(client, []);
 
       if (roomId) {
@@ -137,11 +142,43 @@ const Chat: React.FC = () => {
     };
 
     startClient();
-  }, []);
+  };
+
+  const onChangeLogin = (event: ChangeEvent<HTMLInputElement>) => {
+    setLogin(event.target.value);
+  };
+
+  const onChangePassword = (event: ChangeEvent<HTMLInputElement>) => {
+    setPassword(event.target.value);
+  };
 
   return (
     <>
       <h2 className="font-light text-xl p-4">Chat</h2>
+      <div className="p-2">
+        <InputText
+          className="w-full"
+          label="Login"
+          placeholder="Login"
+          value={login}
+          onChange={onChangeLogin}
+        />
+      </div>
+      <div className="p-2">
+        <InputText
+          className="w-full"
+          label="Password"
+          placeholder="Password"
+          type="password"
+          value={password}
+          onChange={onChangePassword}
+        />
+      </div>
+      <div className="p-2">
+        <Button fat onClick={onLoginClick}>
+          Login
+        </Button>
+      </div>
     </>
   );
 };
