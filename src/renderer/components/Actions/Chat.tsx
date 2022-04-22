@@ -10,9 +10,9 @@ enum Visibility {
   Private = 'private',
 }
 
-const LOGIN = 'asmadek';
+const LOGIN = '';
 const ROOM_CRYPTO_CONFIG = { algorithm: 'm.megolm.v1.aes-sha2' };
-const PASSWORD = 'Flymc1020!';
+const PASSWORD = '';
 
 const Chat: React.FC = () => {
   useEffect(() => {
