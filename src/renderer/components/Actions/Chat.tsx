@@ -12,9 +12,7 @@ enum Visibility {
   Private = 'private',
 }
 
-const LOGIN = 'asmadek';
 const ROOM_CRYPTO_CONFIG = { algorithm: 'm.megolm.v1.aes-sha2' };
-const PASSWORD = 'Flymc1020!';
 
 const Chat: React.FC = () => {
   const [login, setLogin] = useState('');
@@ -101,8 +99,8 @@ const Chat: React.FC = () => {
         baseUrl: 'https://matrix.org',
       });
       const userLoginResult = await loginClient.loginWithPassword(
-        LOGIN,
-        PASSWORD
+        login,
+        password
       );
 
       const client = sdk.createClient({
