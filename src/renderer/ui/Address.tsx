@@ -1,7 +1,6 @@
 /* eslint-disable react/require-default-props */
 /* eslint-disable jsx-a11y/label-has-associated-control */
 import Identicon from '@polkadot/react-identicon';
-import React from 'react';
 import { shortAddress } from '../utils/strings';
 
 interface Props {
@@ -9,7 +8,7 @@ interface Props {
   className?: string;
 }
 
-const Address: React.FC<Props> = ({ address, className = '' }: Props) => {
+const Address = ({ address, className = '' }: Props) => {
   const theme = 'polkadot';
   const size = 16;
 

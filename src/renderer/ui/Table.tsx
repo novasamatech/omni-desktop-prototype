@@ -1,6 +1,5 @@
 // FIXME
 /* eslint-disable react/no-array-index-key */
-import React from 'react';
 
 interface Props {
   withBorder?: boolean;
@@ -8,7 +7,7 @@ interface Props {
   data?: Array<Array<string>>;
 }
 
-const Table: React.FC<Props> = ({ withBorder, headers, data }: Props) => {
+const Table = ({ withBorder, headers, data }: Props) => {
   const borderClasses = withBorder ? 'border' : 'border-b-2';
 
   return (

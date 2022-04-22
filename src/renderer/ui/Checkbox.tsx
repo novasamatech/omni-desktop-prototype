@@ -9,12 +9,7 @@ interface Props {
   onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
 }
 
-const Checkbox: React.FC<Props> = ({
-  label,
-  checked,
-  onChange,
-  className = '',
-}: Props) => {
+const Checkbox = ({ label, checked, onChange, className = '' }: Props) => {
   return (
     <div className={className}>
       <label className="flex items-center">

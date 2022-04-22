@@ -10,7 +10,7 @@ type Props = {
   className?: string;
 };
 
-const Button: React.FC<Props> = ({
+const Button = ({
   disabled = false,
   submit = false,
   fat = false,

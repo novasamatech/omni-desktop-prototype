@@ -16,7 +16,7 @@ interface Props {
   inputClassName?: string;
 }
 
-const InputText: React.FC<Props> = ({
+const InputText = ({
   type = 'text',
   label,
   required,

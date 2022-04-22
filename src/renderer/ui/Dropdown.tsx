@@ -26,7 +26,7 @@ const Dropdown: React.FC<Props> = ({
   value,
   onChange,
   className = '',
-}: Props) => {
+}) => {
   return (
     <select
       id={id}

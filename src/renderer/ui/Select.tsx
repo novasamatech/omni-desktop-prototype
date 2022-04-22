@@ -34,7 +34,7 @@ const Select: React.FC<Props> = ({
   onChange,
   className = '',
   inputClassName = '',
-}: Props) => {
+}) => {
   return (
     <div
       className={`relative border border-gray-500 rounded-lg pt-2 pl-3 pr-3 pb-3 ${
