@@ -1,6 +1,6 @@
 name: Build/release
 
-on: workflow_dispatch
+on: pull_request
 
 jobs:
   release:
