@@ -51,6 +51,7 @@ export interface Asset {
   assetId: number;
   symbol: string;
   precision: number;
+  icon?: string;
   priceId?: string;
   staking?: string;
   type?: string;
@@ -110,8 +111,15 @@ export interface Chain {
   options?: ChainOptions[];
   externalApi?: ExternalApiSet;
   explorers?: Expolorer[];
+  // TODO: Store connection information in separate table
   activeType: ActiveType;
   addressPrefix?: number;
+}
+
+export interface ChainConnection {
+  id?: number;
+  chainId: HexString;
+  activeType: ActiveType;
 }
 
 export class OmniDexie extends Dexie {
@@ -119,11 +127,14 @@ export class OmniDexie extends Dexie {
 
   chains!: Table<Chain>;
 
+  connections!: Table<ChainConnection>;
+
   constructor() {
     super('omniDatabase');
-    this.version(2).stores({
+    this.version(4).stores({
       wallets: '++id,name',
       chains: '++id,&chainId,parentId,name,activeType',
+      connections: '++id,&chainId,activeType',
     });
   }
 }
