@@ -1,10 +1,8 @@
 import { WellKnownChain } from '@substrate/connect';
-import adz from './chainSpecs/adz.json';
 import statemine from './chainSpecs/statemine.json';
 import westmint from './chainSpecs/westmint.json';
 
 const KnownChainSpecs: Record<string, string> = {
-  Adz: JSON.stringify(adz),
   Statemine: JSON.stringify(statemine),
   Westmint: JSON.stringify(westmint),
 };

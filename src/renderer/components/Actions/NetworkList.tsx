@@ -24,13 +24,10 @@ const NetworkList: React.FC = () => {
 
   useEffect(() => {
     const loadChains = async () => {
+      // TODO: Add possibility to update chains list
       if (networks && networks.length === 0) {
         const chains = await loadChainsList();
-        chains.forEach(async (chain: any) => {
-          if (chain) {
-            db.chains.add(chain);
-          }
-        });
+        db.chains.bulkAdd(chains);
       }
     };
 
@@ -70,6 +67,7 @@ const NetworkList: React.FC = () => {
         }
       }
     } else if (value === ActiveType.EXTERNAL_NODE) {
+      // TODO: Add possibility to select best node
       provider = new WsProvider(network.nodes[0].url);
     }
 
