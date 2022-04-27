@@ -19,7 +19,11 @@ const AccountBalances: React.FC<Props> = ({ wallet }: Props) => {
       <div className="mb-2 text-2xl font-light">{wallet.name}</div>
 
       {Object.values(networks).map((network) => (
-        <NetworkBalances wallet={wallet} connection={network} />
+        <NetworkBalances
+          key={network.network.chainId}
+          wallet={wallet}
+          connection={network}
+        />
       ))}
     </Card>
   );

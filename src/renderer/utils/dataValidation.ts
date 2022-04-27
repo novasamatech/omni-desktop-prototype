@@ -1,13 +1,13 @@
 /* eslint-disable import/prefer-default-export */
 import { ApiPromise } from '@polkadot/api';
-import { Header } from '@polkadot/types/interfaces';
+import { Header, BlockNumber } from '@polkadot/types/interfaces';
 import { u8aToHex } from '@polkadot/util';
 import { getBlockHash, getHeader, getProofs } from './merkle';
 
 export const checkBlockNumber = async (
   relaychainApi: ApiPromise,
   parachainApi: ApiPromise,
-  blockNumber: any,
+  blockNumber: BlockNumber,
   storageKey: string
 ) => {
   const header = await getHeader(relaychainApi, 2023);
@@ -49,11 +49,10 @@ export const validate = async (
   const accountBlock = await parachainApi.rpc.chain.getBlock(accountBlockHash);
   const accountBlockNumber = accountBlock.block.header.number;
 
-  const result = checkBlockNumber(
+  return checkBlockNumber(
     relaychainApi,
     parachainApi,
-    accountBlockNumber,
+    accountBlockNumber.unwrap(),
     storageKey
   );
-  return result;
 };

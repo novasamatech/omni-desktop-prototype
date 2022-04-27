@@ -168,27 +168,28 @@ const NetworkBalances: React.FC<Props> = ({
 
       <Card>
         {network.assets.map((asset: Asset) => (
-          <>
-            <div className="flex w-full items-center justify-between h-11">
-              <div className="font-normal text-xl flex items-center">
-                <img
-                  className="w-7 h-7 invert mr-3"
-                  src={asset.icon || network.icon}
-                  alt={asset.symbol}
-                />
-                {asset.symbol}
-              </div>
-              <div className="font-normal text-xl">
-                {!balances[asset.assetId]?.isValid ? (
-                  <div className="w-12">
-                    <Shimmer />
-                  </div>
-                ) : (
-                  <>{balances[asset.assetId]?.free}</>
-                )}
-              </div>
+          <div
+            key={asset.assetId}
+            className="flex w-full items-center justify-between h-11"
+          >
+            <div className="font-normal text-xl flex items-center">
+              <img
+                className="w-7 h-7 invert mr-3"
+                src={asset.icon || network.icon}
+                alt={asset.symbol}
+              />
+              {asset.symbol}
             </div>
-          </>
+            <div className="font-normal text-xl">
+              {!balances[asset.assetId]?.isValid ? (
+                <div className="w-12">
+                  <Shimmer />
+                </div>
+              ) : (
+                <>{balances[asset.assetId]?.free}</>
+              )}
+            </div>
+          </div>
         ))}
       </Card>
     </>
