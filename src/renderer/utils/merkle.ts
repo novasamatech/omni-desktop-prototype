@@ -1,6 +1,8 @@
 import { ApiPromise } from '@polkadot/api';
+import { Bytes, u32 } from '@polkadot/types';
 import { Header } from '@polkadot/types/interfaces';
-import { blake2AsU8a } from '@polkadot/util-crypto';
+import { blake2AsU8a, blake2AsHex } from '@polkadot/util-crypto';
+import { HexString } from '../../common/types';
 
 export async function getHeader(
   api: ApiPromise,
@@ -12,6 +14,11 @@ export async function getHeader(
 
 export async function convertHeader(api: ApiPromise, header: string) {
   return api.createType('Header', header);
+}
+
+export async function getParachainId(api: ApiPromise) {
+  const parachainId = (await api.query.parachainInfo.parachainId()) as u32;
+  return parachainId.toNumber();
 }
 
 export async function getBlockHash(api: ApiPromise, header: Header) {
@@ -45,4 +52,8 @@ export function calculateRightRoot(
   return proofs.reduce((acc, proof) => {
     return blake2AsU8a(new Uint8Array([...proof, ...acc]));
   }, leaf);
+}
+
+export function checkRootExists(proofs: Bytes[], stateRoot: HexString) {
+  return !!proofs.find((proof) => blake2AsHex(proof.toU8a(true)) === stateRoot);
 }

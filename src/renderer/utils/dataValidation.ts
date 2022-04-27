@@ -1,16 +1,22 @@
 /* eslint-disable import/prefer-default-export */
 import { ApiPromise } from '@polkadot/api';
 import { Header, BlockNumber } from '@polkadot/types/interfaces';
-import { u8aToHex } from '@polkadot/util';
-import { getBlockHash, getHeader, getProofs } from './merkle';
+import {
+  getBlockHash,
+  getHeader,
+  getProofs,
+  checkRootExists,
+  getParachainId,
+} from './merkle';
 
-export const checkBlockNumber = async (
+export const validateWithBlockNumber = async (
   relaychainApi: ApiPromise,
   parachainApi: ApiPromise,
   blockNumber: BlockNumber,
   storageKey: string
-) => {
-  const header = await getHeader(relaychainApi, 2023);
+): Promise<boolean> => {
+  const parachainId = await getParachainId(parachainApi);
+  const header = await getHeader(relaychainApi, parachainId);
   const decodedHeader: Header = parachainApi.registry.createType(
     'Header',
     header.toString()
@@ -26,17 +32,17 @@ export const checkBlockNumber = async (
       parachainBlockHash.toString()
     );
 
-    console.log('isBare', u8aToHex(proofs[0].toU8a(true)));
-    console.log('notBare', u8aToHex(proofs[0].toU8a(false)));
-
-    console.log(proofs.toJSON());
-    console.log('state root', parachainStateRoot.toJSON());
-  } else {
-    console.log('block is not found');
-    checkBlockNumber(relaychainApi, parachainApi, blockNumber, storageKey);
+    // TODO: Switch this version with real merkle trie verification
+    return checkRootExists(proofs, parachainStateRoot.toHex());
   }
 
-  return true;
+  console.log('block is not found');
+  return validateWithBlockNumber(
+    relaychainApi,
+    parachainApi,
+    blockNumber,
+    storageKey
+  );
 };
 
 export const validate = async (
@@ -49,7 +55,7 @@ export const validate = async (
   const accountBlock = await parachainApi.rpc.chain.getBlock(accountBlockHash);
   const accountBlockNumber = accountBlock.block.header.number;
 
-  return checkBlockNumber(
+  return validateWithBlockNumber(
     relaychainApi,
     parachainApi,
     accountBlockNumber.unwrap(),
