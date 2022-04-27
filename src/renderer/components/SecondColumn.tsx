@@ -71,6 +71,11 @@ const SecondColumn: React.FC = () => {
             Chat
           </li>
         </Link>
+        <Link to="/add-contact">
+          <li className="m-2 p-2 hover:bg-black hover:text-white hover:rounded-lg">
+            Add contact
+          </li>
+        </Link>
       </ul>
     </div>
   );

@@ -874,7 +874,7 @@
     "@polkadot/util" "^9.0.1"
     rxjs "^7.5.5"
 
-"@polkadot/rpc-provider@8.0.2", "@polkadot/rpc-provider@^8.0.2":
+"@polkadot/rpc-provider@8.0.2":
   version "8.0.2"
   resolved "https://registry.yarnpkg.com/@polkadot/rpc-provider/-/rpc-provider-8.0.2.tgz#30fa0a5fe00ecba6d93e2e81ba0acdcad7f970b8"
   integrity sha512-kORCquwxWhFvuCuwti+gEBEKFZpI2FCTWrQ05bQ2svpJtUBilTuCienwf+P9xDmFIl64F/9nvJjFcIeweNxj0Q==
@@ -3176,6 +3176,11 @@ cjs-module-lexer@^1.0.0:
   version "1.2.2"
   resolved "https://registry.yarnpkg.com/cjs-module-lexer/-/cjs-module-lexer-1.2.2.tgz#9f84ba3244a512f3a54e5277e8eef4c489864e40"
   integrity sha512-cOU9usZw8/dXIXKtwa8pM0OTJQuJkxMN6w30csNRUerHfeQ5R6U3kkU/FtJeIf3M202OHfY2U8ccInBG7/xogA==
+
+classnames@^2.3.1:
+  version "2.3.1"
+  resolved "https://registry.yarnpkg.com/classnames/-/classnames-2.3.1.tgz#dfcfa3891e306ec1dad105d0e88f4417b8535e8e"
+  integrity sha512-OlQdbZ7gLfGarSqxesMesDa5uz7KFbID8Kpq/SxIoNGDqY8lSYs0D+hhtBXhcdB3rcbXArFr7vlHheLk1voeNA==
 
 clean-css@^5.2.2:
   version "5.3.0"
@@ -8990,10 +8995,10 @@ react-dom@^17.0.2:
     object-assign "^4.1.1"
     scheduler "^0.20.2"
 
-react-hook-form@^7.28.1:
-  version "7.29.0"
-  resolved "https://registry.yarnpkg.com/react-hook-form/-/react-hook-form-7.29.0.tgz#5e7e41a483b70731720966ed8be52163ea1fecf1"
-  integrity sha512-NcJqWRF6el5HMW30fqZRt27s+lorvlCCDbTpAyHoodQeYWXgQCvZJJQLC1kRMKdrJknVH0NIg3At6TUzlZJFOQ==
+react-hook-form@^7.30.0:
+  version "7.30.0"
+  resolved "https://registry.yarnpkg.com/react-hook-form/-/react-hook-form-7.30.0.tgz#c9e2fd54d3627e43bd94bf38ef549df2e80c1371"
+  integrity sha512-DzjiM6o2vtDGNMB9I4yCqW8J21P314SboNG1O0obROkbg7KVS0I7bMtwSdKyapnCPjHgnxc3L7E5PEdISeEUcQ==
 
 react-is@^16.12.0, react-is@^16.13.1, react-is@^16.6.0, react-is@^16.7.0, react-is@^16.8.6:
   version "16.13.1"
@@ -9065,6 +9070,13 @@ react-shallow-renderer@^16.13.1:
   dependencies:
     object-assign "^4.1.1"
     react-is "^16.12.0 || ^17.0.0 || ^18.0.0"
+
+react-shimmer-effects@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/react-shimmer-effects/-/react-shimmer-effects-1.0.2.tgz#77a9f339f3f9ac37d288671ac9b10e1fe336f382"
+  integrity sha512-l08voMV0wffxve/fyDAnjqNzhZvmIWNVfWZkcgDA5n+aFQrMvpx3x7Jy0LMKJw+3mhPhdl+LN3ThazdQFxrPmQ==
+  dependencies:
+    classnames "^2.3.1"
 
 react-test-renderer@^16.0.0-0:
   version "16.14.0"

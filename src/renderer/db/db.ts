@@ -122,6 +122,14 @@ export interface ChainConnection {
   activeType: ActiveType;
 }
 
+export type Contacts = {
+  id?: number;
+  name: string;
+  mainAccounts: Account[];
+  chainAccounts: ChainAccount[];
+  secureProtocolId: string;
+};
+
 export class OmniDexie extends Dexie {
   wallets!: Table<Wallet>;
 
@@ -129,12 +137,15 @@ export class OmniDexie extends Dexie {
 
   connections!: Table<ChainConnection>;
 
+  contacts!: Table<Contacts>;
+
   constructor() {
     super('omniDatabase');
-    this.version(4).stores({
+    this.version(5).stores({
       wallets: '++id,name',
       chains: '++id,&chainId,parentId,name,activeType',
       connections: '++id,&chainId,activeType',
+      contacts: '++id,name,secureProtocolId',
     });
   }
 }

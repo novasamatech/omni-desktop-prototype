@@ -8,6 +8,7 @@ import NetworkList from './Actions/NetworkList';
 import Transfer from './Actions/Transfer';
 import WalletList from './Actions/WalletList';
 import Wallet from './Actions/Wallet';
+import ManageContact from './Actions/ManageContact';
 
 const ThirdColumn: React.FC = () => {
   return (
@@ -24,6 +25,7 @@ const ThirdColumn: React.FC = () => {
         <Route path="/chat" component={Chat} />
         <Route path="/wallets" component={WalletList} />
         <Route path="/wallet/:walletId" component={Wallet} />
+        <Route path="/add-contact" component={ManageContact} />
       </Switch>
     </div>
   );
