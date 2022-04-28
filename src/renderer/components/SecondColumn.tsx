@@ -42,45 +42,47 @@ const SecondColumn: React.FC = () => {
       <h2 className="font-light text-xl p-4">Actions</h2>
 
       <ul className="divide-y-2 divide-gray-100">
-        <Link to="/wallets">
-          <li className="m-2 p-2 hover:bg-black hover:text-white hover:rounded-lg">
+        <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
+          <Link className="inline-block p-2 w-full" to="/wallets">
             Wallets
-          </li>
-        </Link>
-        <Link to="/network-list">
-          <li className="m-2 p-2 hover:bg-black hover:text-white hover:rounded-lg">
+          </Link>
+        </li>
+        <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
+          <Link className="inline-block p-2 w-full" to="/network-list">
             Networks
-          </li>
-        </Link>
+          </Link>
+        </li>
+
         {selectedAccounts.length > 0 && (
-          <Link to="/balances">
-            <li className="m-2 p-2 hover:bg-black hover:text-white hover:rounded-lg">
+          <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
+            <Link className="inline-block p-2 w-full" to="/balances">
               Balances
-            </li>
-          </Link>
+            </Link>
+          </li>
         )}
         {selectedAccounts.length > 0 && (
-          <Link to="/transfer">
-            <li className="m-2 p-2 hover:bg-black hover:text-white hover:rounded-lg">
+          <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
+            <Link className="inline-block p-2 w-full" to="/transfer">
               Transfer
-            </li>
-          </Link>
+            </Link>
+          </li>
         )}
-        <Link to="/chat">
-          <li className="m-2 p-2 hover:bg-black hover:text-white hover:rounded-lg">
+        <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
+          <Link className="inline-block p-2 w-full" to="/chat">
             Chat
-          </li>
-        </Link>
-        <Link to="/add-contact">
-          <li className="m-2 p-2 hover:bg-black hover:text-white hover:rounded-lg">
+          </Link>
+        </li>
+
+        <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
+          <Link className="inline-block p-2 w-full" to="/add-contact">
             Add contact
-          </li>
-        </Link>
-        <Link to="/contacts">
-          <li className="m-2 p-2 hover:bg-black hover:text-white hover:rounded-lg">
+          </Link>
+        </li>
+        <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
+          <Link className="inline-block p-2 w-full" to="/contacts">
             Contacts
-          </li>
-        </Link>
+          </Link>
+        </li>
       </ul>
     </div>
   );

@@ -13,12 +13,16 @@ import Button from '../../ui/Button';
 import { Contact, CryptoType, db } from '../../db/db';
 import useToggle from '../../hooks/toggle';
 import DialogContent from '../../ui/DialogContent';
+import { validateAddress } from '../../utils/dataValidation';
 
 type ContactForm = {
   name: string;
   matrixId: string;
   address: string;
 };
+
+const MatrixIdRegex =
+  /@[\w\d\-_]*:(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]/i;
 
 const ManageContact: React.FC = () => {
   const { contactId } = useParams<{ contactId: string }>();
@@ -50,7 +54,7 @@ const ManageContact: React.FC = () => {
         })
         .catch((e) => console.log(e));
     }
-  }, [contactId, reset]);
+  }, [contactId]);
 
   useEffect(() => {
     reset({
@@ -61,13 +65,13 @@ const ManageContact: React.FC = () => {
   }, [contact, reset]);
 
   const forgetContact = async () => {
-    if (contact && contact.id) {
+    if (contact?.id) {
       await db.contacts.delete(contact?.id);
       history.push('/contacts');
     }
   };
 
-  const addContact: SubmitHandler<ContactForm> = async ({
+  const addOrUpdateContact: SubmitHandler<ContactForm> = async ({
     address,
     name,
     matrixId,
@@ -86,7 +90,7 @@ const ManageContact: React.FC = () => {
         chainAccounts: [],
       };
 
-      if (contact && contact.id) {
+      if (contact?.id) {
         await db.contacts.update(contact.id, contactObject);
         history.push('/contacts');
       } else {
@@ -104,26 +108,13 @@ const ManageContact: React.FC = () => {
     }
   };
 
-  const validateAddress = (address: string) => {
-    try {
-      const result = encodeAddress(decodeAddress(address));
-      if (result) {
-        return true;
-      }
-    } catch (error) {
-      return false;
-    }
-
-    return false;
-  };
-
   return (
     <>
       <h2 className="font-light text-xl p-4">
         {contact ? 'Edit contact' : 'Add Contact'}
       </h2>
 
-      <form onSubmit={handleSubmit(addContact)}>
+      <form onSubmit={handleSubmit(addOrUpdateContact)}>
         <div className="p-2">
           <Controller
             name="address"
@@ -168,8 +159,7 @@ const ManageContact: React.FC = () => {
               control={control}
               rules={{
                 required: true,
-                pattern:
-                  /@[\w\d\-_]*:(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]/i,
+                pattern: MatrixIdRegex,
               }}
               render={({ field: { onChange, onBlur, value } }) => (
                 <InputText
@@ -187,11 +177,11 @@ const ManageContact: React.FC = () => {
         </div>
 
         <div className="flex p-2">
-          <Button className="w-fit" fat submit disabled={!isValid}>
+          <Button className="w-fit" size="lg" submit disabled={!isValid}>
             {contact ? 'Update contact' : 'Add contact'}
           </Button>
           {contact && (
-            <Button className="w-fit ml-3" fat onClick={toggleDialogOpen}>
+            <Button className="w-fit ml-3" size="lg" onClick={toggleDialogOpen}>
               Forget contact
             </Button>
           )}

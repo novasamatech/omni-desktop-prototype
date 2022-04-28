@@ -69,7 +69,7 @@ const WalletList: React.FC = () => {
         />
       </div>
       <div className="p-2">
-        <Button fat onClick={addWallet}>
+        <Button size="lg" onClick={addWallet}>
           Add wallet
         </Button>
       </div>

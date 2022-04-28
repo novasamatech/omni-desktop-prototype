@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useSetRecoilState, useRecoilValue } from 'recoil';
-import { Link } from 'react-router-dom';
+import { useHistory } from 'react-router';
 import Button from '../ui/Button';
 import { TransactionData } from '../../common/types';
 import { currentTransactionState } from '../store/currentTransaction';
-import { transactionBusketState } from '../store/transactionBusket';
 import { connectionState, Connection } from '../store/api';
 import Address from '../ui/Address';
 
@@ -14,8 +13,8 @@ type Props = {
 
 const Transaction: React.FC<Props> = ({ transaction }: Props) => {
   const setCurrentTransaction = useSetRecoilState(currentTransactionState);
-  const setTransactions = useSetRecoilState(transactionBusketState);
   const networks = useRecoilValue(connectionState);
+  const history = useHistory();
 
   const [transactionNetwork, setNetwork] = useState<Connection>();
   const [tokenSymbol, setTokenSymbol] = useState('');
@@ -38,10 +37,9 @@ const Transaction: React.FC<Props> = ({ transaction }: Props) => {
     }
   }, [networks, transactionNetwork, transaction]);
 
-  const sendTransaction = () => {
-    setTransactions((trxs) => {
-      return trxs.filter((t) => t !== transaction);
-    });
+  const showQR = () => {
+    setCurrentTransaction(transaction);
+    history.push('/show-code');
   };
 
   return (
@@ -69,17 +67,7 @@ const Transaction: React.FC<Props> = ({ transaction }: Props) => {
         </div>
       )}
 
-      {transaction.signature ? (
-        <Button onClick={() => sendTransaction()}>
-          Send to the blockchain
-        </Button>
-      ) : (
-        <Link to="show-code">
-          <Button onClick={() => setCurrentTransaction(transaction)}>
-            Show QR Code
-          </Button>
-        </Link>
-      )}
+      <Button onClick={showQR}>Show QR Code</Button>
     </div>
   );
 };

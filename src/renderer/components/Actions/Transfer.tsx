@@ -109,7 +109,11 @@ const Transfer: React.FC = () => {
         />
       </div>
       <div className="p-2">
-        <Button onClick={addTransaction} fat disabled={wallets.length === 0}>
+        <Button
+          onClick={addTransaction}
+          size="lg"
+          disabled={wallets.length === 0}
+        >
           Add transaction
         </Button>
       </div>

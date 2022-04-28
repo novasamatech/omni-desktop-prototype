@@ -141,7 +141,7 @@ export class OmniDexie extends Dexie {
 
   constructor() {
     super('omniDatabase');
-    this.version(5).stores({
+    this.version(51).stores({
       wallets: '++id,name',
       chains: '++id,&chainId,parentId,name,activeType',
       connections: '++id,&chainId,activeType',
