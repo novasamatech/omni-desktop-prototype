@@ -1,5 +1,5 @@
 /* eslint-disable react/require-default-props */
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 type Props = {
   disabled?: boolean;
@@ -8,6 +8,13 @@ type Props = {
   onClick?: () => void;
   children?: React.ReactNode;
   className?: string;
+  size?: keyof typeof SizeClass;
+};
+
+const SizeClass = {
+  sm: 'text-sm py-1 px-4',
+  md: 'text-base py-2 px-6',
+  lg: 'text-lg py-4 px-8',
 };
 
 const Button = ({
@@ -17,7 +24,21 @@ const Button = ({
   onClick,
   children,
   className = '',
+  size = 'md',
 }: Props) => {
+  // TODO: Remove this hack when we remove fat property size
+  const [sizeClass, setSizeClass] = useState(SizeClass.md);
+
+  useEffect(() => {
+    if (size) {
+      setSizeClass(SizeClass[size]);
+    }
+
+    if (fat) {
+      setSizeClass(SizeClass.lg);
+    }
+  }, [fat, size]);
+
   return (
     <button
       onClick={onClick}
@@ -29,7 +50,7 @@ const Button = ({
         text-center text-base shadow-md
         flex justify-center items-center
         ${disabled ? ' opacity-70 cursor-not-allowed' : ''}
-        ${fat ? 'py-4 px-6 ' : 'py-2 px-4 '}
+        ${sizeClass}
         ${className}
       `}
     >

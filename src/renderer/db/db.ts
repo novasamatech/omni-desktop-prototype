@@ -122,7 +122,7 @@ export interface ChainConnection {
   activeType: ActiveType;
 }
 
-export type Contacts = {
+export type Contact = {
   id?: number;
   name: string;
   mainAccounts: Account[];
@@ -137,7 +137,7 @@ export class OmniDexie extends Dexie {
 
   connections!: Table<ChainConnection>;
 
-  contacts!: Table<Contacts>;
+  contacts!: Table<Contact>;
 
   constructor() {
     super('omniDatabase');

@@ -40,6 +40,7 @@ const AddAccount: React.FC = () => {
       </div>
       <div className="p-2">
         <InputText
+          address
           className="w-full"
           label="Account Id"
           placeholder="Account Id"
