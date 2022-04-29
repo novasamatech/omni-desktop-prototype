@@ -4,7 +4,7 @@ on: pull_request
 
 jobs:
   build-macos:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v1
@@ -16,7 +16,7 @@ jobs:
 
       - name: Build app
         run: |
-          yarn
+          yarn install --ignore-scripts
           yarn package
 
       - name: Debug
