@@ -16,8 +16,8 @@ jobs:
 
       - name: Build app
         run: |
-          npm install
-          npm run package
+          yarn
+          yarn package
 
       - name: Debug
         run: ls -lh ./release/build
@@ -42,8 +42,8 @@ jobs:
 
       - name: Build app
         run: |
-          npm install
-          npm run package
+          yarn
+          yarn package
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
