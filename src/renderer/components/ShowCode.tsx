@@ -12,14 +12,13 @@ import {
   methods,
   GetRegistryOpts,
 } from '@substrate/txwrapper-polkadot';
-import { Link } from 'react-router-dom';
 import { ApiPromise } from '@polkadot/api';
 import { connectionState } from '../store/api';
 import {
   currentTransactionState,
   currentUnsignedState,
 } from '../store/currentTransaction';
-import Button from '../ui/Button';
+import LinkButton from '../ui/LinkButton';
 
 const ShowCode: React.FC = () => {
   const [api, setApi] = useState<ApiPromise>();
@@ -97,9 +96,9 @@ const ShowCode: React.FC = () => {
   return (
     <div className="h-screen flex flex-col">
       <div className="flex justify-center items-center">
-        <Link className="ml-2 absolute left-0" to="/busket">
-          <Button>Back</Button>
-        </Link>
+        <LinkButton className="ml-2 absolute left-0" to="/busket">
+          Back
+        </LinkButton>
         <h2 className="h-16 p-4 font-light text-lg">
           Sign your operations using Parity Signer
         </h2>
@@ -119,9 +118,9 @@ const ShowCode: React.FC = () => {
             />
           </div>
         )}
-        <Link to="/scan-code">
-          <Button fat>Done, upload signed operations</Button>
-        </Link>
+        <LinkButton to="/scan-code" size="lg">
+          Done, upload signed operations
+        </LinkButton>
       </div>
     </div>
   );

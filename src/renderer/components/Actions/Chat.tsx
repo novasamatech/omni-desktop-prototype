@@ -173,7 +173,7 @@ const Chat: React.FC = () => {
         />
       </div>
       <div className="p-2">
-        <Button fat onClick={onLoginClick}>
+        <Button size="lg" onClick={onLoginClick}>
           Login
         </Button>
       </div>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSetRecoilState, useRecoilValue } from 'recoil';
-import { Link, useHistory } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { QrScanSignature } from '@polkadot/react-qr';
 import { GenericExtrinsic } from '@polkadot/types';
 import {
@@ -16,8 +16,8 @@ import {
   currentTransactionState,
   currentUnsignedState,
 } from '../store/currentTransaction';
-import Button from '../ui/Button';
 import { HexString } from '../../common/types';
+import LinkButton from '../ui/LinkButton';
 
 // TODO: Move this function to utils
 function createSignedTx(
@@ -96,9 +96,9 @@ const ScanCode: React.FC = () => {
   return (
     <div className="h-screen flex flex-col">
       <div className="flex justify-center items-center">
-        <Link className="ml-2 absolute left-0" to="/show-code">
-          <Button>Back</Button>
-        </Link>
+        <LinkButton className="ml-2 absolute left-0" to="/show-code">
+          Back
+        </LinkButton>
         <h2 className="h-16 p-4 font-light text-lg">
           Upload signed operations via Parity Signer
         </h2>
