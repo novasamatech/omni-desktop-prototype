@@ -1,6 +1,10 @@
 name: Build and release Omni desktop
 
-on: pull_request
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
 jobs:
   build-macos:
@@ -16,7 +20,7 @@ jobs:
 
       - name: Build app
         run: |
-          yarn install
+          yarn install --ignore-scripts
           yarn package
 
       - name: Debug
