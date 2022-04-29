@@ -40,6 +40,7 @@ const AddAccount: React.FC = () => {
       </div>
       <div className="p-2">
         <InputText
+          address
           className="w-full"
           label="Account Id"
           placeholder="Account Id"
@@ -48,7 +49,7 @@ const AddAccount: React.FC = () => {
         />
       </div>
       <div className="p-2">
-        <Button fat onClick={addAccount}>
+        <Button size="lg" onClick={addAccount}>
           Add account
         </Button>
       </div>

@@ -73,7 +73,7 @@ const Transfer: React.FC = () => {
         />
       </div>
       <div className="p-2">
-        <Button fat onClick={addTransaction}>
+        <Button size="lg" onClick={addTransaction}>
           Add transaction
         </Button>
       </div>

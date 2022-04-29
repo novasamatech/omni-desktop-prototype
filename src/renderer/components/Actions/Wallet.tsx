@@ -249,7 +249,7 @@ const Wallet: React.FC = () => {
         )} */}
       </div>
       <div className="p-2">
-        <Button fat onClick={addAccount}>
+        <Button size="lg" onClick={addAccount}>
           Add account
         </Button>
       </div>

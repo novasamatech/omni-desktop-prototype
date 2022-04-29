@@ -1,5 +1,7 @@
+/* eslint-disable react/jsx-props-no-spreading */
 /* eslint-disable react/require-default-props */
 import { ChangeEvent } from 'react';
+import Identicon from '@polkadot/react-identicon';
 
 interface Props {
   type?: string;
@@ -9,9 +11,11 @@ interface Props {
   placeholder?: string;
   name?: string;
   disabled?: boolean;
+  address?: boolean;
   id?: string;
   value?: string | number;
   onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
+  onBlur?: (event: any) => void;
   className?: string;
   inputClassName?: string;
 }
@@ -24,11 +28,13 @@ const InputText = ({
   placeholder,
   name,
   disabled,
+  address,
   id,
-  value,
-  onChange,
   className = '',
   inputClassName = '',
+  value,
+  onChange,
+  onBlur,
 }: Props) => {
   return (
     <div
@@ -37,24 +43,30 @@ const InputText = ({
       } ${className}`}
     >
       {label && (
-        <label htmlFor={id} className="text-gray-500 text-sm mb-2">
-          {label}{' '}
-          {required && <span className="text-red-500 required-dot">*</span>}
-        </label>
+        <div className="flex justify-between">
+          <label htmlFor={id} className="text-gray-500 text-sm mb-2">
+            {label}{' '}
+            {required && <span className="text-red-500 required-dot">*</span>}
+          </label>
+          {address && (
+            <Identicon theme="polkadot" value={value?.toString()} size={16} />
+          )}
+        </div>
       )}
       <input
         id={id}
         disabled={disabled}
         className={`
-          flex-1 appearance-none w-full mt-1 text-black placeholder-gray-400 text-xl focus:outline-none
-          ${disabled ? 'bg-gray-200' : ''}
-          ${inputClassName}
-        `}
+            flex-1 appearance-none w-full mt-1 text-black placeholder-gray-400 text-xl focus:outline-none
+            ${disabled ? 'bg-gray-200' : ''}
+            ${inputClassName}
+          `}
+        value={value}
         type={type}
         name={name}
         placeholder={placeholder}
-        value={value}
         onChange={onChange}
+        onBlur={onBlur}
       />
 
       {error && (

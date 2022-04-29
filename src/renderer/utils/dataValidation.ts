@@ -1,5 +1,6 @@
 /* eslint-disable import/prefer-default-export */
 import { ApiPromise } from '@polkadot/api';
+import { decodeAddress, encodeAddress } from '@polkadot/keyring';
 import { Header, BlockNumber } from '@polkadot/types/interfaces';
 import {
   getBlockHash,
@@ -61,4 +62,14 @@ export const validate = async (
     accountBlockNumber.unwrap(),
     storageKey
   );
+};
+
+export const validateAddress = (address: string): boolean => {
+  try {
+    const result = encodeAddress(decodeAddress(address));
+
+    return Boolean(result);
+  } catch (error) {
+    return false;
+  }
 };

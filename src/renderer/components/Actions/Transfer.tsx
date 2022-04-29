@@ -82,7 +82,7 @@ const Transfer: React.FC = () => {
         <Select
           label="Network"
           className="w-full"
-          placeholder="Account id"
+          placeholder="Network"
           value={currentNetwork?.network.name}
           options={networkOptions}
           onChange={(event) => setNetwork(event.target.value)}
@@ -90,6 +90,7 @@ const Transfer: React.FC = () => {
       </div>
       <div className="p-2">
         <InputText
+          address
           label="Account id"
           className="w-full"
           placeholder="Account id"
@@ -108,7 +109,11 @@ const Transfer: React.FC = () => {
         />
       </div>
       <div className="p-2">
-        <Button onClick={addTransaction} fat disabled={wallets.length === 0}>
+        <Button
+          onClick={addTransaction}
+          size="lg"
+          disabled={wallets.length === 0}
+        >
           Add transaction
         </Button>
       </div>

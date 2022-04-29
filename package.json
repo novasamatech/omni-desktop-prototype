@@ -220,7 +220,8 @@
     "webpack-merge": "^5.8.0"
   },
   "dependencies": {
-    "@headlessui/react": "^1.4.2",
+    "@headlessui/react": "^1.6.0",
+    "@hookform/resolvers": "^2.8.8",
     "@matrix-org/olm": "https://gitlab.matrix.org/api/v4/projects/27/packages/npm/@matrix-org/olm/-/@matrix-org/olm-3.2.8.tgz",
     "@polkadot/api": "^8.0.2",
     "@polkadot/react-identicon": "^2.0.1",
@@ -245,14 +246,16 @@
     "postcss": "^8.3.8",
     "postcss-loader": "^6.2.0",
     "react": "^17.0.2",
+    "react-data-table-component": "^7.5.0",
     "react-dom": "^17.0.2",
-    "react-hook-form": "^7.28.1",
+    "react-hook-form": "^7.30.0",
     "react-router-dom": "^5.3.0",
     "react-shimmer-effects": "^1.0.2",
     "recoil": "^0.5.2",
     "regenerator-runtime": "^0.13.9",
     "stream-browserify": "^3.0.0",
-    "tailwindcss": "^2.2.16"
+    "tailwindcss": "^3.0.24",
+    "yup": "^0.32.11"
   },
   "devEngines": {
     "node": ">=14.x",

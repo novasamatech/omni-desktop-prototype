@@ -1,6 +1,6 @@
 // import { useEffect, useState } from 'react';
 // import { useLiveQuery } from 'dexie-react-hooks';
-import { MemoryRouter as Router, Switch, Route, Link } from 'react-router-dom';
+import { MemoryRouter as Router, Switch, Route } from 'react-router-dom';
 import { RecoilRoot, useRecoilValue } from 'recoil';
 // import { ApiPromise, WsProvider } from '@polkadot/api';
 // import { ProviderInterface } from '@polkadot/rpc-provider/types';
@@ -12,9 +12,9 @@ import Busket from './components/Busket';
 // import { connectionState } from './store/api';
 import { transactionBusketDataState } from './store/transactionBusket';
 import './App.css';
-import Button from './ui/Button';
 import ShowCode from './components/ShowCode';
 import ScanCode from './components/ScanCode';
+import LinkButton from './ui/LinkButton';
 // import { ActiveType, db } from './db/db';
 // import { getChainSpec, getKnownChainId } from '../common/networks';
 
@@ -91,11 +91,9 @@ const Main = () => {
             View your {transactionsAmount} pending{' '}
             {transactionsAmount > 1 ? 'operations' : 'operation'}
           </div>
-          <Link to="/busket">
-            <Button fat>
-              View {transactionsAmount > 1 ? 'operations' : 'operation'}
-            </Button>
-          </Link>
+          <LinkButton to="/busket" size="lg">
+            View {transactionsAmount > 1 ? 'operations' : 'operation'}
+          </LinkButton>
         </div>
       )}
     </div>
