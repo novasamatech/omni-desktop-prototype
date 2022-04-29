@@ -17,11 +17,12 @@ import {
   currentUnsignedState,
 } from '../store/currentTransaction';
 import Button from '../ui/Button';
+import { HexString } from '../../common/types';
 
 // TODO: Move this function to utils
 function createSignedTx(
   unsigned: UnsignedTransaction,
-  signature: `0x${string}`,
+  signature: HexString,
   options: OptionsWithMeta
 ): GenericExtrinsic {
   const {

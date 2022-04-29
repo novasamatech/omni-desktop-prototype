@@ -5,6 +5,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import { QrDisplayPayload } from '@polkadot/react-qr';
+import { hexToU8a } from '@polkadot/util';
 import {
   construct,
   getRegistry,
@@ -84,18 +85,7 @@ const ShowCode: React.FC = () => {
             registry,
           });
 
-          const fromHexString = (hexString: string) => {
-            const array = hexString.match(/.{1,2}/g);
-            if (array && array.length > 0) {
-              array.shift();
-              return new Uint8Array(array.map((byte) => parseInt(byte, 16)));
-            }
-
-            return new Uint8Array([]);
-          };
-
-          setPayload(fromHexString(signingPayloadHex));
-
+          setPayload(hexToU8a(signingPayloadHex));
           setUnsigned(unsigned);
         }
       }
