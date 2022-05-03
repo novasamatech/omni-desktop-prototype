@@ -227,6 +227,7 @@
     "@polkadot/react-identicon": "^2.0.1",
     "@polkadot/react-qr": "^2.0.1",
     "@polkadot/rpc-provider": "^8.0.2",
+    "@polkadot/trie-db": "^1.8.0",
     "@polkadot/types": "^8.0.2",
     "@substrate/connect": "^0.7.2",
     "@substrate/txwrapper-polkadot": "^2.0.2",
