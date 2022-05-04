@@ -3,37 +3,6 @@ import { Link } from 'react-router-dom';
 import { useRecoilValue } from 'recoil';
 import { selectedWalletsState } from '../store/selectedWallets';
 
-// const routes = [
-//   {
-//     title: 'Wallets',
-//     address: '/wallets',
-//   },
-//   {
-//     title: 'Networks',
-//     address: '/network-list',
-//   },
-//   {
-//     title: 'Balances',
-//     address: '/balances',
-//   },
-//   {
-//     title: 'Transfer',
-//     address: '/transfer',
-//   },
-//   // {
-//   //   title: 'Add account',
-//   //   address: '/add-account',
-//   // },
-//   // {
-//   //   title: 'Create multisig account',
-//   //   address: '/create-multisig-account',
-//   // },
-//   // {
-//   //   title: 'Chat',
-//   //   address: '/chat',
-//   // },
-// ];
-
 const SecondColumn: React.FC = () => {
   const selectedAccounts = useRecoilValue(selectedWalletsState);
 
@@ -45,6 +14,19 @@ const SecondColumn: React.FC = () => {
         <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
           <Link className="inline-block p-2 w-full" to="/wallets">
             Wallets
+          </Link>
+        </li>
+        <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
+          <Link className="inline-block p-2 w-full" to="/wallet/create">
+            Add wallet
+          </Link>
+        </li>
+        <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
+          <Link
+            className="inline-block p-2 w-full"
+            to="/multisig-wallet/create"
+          >
+            Add multisig wallet
           </Link>
         </li>
         <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
@@ -74,13 +56,13 @@ const SecondColumn: React.FC = () => {
         </li>
 
         <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
-          <Link className="inline-block p-2 w-full" to="/add-contact">
-            Add contact
+          <Link className="inline-block p-2 w-full" to="/contacts">
+            Contacts
           </Link>
         </li>
         <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
-          <Link className="inline-block p-2 w-full" to="/contacts">
-            Contacts
+          <Link className="inline-block p-2 w-full" to="/add-contact">
+            Add contact
           </Link>
         </li>
       </ul>

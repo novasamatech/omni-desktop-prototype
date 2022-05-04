@@ -1,41 +1,46 @@
 import React, { ChangeEvent, useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useParams } from 'react-router-dom';
+import { useHistory } from 'react-router';
 import { decodeAddress, encodeAddress } from '@polkadot/keyring';
 import { u8aToHex } from '@polkadot/util';
+import { Dialog } from '@headlessui/react';
+
+import { Account, ChainAccount, Chain, db } from '../../db/db';
 import InputText from '../../ui/Input';
 import Button from '../../ui/Button';
 import List from '../../ui/List';
 import ListItem from '../../ui/ListItem';
 import Select, { OptionType } from '../../ui/Select';
-
-import { Account, ChainAccount, Chain, db } from '../../db/db';
 import Address from '../../ui/Address';
+import DialogContent from '../../ui/DialogContent';
 
-enum AccountTypes {
-  CHAIN = 'CHAIN',
+const enum AccountTypes {
   MAIN = 'MAIN',
+  CHAIN = 'CHAIN',
 }
 
 const AccountTypeOptions = [
   {
-    label: 'Chain',
-    value: AccountTypes.CHAIN,
-  },
-  {
     label: 'Main',
     value: AccountTypes.MAIN,
+  },
+  {
+    label: 'Chain',
+    value: AccountTypes.CHAIN,
   },
 ];
 
 const Wallet: React.FC = () => {
+  const history = useHistory();
   const params = useParams<{ walletId: string }>();
 
   const [address, setAddress] = useState('');
+  const [name, setName] = useState('');
   const [networkOptions, setNetworkOptions] = useState<OptionType[]>([]);
   const [accountNetwork, setAccountNetwork] = useState<string>();
   // const [networkType, setNetworkType] = useState<string>();
-  const [accountType, setAccountType] = useState(AccountTypes.CHAIN);
+  const [accountType, setAccountType] = useState(AccountTypes.MAIN);
   const [accounts, setAccounts] = useState<
     Array<{
       account: Account | ChainAccount | null;
@@ -54,6 +59,22 @@ const Wallet: React.FC = () => {
 
     return w;
   });
+
+  useEffect(() => {
+    if (wallet) {
+      setName(wallet.name);
+    }
+  }, [wallet]);
+
+  const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
+
+  const forgetWallet = async () => {
+    if (wallet?.id) {
+      await db.wallets.delete(wallet.id);
+    }
+    setIsRemoveDialogOpen(false);
+    history.push('/wallets');
+  };
 
   // const NetworkTypeOptions = [
   //   {
@@ -94,7 +115,6 @@ const Wallet: React.FC = () => {
   useEffect(() => {
     const accountList = networks
       ?.map((n) => {
-        // find chainAccount by chainId
         const chainAccount = wallet?.chainAccounts.find(
           (c) => c.chainId === n.chainId
         );
@@ -187,6 +207,18 @@ const Wallet: React.FC = () => {
     }
   };
 
+  const updateWallet = async () => {
+    if (wallet?.id) {
+      await db.wallets.update(wallet.id, {
+        name,
+      });
+    }
+  };
+
+  const onChangeWalletName = (event: ChangeEvent<HTMLInputElement>) => {
+    setName(event.target.value);
+  };
+
   const onChangeAccountAddress = (event: ChangeEvent<HTMLInputElement>) => {
     setAddress(event.target.value);
   };
@@ -205,7 +237,32 @@ const Wallet: React.FC = () => {
 
   return (
     <>
-      <h2 className="font-light text-xl p-4">{wallet?.name}</h2>
+      <h2 className="font-light text-xl p-4">Edit wallet</h2>
+
+      <div className="p-2">
+        <InputText
+          className="w-full"
+          label="Wallet name"
+          placeholder="Wallet name"
+          value={name}
+          onChange={onChangeWalletName}
+        />
+      </div>
+
+      <div className="p-2 flex items-center">
+        <Button size="lg" onClick={updateWallet}>
+          Update
+        </Button>
+        <Button
+          className="ml-3"
+          size="lg"
+          onClick={() => setIsRemoveDialogOpen(true)}
+        >
+          Forget
+        </Button>
+      </div>
+
+      <h2 className="font-light text-xl p-4">Accounts</h2>
 
       <div className="p-2">
         <Select
@@ -279,6 +336,34 @@ const Wallet: React.FC = () => {
           ))}
         </List>
       </div>
+
+      <Dialog
+        as="div"
+        className="relative z-10"
+        open={isRemoveDialogOpen}
+        onClose={() => setIsRemoveDialogOpen(false)}
+      >
+        <DialogContent>
+          <Dialog.Title as="h3" className="font-light text-xl">
+            Forget wallet
+          </Dialog.Title>
+          <div className="mt-2">
+            Are you sure you want to forget this wallet?
+          </div>
+
+          <div className=" mt-2 flex justify-between">
+            <Button
+              className="max-w-min"
+              onClick={() => setIsRemoveDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button className="max-w-min" onClick={() => forgetWallet()}>
+              Forget
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

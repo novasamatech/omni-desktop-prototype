@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/ban-types */
+import { FC } from 'react';
 import { Dialog } from '@headlessui/react';
-import { PropsWithChildren } from 'react';
 
-const DialogContent = ({ children }: PropsWithChildren<{}>) => {
+const DialogContent: FC = ({ children }) => {
   return (
     <>
       <div className="fixed inset-0 bg-black bg-opacity-25" />

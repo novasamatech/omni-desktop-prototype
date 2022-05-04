@@ -6,16 +6,19 @@ import { shortAddress } from '../utils/strings';
 interface Props {
   address: string;
   className?: string;
+  full?: boolean;
 }
 
-const Address = ({ address, className = '' }: Props) => {
+const Address = ({ address, className = '', full = false }: Props) => {
   const theme = 'polkadot';
   const size = 16;
 
   return (
     <div className={`flex items-center ${className}`}>
       <Identicon className="mr-1" value={address} size={size} theme={theme} />
-      <div className="text-gray-500">{shortAddress(address)}</div>
+      <div className="text-gray-500 text-sm break-all">
+        {full ? address : shortAddress(address)}
+      </div>
     </div>
   );
 };
