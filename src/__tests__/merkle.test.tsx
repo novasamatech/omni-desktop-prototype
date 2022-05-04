@@ -19,10 +19,6 @@ describe('Calculate root', () => {
     );
 
   it('verify proof for key', () => {
-    try {
-      verifyProof(stateRoot, key, proofs)
-    } catch (e) {
-      expect(false).toBe(true)
-    }
+    verifyProof(stateRoot, key, proofs);
   });
 });
