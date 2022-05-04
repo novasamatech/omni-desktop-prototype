@@ -1,36 +1,13 @@
 import React from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-// import { Dialog } from '@headlessui/react';
 import List from '../../ui/List';
 import ListItem from '../../ui/ListItem';
 import { db, MultisigWallet } from '../../db/db';
-// import DialogContent from '../../ui/DialogContent';
 import LinkButton from '../../ui/LinkButton';
 import mst from '../../../../assets/mst.svg';
 
 const WalletList: React.FC = () => {
-  // const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
-  // const [removeWalletId, setRemoveWalletId] = useState(-1);
-
   const wallets = useLiveQuery(() => db.wallets.toArray());
-
-  // const handleRemoveWallet = async (walletId: number) => {
-  //   setIsRemoveDialogOpen(true);
-  //   setRemoveWalletId(walletId);
-  // };
-
-  // const handleRemoveWalletDialogClose = () => {
-  //   setIsRemoveDialogOpen(false);
-  //   setRemoveWalletId(-1);
-  // };
-
-  // const removeWallet = async () => {
-  //   if (removeWalletId !== -1) {
-  //     await db.wallets.delete(removeWalletId);
-  //   }
-
-  //   handleRemoveWalletDialogClose();
-  // };
 
   return (
     <>

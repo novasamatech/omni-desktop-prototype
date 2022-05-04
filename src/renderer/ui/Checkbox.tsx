@@ -27,11 +27,11 @@ const Checkbox = ({
           checked={checked}
           onChange={onChange}
           className={`
-          appearance-none bg-white h-5 w-5
-          border border-gray-300 rounded-md
-          checked:bg-black checked:border-transparent focus:outline-none
-          ${disabled ? 'bg-gray-100' : ''}
-        `}
+            appearance-none h-5 w-5
+            border border-gray-300 rounded-md
+            checked:bg-black checked:border-transparent focus:outline-none
+            ${disabled ? 'bg-gray-100' : ''}
+          `}
         />
         {label && (
           <span className="text-gray-700 dark:text-white font-normal">

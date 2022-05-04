@@ -168,6 +168,9 @@ const ManageMultisigWallet: React.FC = () => {
                 <div className="mr-3">
                   <Checkbox
                     disabled={!!wallet}
+                    checked={wallet?.originContacts?.some(
+                      (c) => c.id === contact.id
+                    )}
                     onChange={() => updateSelectedContact(contact)}
                   />
                 </div>

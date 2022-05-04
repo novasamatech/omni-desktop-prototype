@@ -10,7 +10,6 @@ import NetworkList from './Actions/NetworkList';
 import Transfer from './Actions/Transfer';
 import WalletList from './Actions/WalletList';
 import Wallet from './Actions/Wallet';
-import MultisigWalletList from './Actions/MultisigWalletList';
 import AddWallet from './Actions/AddWallet';
 
 const ThirdColumn: React.FC = () => {
@@ -21,7 +20,7 @@ const ThirdColumn: React.FC = () => {
         <Route path="/add-account" component={AddAccount} />
         <Route
           path="/multisig-wallet/create"
-          component={ManageMultisigAccount}
+          component={() => <ManageMultisigAccount />}
         />
         <Route
           path="/multisig-wallet/edit/:id"
@@ -32,10 +31,9 @@ const ThirdColumn: React.FC = () => {
         <Route path="/balances" component={Balances} />
         <Route path="/chat" component={Chat} />
         <Route path="/wallets" component={WalletList} />
-        <Route path="/multisig-wallets" component={MultisigWalletList} />
         <Route path="/wallet/:walletId" component={Wallet} />
         <Route path="/edit-contact/:contactId" component={ManageContact} />
-        <Route path="/add-contact" component={ManageContact} />
+        <Route path="/add-contact" component={() => <ManageContact />} />
         <Route path="/contacts" component={Contacts} />
       </Switch>
     </div>
