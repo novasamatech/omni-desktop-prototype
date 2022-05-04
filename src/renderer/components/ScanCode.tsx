@@ -18,6 +18,7 @@ import {
 } from '../store/currentTransaction';
 import { HexString } from '../../common/types';
 import LinkButton from '../ui/LinkButton';
+import { Routes } from '../../common/consts';
 
 // TODO: Move this function to utils
 function createSignedTx(
@@ -87,7 +88,7 @@ const ScanCode: React.FC = () => {
           setTransactions((trxs) => {
             return trxs.filter((t) => t !== transaction);
           });
-          history.push('/busket');
+          history.push(Routes.BUSKET);
         }
       }
     }
@@ -96,7 +97,7 @@ const ScanCode: React.FC = () => {
   return (
     <div className="h-screen flex flex-col">
       <div className="flex justify-center items-center">
-        <LinkButton className="ml-2 absolute left-0" to="/show-code">
+        <LinkButton className="ml-2 absolute left-0" to={Routes.SHOW_CODE}>
           Back
         </LinkButton>
         <h2 className="h-16 p-4 font-light text-lg">

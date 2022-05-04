@@ -14,6 +14,7 @@ import Checkbox from '../../ui/Checkbox';
 import Address from '../../ui/Address';
 import DialogContent from '../../ui/DialogContent';
 import useToggle from '../../hooks/toggle';
+import { Routes } from '../../../common/consts';
 
 const SS58Prefix = 42;
 const DEFAULT_THRESHOLD = 2;
@@ -66,7 +67,7 @@ const ManageMultisigWallet: React.FC = () => {
     if (wallet) {
       const updatedWallet = {
         ...wallet,
-        name,
+        name: name.trim(),
       };
 
       await db.wallets.put(updatedWallet);
@@ -79,7 +80,7 @@ const ManageMultisigWallet: React.FC = () => {
         const Ss58Address = encodeAddress(multiAddress, SS58Prefix);
 
         db.wallets.add({
-          name,
+          name: name.trim(),
           threshold,
           originContacts: selectedContacts || [],
           mainAccounts: [
@@ -101,14 +102,14 @@ const ManageMultisigWallet: React.FC = () => {
     if (selectedContacts?.includes(contact)) {
       setSelectedContacts(selectedContacts.filter((c) => c.id !== contact.id));
     } else {
-      setSelectedContacts([...(selectedContacts || []), contact]);
+      setSelectedContacts((selectedContacts || []).concat(contact));
     }
   };
 
   const forgetMultisigWallet = () => {
     if (id) {
       db.wallets.delete(Number(id));
-      history.push('/multisig-wallets');
+      history.push(Routes.WALLETS);
     }
   };
 

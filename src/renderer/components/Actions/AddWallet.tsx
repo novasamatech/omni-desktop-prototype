@@ -3,6 +3,7 @@ import { useHistory } from 'react-router';
 import InputText from '../../ui/Input';
 import Button from '../../ui/Button';
 import { db } from '../../db/db';
+import { Routes } from '../../../common/consts';
 
 const AddWallet: React.FC = () => {
   const [walletName, setWalletName] = useState('');
@@ -16,16 +17,16 @@ const AddWallet: React.FC = () => {
         chainAccounts: [],
       });
 
-      history.push(`/wallets`);
+      history.push(Routes.WALLETS);
     }
   };
 
   const onChangeWalletName = (event: ChangeEvent<HTMLInputElement>) => {
-    setWalletName(event.target.value);
+    setWalletName(event.target.value.trim());
   };
 
   return (
-    <>
+    <form onSubmit={addWallet}>
       <h2 className="font-light text-xl p-4">Add Wallet</h2>
 
       <div className="p-2">
@@ -38,11 +39,11 @@ const AddWallet: React.FC = () => {
         />
       </div>
       <div className="p-2">
-        <Button size="lg" onClick={addWallet}>
+        <Button size="lg" submit>
           Add wallet
         </Button>
       </div>
-    </>
+    </form>
   );
 };
 

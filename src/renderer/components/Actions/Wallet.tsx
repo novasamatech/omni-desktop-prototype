@@ -14,6 +14,7 @@ import ListItem from '../../ui/ListItem';
 import Select, { OptionType } from '../../ui/Select';
 import Address from '../../ui/Address';
 import DialogContent from '../../ui/DialogContent';
+import { Routes } from '../../../common/consts';
 
 const enum AccountTypes {
   MAIN = 'MAIN',
@@ -33,7 +34,7 @@ const AccountTypeOptions = [
 
 const Wallet: React.FC = () => {
   const history = useHistory();
-  const params = useParams<{ walletId: string }>();
+  const { id } = useParams<{ id: string }>();
 
   const [address, setAddress] = useState('');
   const [name, setName] = useState('');
@@ -54,11 +55,7 @@ const Wallet: React.FC = () => {
     return networkList;
   });
 
-  const wallet = useLiveQuery(async () => {
-    const w = await db.wallets.get(Number(params.walletId));
-
-    return w;
-  });
+  const wallet = useLiveQuery(() => db.wallets.get(Number(id)));
 
   useEffect(() => {
     if (wallet) {
@@ -73,7 +70,7 @@ const Wallet: React.FC = () => {
       await db.wallets.delete(wallet.id);
     }
     setIsRemoveDialogOpen(false);
-    history.push('/wallets');
+    history.push(Routes.WALLETS);
   };
 
   // const NetworkTypeOptions = [
@@ -239,62 +236,65 @@ const Wallet: React.FC = () => {
     <>
       <h2 className="font-light text-xl p-4">Edit wallet</h2>
 
-      <div className="p-2">
-        <InputText
-          className="w-full"
-          label="Wallet name"
-          placeholder="Wallet name"
-          value={name}
-          onChange={onChangeWalletName}
-        />
-      </div>
+      <form onSubmit={updateWallet}>
+        <div className="p-2">
+          <InputText
+            className="w-full"
+            label="Wallet name"
+            placeholder="Wallet name"
+            value={name}
+            onChange={onChangeWalletName}
+          />
+        </div>
 
-      <div className="p-2 flex items-center">
-        <Button size="lg" onClick={updateWallet}>
-          Update
-        </Button>
-        <Button
-          className="ml-3"
-          size="lg"
-          onClick={() => setIsRemoveDialogOpen(true)}
-        >
-          Forget
-        </Button>
-      </div>
+        <div className="p-2 flex items-center">
+          <Button size="lg" submit>
+            Update
+          </Button>
+          <Button
+            className="ml-3"
+            size="lg"
+            onClick={() => setIsRemoveDialogOpen(true)}
+          >
+            Forget
+          </Button>
+        </div>
+      </form>
 
       <h2 className="font-light text-xl p-4">Accounts</h2>
 
-      <div className="p-2">
-        <Select
-          className="w-full"
-          label="Account type"
-          placeholder="Account type"
-          value={accountType}
-          options={AccountTypeOptions}
-          onChange={onChangeAccountType}
-        />
-      </div>
-      <div className="p-2">
-        <InputText
-          className="w-full"
-          label="Account address"
-          placeholder="Account address"
-          value={address}
-          onChange={onChangeAccountAddress}
-        />
-      </div>
-      <div className="p-2">
-        {accountType === AccountTypes.CHAIN && (
+      <form onSubmit={addAccount}>
+        <div className="p-2">
           <Select
             className="w-full"
-            label="Network"
-            placeholder="Network"
-            value={accountNetwork}
-            options={networkOptions}
-            onChange={onChangeAccountNetwork}
+            label="Account type"
+            placeholder="Account type"
+            value={accountType}
+            options={AccountTypeOptions}
+            onChange={onChangeAccountType}
           />
-        )}
-        {/* {accountType === AccountTypes.MAIN && (
+        </div>
+        <div className="p-2">
+          <InputText
+            className="w-full"
+            label="Account address"
+            placeholder="Account address"
+            value={address}
+            onChange={onChangeAccountAddress}
+          />
+        </div>
+        <div className="p-2">
+          {accountType === AccountTypes.CHAIN && (
+            <Select
+              className="w-full"
+              label="Network"
+              placeholder="Network"
+              value={accountNetwork}
+              options={networkOptions}
+              onChange={onChangeAccountNetwork}
+            />
+          )}
+          {/* {accountType === AccountTypes.MAIN && (
           <Select
             className="w-full"
             label="Network type"
@@ -304,12 +304,13 @@ const Wallet: React.FC = () => {
             onChange={onChangeNetworkType}
           />
         )} */}
-      </div>
-      <div className="p-2">
-        <Button size="lg" onClick={addAccount}>
-          Add account
-        </Button>
-      </div>
+        </div>
+        <div className="p-2">
+          <Button size="lg" submit>
+            Add account
+          </Button>
+        </div>
+      </form>
 
       <div className="m-2">
         <List>

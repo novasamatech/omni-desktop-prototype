@@ -5,6 +5,7 @@ import ListItem from '../../ui/ListItem';
 import { db, MultisigWallet } from '../../db/db';
 import LinkButton from '../../ui/LinkButton';
 import mst from '../../../../assets/mst.svg';
+import { Routes, withId } from '../../../common/consts';
 
 const WalletList: React.FC = () => {
   const wallets = useLiveQuery(() => db.wallets.toArray());
@@ -28,8 +29,8 @@ const WalletList: React.FC = () => {
                 <LinkButton
                   to={
                     (wallet as MultisigWallet).originContacts
-                      ? `multisig-wallet/edit/${id}`
-                      : `/wallet/${id}`
+                      ? withId(Routes.EDIT_MULTISIG_WALLET, id)
+                      : withId(Routes.WALLET, id)
                   }
                 >
                   Edit

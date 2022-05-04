@@ -9,7 +9,7 @@ const SizeClass = {
 };
 
 type Props = {
-  to: string;
+  to: string | object;
   className?: string;
   size?: keyof typeof SizeClass;
 };
