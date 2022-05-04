@@ -1,20 +1,20 @@
 import Dexie, { Table } from 'dexie';
 import { HexString } from '../../common/types';
 
-export enum CryptoType {
+export const enum CryptoType {
   SR25519,
   ED25519,
   ECDSA,
   ETHEREUM,
 }
 
-export enum SubstrateCryptoType {
+export const enum SubstrateCryptoType {
   SR25519,
   ED25519,
   ECDSA,
 }
 
-export enum ChainClass {
+export const enum ChainClass {
   ETHERIUM,
   SUBSTRATE,
 }
@@ -24,6 +24,11 @@ export interface Wallet {
   name: string;
   mainAccounts: Account[];
   chainAccounts: ChainAccount[];
+}
+
+export interface MultisigWallet extends Wallet {
+  originContacts: Contact[];
+  threshold: number;
 }
 
 export interface StatemineExtras {
@@ -131,7 +136,7 @@ export type Contact = {
 };
 
 export class OmniDexie extends Dexie {
-  wallets!: Table<Wallet>;
+  wallets!: Table<Wallet | MultisigWallet>;
 
   chains!: Table<Chain>;
 

@@ -2,37 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useRecoilValue } from 'recoil';
 import { selectedWalletsState } from '../store/selectedWallets';
-
-// const routes = [
-//   {
-//     title: 'Wallets',
-//     address: '/wallets',
-//   },
-//   {
-//     title: 'Networks',
-//     address: '/network-list',
-//   },
-//   {
-//     title: 'Balances',
-//     address: '/balances',
-//   },
-//   {
-//     title: 'Transfer',
-//     address: '/transfer',
-//   },
-//   // {
-//   //   title: 'Add account',
-//   //   address: '/add-account',
-//   // },
-//   // {
-//   //   title: 'Create multisig account',
-//   //   address: '/create-multisig-account',
-//   // },
-//   // {
-//   //   title: 'Chat',
-//   //   address: '/chat',
-//   // },
-// ];
+import { Routes } from '../../common/consts';
 
 const SecondColumn: React.FC = () => {
   const selectedAccounts = useRecoilValue(selectedWalletsState);
@@ -43,44 +13,57 @@ const SecondColumn: React.FC = () => {
 
       <ul className="divide-y-2 divide-gray-100">
         <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
-          <Link className="inline-block p-2 w-full" to="/wallets">
+          <Link className="inline-block p-2 w-full" to={Routes.WALLETS}>
             Wallets
           </Link>
         </li>
         <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
-          <Link className="inline-block p-2 w-full" to="/network-list">
+          <Link className="inline-block p-2 w-full" to={Routes.CREATE_WALLET}>
+            Add wallet
+          </Link>
+        </li>
+        <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
+          <Link
+            className="inline-block p-2 w-full"
+            to={Routes.CREATE_MULTISIG_WALLET}
+          >
+            Add multisig wallet
+          </Link>
+        </li>
+        <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
+          <Link className="inline-block p-2 w-full" to={Routes.NETWORK_LIST}>
             Networks
           </Link>
         </li>
 
         {selectedAccounts.length > 0 && (
           <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
-            <Link className="inline-block p-2 w-full" to="/balances">
+            <Link className="inline-block p-2 w-full" to={Routes.BALANCES}>
               Balances
             </Link>
           </li>
         )}
         {selectedAccounts.length > 0 && (
           <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
-            <Link className="inline-block p-2 w-full" to="/transfer">
+            <Link className="inline-block p-2 w-full" to={Routes.TRANSFER}>
               Transfer
             </Link>
           </li>
         )}
         <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
-          <Link className="inline-block p-2 w-full" to="/chat">
+          <Link className="inline-block p-2 w-full" to={Routes.CHAT}>
             Chat
           </Link>
         </li>
 
         <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
-          <Link className="inline-block p-2 w-full" to="/add-contact">
-            Add contact
+          <Link className="inline-block p-2 w-full" to={Routes.CONTACTS}>
+            Contacts
           </Link>
         </li>
         <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
-          <Link className="inline-block p-2 w-full" to="/contacts">
-            Contacts
+          <Link className="inline-block p-2 w-full" to={Routes.ADD_CONTACT}>
+            Add contact
           </Link>
         </li>
       </ul>

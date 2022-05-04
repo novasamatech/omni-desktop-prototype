@@ -39,7 +39,7 @@ const InputText = ({
   return (
     <div
       className={`relative border border-gray-500 rounded-lg pt-2 pl-3 pr-3 pb-3 ${
-        disabled ? 'bg-gray-200 pointer-events-none' : ''
+        disabled ? 'bg-gray-100 pointer-events-none' : ''
       } ${className}`}
     >
       {label && (
@@ -58,7 +58,7 @@ const InputText = ({
         disabled={disabled}
         className={`
             flex-1 appearance-none w-full mt-1 text-black placeholder-gray-400 text-xl focus:outline-none
-            ${disabled ? 'bg-gray-200' : ''}
+            ${disabled ? 'bg-gray-100' : ''}
             ${inputClassName}
           `}
         value={value}

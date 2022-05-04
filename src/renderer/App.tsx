@@ -15,6 +15,7 @@ import './App.css';
 import ShowCode from './components/ShowCode';
 import ScanCode from './components/ScanCode';
 import LinkButton from './ui/LinkButton';
+import { Routes } from '../common/consts';
 // import { ActiveType, db } from './db/db';
 // import { getChainSpec, getKnownChainId } from '../common/networks';
 
@@ -91,7 +92,7 @@ const Main = () => {
             View your {transactionsAmount} pending{' '}
             {transactionsAmount > 1 ? 'operations' : 'operation'}
           </div>
-          <LinkButton to="/busket" size="lg">
+          <LinkButton to={Routes.BUSKET} size="lg">
             View {transactionsAmount > 1 ? 'operations' : 'operation'}
           </LinkButton>
         </div>
@@ -105,9 +106,9 @@ export default function App() {
     <RecoilRoot>
       <Router>
         <Switch>
-          <Route path="/busket" component={Busket} />
-          <Route path="/show-code" component={ShowCode} />
-          <Route path="/scan-code" component={ScanCode} />
+          <Route path={Routes.BUSKET} component={Busket} />
+          <Route path={Routes.SHOW_CODE} component={ShowCode} />
+          <Route path={Routes.SCAN_CODE} component={ScanCode} />
           <Route path="/*" component={Main} />
         </Switch>
       </Router>

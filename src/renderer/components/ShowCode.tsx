@@ -19,6 +19,7 @@ import {
   currentUnsignedState,
 } from '../store/currentTransaction';
 import LinkButton from '../ui/LinkButton';
+import { Routes } from '../../common/consts';
 
 const ShowCode: React.FC = () => {
   const [api, setApi] = useState<ApiPromise>();
@@ -96,7 +97,7 @@ const ShowCode: React.FC = () => {
   return (
     <div className="h-screen flex flex-col">
       <div className="flex justify-center items-center">
-        <LinkButton className="ml-2 absolute left-0" to="/busket">
+        <LinkButton className="ml-2 absolute left-0" to={Routes.BUSKET}>
           Back
         </LinkButton>
         <h2 className="h-16 p-4 font-light text-lg">
@@ -118,7 +119,7 @@ const ShowCode: React.FC = () => {
             />
           </div>
         )}
-        <LinkButton to="/scan-code" size="lg">
+        <LinkButton to={Routes.SCAN_CODE} size="lg">
           Done, upload signed operations
         </LinkButton>
       </div>

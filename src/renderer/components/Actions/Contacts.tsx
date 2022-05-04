@@ -4,6 +4,7 @@ import DataTable from 'react-data-table-component';
 import { db } from '../../db/db';
 import Address from '../../ui/Address';
 import LinkButton from '../../ui/LinkButton';
+import { withId, Routes } from '../../../common/consts';
 
 type ContactTable = {
   id: string;
@@ -29,7 +30,7 @@ const COLUMNS = [
     button: true,
     right: true,
     cell: (row: ContactTable) => (
-      <LinkButton to={`/edit-contact/${row.id}`} size="sm">
+      <LinkButton to={withId(Routes.EDIT_CONTACT, row.id)} size="sm">
         Edit
       </LinkButton>
     ),
@@ -60,7 +61,7 @@ const WalletList: React.FC = () => {
       <div className="flex justify-between items-top">
         <h2 className="font-light text-xl m-4">Contacts</h2>
 
-        <LinkButton to="/add-contact" className="m-4" size="lg">
+        <LinkButton to={Routes.ADD_CONTACT} className="m-4" size="lg">
           Add contact
         </LinkButton>
       </div>

@@ -6,6 +6,7 @@ import { TransactionData } from '../../common/types';
 import { currentTransactionState } from '../store/currentTransaction';
 import { connectionState, Connection } from '../store/api';
 import Address from '../ui/Address';
+import { Routes } from '../../common/consts';
 
 type Props = {
   transaction: TransactionData;
@@ -39,7 +40,7 @@ const Transaction: React.FC<Props> = ({ transaction }: Props) => {
 
   const showQR = () => {
     setCurrentTransaction(transaction);
-    history.push('/show-code');
+    history.push(Routes.SHOW_CODE);
   };
 
   return (

@@ -14,6 +14,7 @@ import { Contact, CryptoType, db } from '../../db/db';
 import useToggle from '../../hooks/toggle';
 import DialogContent from '../../ui/DialogContent';
 import { validateAddress } from '../../utils/dataValidation';
+import { Routes } from '../../../common/consts';
 
 type ContactForm = {
   name: string;
@@ -25,7 +26,7 @@ const MatrixIdRegex =
   /@[\w\d\-_]*:(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]/i;
 
 const ManageContact: React.FC = () => {
-  const { contactId } = useParams<{ contactId: string }>();
+  const { id } = useParams<{ id: string }>();
   const [contact, setContact] = useState<Contact>();
   const history = useHistory();
   const [isDialogOpen, toggleDialogOpen] = useToggle(false);
@@ -44,9 +45,9 @@ const ManageContact: React.FC = () => {
   }, [reset]);
 
   useEffect(() => {
-    if (contactId) {
+    if (id) {
       db.contacts
-        .get(Number(contactId))
+        .get(Number(id))
         .then((c) => {
           if (c) {
             setContact(c);
@@ -54,7 +55,7 @@ const ManageContact: React.FC = () => {
         })
         .catch((e) => console.log(e));
     }
-  }, [contactId]);
+  }, [id]);
 
   useEffect(() => {
     reset({
@@ -67,7 +68,7 @@ const ManageContact: React.FC = () => {
   const forgetContact = async () => {
     if (contact?.id) {
       await db.contacts.delete(contact?.id);
-      history.push('/contacts');
+      history.push(Routes.CONTACTS);
     }
   };
 
@@ -78,7 +79,7 @@ const ManageContact: React.FC = () => {
   }) => {
     try {
       const contactObject = {
-        name,
+        name: name.trim(),
         secureProtocolId: matrixId,
         mainAccounts: [
           {
@@ -92,7 +93,7 @@ const ManageContact: React.FC = () => {
 
       if (contact?.id) {
         await db.contacts.update(contact.id, contactObject);
-        history.push('/contacts');
+        history.push(Routes.CONTACTS);
       } else {
         await db.contacts.add(contactObject);
 

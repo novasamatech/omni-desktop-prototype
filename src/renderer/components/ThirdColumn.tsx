@@ -1,34 +1,39 @@
 import React from 'react';
 import { Switch, Route } from 'react-router-dom';
-import AddAccount from './Actions/AddAccount';
 import Balances from './Actions/Balances';
 import Chat from './Actions/Chat';
-import CreateMultisigAccount from './Actions/CreateMultisigAccount';
+import ManageContact from './Actions/ManageContact';
+import Contacts from './Actions/Contacts';
+import ManageMultisigAccount from './Actions/ManageMultisigWallet';
 import NetworkList from './Actions/NetworkList';
 import Transfer from './Actions/Transfer';
 import WalletList from './Actions/WalletList';
 import Wallet from './Actions/Wallet';
-import ManageContact from './Actions/ManageContact';
-import Contacts from './Actions/Contacts';
+import AddWallet from './Actions/AddWallet';
+import { Routes } from '../../common/consts';
 
 const ThirdColumn: React.FC = () => {
   return (
-    <div className="flex-auto overflow-auto">
+    <div className="flex-1 overflow-auto">
       <Switch>
-        <Route path="/transfer" component={Transfer} />
-        <Route path="/add-account" component={AddAccount} />
+        <Route path={Routes.TRANSFER} component={Transfer} />
         <Route
-          path="/create-multisig-account"
-          component={CreateMultisigAccount}
+          path={Routes.CREATE_MULTISIG_WALLET}
+          component={() => <ManageMultisigAccount />}
         />
-        <Route path="/network-list" component={NetworkList} />
-        <Route path="/balances" component={Balances} />
-        <Route path="/chat" component={Chat} />
-        <Route path="/wallets" component={WalletList} />
-        <Route path="/wallet/:walletId" component={Wallet} />
-        <Route path="/edit-contact/:contactId" component={ManageContact} />
-        <Route path="/add-contact" component={ManageContact} />
-        <Route path="/contacts" component={Contacts} />
+        <Route
+          path={Routes.EDIT_MULTISIG_WALLET}
+          component={ManageMultisigAccount}
+        />
+        <Route path={Routes.CREATE_WALLET} component={AddWallet} />
+        <Route path={Routes.NETWORK_LIST} component={NetworkList} />
+        <Route path={Routes.BALANCES} component={Balances} />
+        <Route path={Routes.CHAT} component={Chat} />
+        <Route path={Routes.WALLETS} component={WalletList} />
+        <Route path={Routes.WALLET} component={Wallet} />
+        <Route path={Routes.EDIT_CONTACT} component={ManageContact} />
+        <Route path={Routes.ADD_CONTACT} component={() => <ManageContact />} />
+        <Route path={Routes.CONTACTS} component={Contacts} />
       </Switch>
     </div>
   );

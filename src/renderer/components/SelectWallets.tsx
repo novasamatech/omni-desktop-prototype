@@ -4,16 +4,15 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import Checkbox from '../ui/Checkbox';
 
 import { selectedWalletsState } from '../store/selectedWallets';
-import { db, Wallet } from '../db/db';
+import { db, MultisigWallet, Wallet } from '../db/db';
+import mst from '../../../assets/mst.svg';
 
 const SelectWallets: React.FC = () => {
   // TODO: select wallets after hot update on interface
   const [selectedWallets, setSelectedWallets] =
     useRecoilState(selectedWalletsState);
 
-  const wallets = useLiveQuery(() => {
-    return db.wallets.toArray();
-  });
+  const wallets = useLiveQuery(() => db.wallets.toArray());
 
   const selectWallet = (wallet: Wallet) => {
     const isExist = selectedWallets.find((w) => w.id === wallet.id);
@@ -40,6 +39,11 @@ const SelectWallets: React.FC = () => {
               />
               <div>{wallet.name}</div>
             </div>
+            {(wallet as MultisigWallet).originContacts?.length && (
+              <div className="flex items-center">
+                <img src={mst} alt="mst" className="h-4 ml-2" />
+              </div>
+            )}
           </div>
         </li>
       ))}
