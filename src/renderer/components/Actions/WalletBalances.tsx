@@ -1,9 +1,10 @@
 import React from 'react';
 import { useRecoilValue } from 'recoil';
 import '@polkadot/api-augment';
+import { useLiveQuery } from 'dexie-react-hooks';
 
 import { connectionState } from '../../store/api';
-import { Wallet } from '../../db/db';
+import { db, Wallet } from '../../db/db';
 import Card from '../../ui/Card';
 import NetworkBalances from './NetworkBalances';
 
@@ -11,17 +12,22 @@ type Props = {
   wallet: Wallet;
 };
 
-const AccountBalances: React.FC<Props> = ({ wallet }: Props) => {
+const WalletBalances: React.FC<Props> = ({ wallet }: Props) => {
   const networks = useRecoilValue(connectionState);
+  const walletFromDb = useLiveQuery(() => db.wallets.get(Number(wallet.id)));
+
+  if (!walletFromDb) {
+    return null;
+  }
 
   return (
     <Card>
-      <div className="mb-2 text-2xl font-light">{wallet.name}</div>
+      <div className="mb-2 text-2xl font-light">{walletFromDb.name}</div>
 
       {Object.values(networks).map((network) => (
         <NetworkBalances
           key={network.network.chainId}
-          wallet={wallet}
+          wallet={walletFromDb}
           connection={network}
         />
       ))}
@@ -29,4 +35,4 @@ const AccountBalances: React.FC<Props> = ({ wallet }: Props) => {
   );
 };
 
-export default AccountBalances;
+export default WalletBalances;
