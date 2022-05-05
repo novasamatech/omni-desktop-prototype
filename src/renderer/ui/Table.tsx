@@ -5,13 +5,14 @@ interface Props {
   withBorder?: boolean;
   headers?: string[];
   data?: Array<Array<string>>;
+  className?: string;
 }
 
-const Table = ({ withBorder, headers, data }: Props) => {
+const Table = ({ withBorder, headers, data, className }: Props) => {
   const borderClasses = withBorder ? 'border' : 'border-b-2';
 
   return (
-    <table className="table p-4 bg-white shadow rounded-lg">
+    <table className={`table p-4 bg-white shadow rounded-lg ${className}`}>
       {headers && (
         <thead>
           <tr>
@@ -55,6 +56,7 @@ Table.defaultProps = {
   withBorder: false,
   headers: undefined,
   data: [],
+  className: '',
 };
 
 export default Table;

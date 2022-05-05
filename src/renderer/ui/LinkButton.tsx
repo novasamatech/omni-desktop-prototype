@@ -1,5 +1,6 @@
 /* eslint-disable react/require-default-props */
 import { PropsWithChildren } from 'react';
+import { Link } from 'react-router-dom';
 
 const SizeClass = {
   sm: 'text-sm py-1 px-4',
@@ -8,38 +9,32 @@ const SizeClass = {
 };
 
 type Props = {
-  disabled?: boolean;
-  submit?: boolean;
-  onClick?: () => void;
+  to: string | object;
   className?: string;
   size?: keyof typeof SizeClass;
 };
 
-const Button = ({
-  disabled = false,
-  submit = false,
-  onClick,
+const LinkButton = ({
+  to,
   children,
   className = '',
   size = 'md',
 }: PropsWithChildren<Props>) => {
   return (
-    <button
-      onClick={onClick}
-      type={submit ? 'submit' : 'button'}
-      disabled={disabled}
+    <Link
+      to={to}
       className={`
         bg-black hover:bg-gray-800
         rounded-lg text-white
         text-center text-base shadow-md
         flex justify-center items-center
-        ${disabled ? ' opacity-70 cursor-not-allowed' : ''}
         ${SizeClass[size]}
         ${className}
       `}
     >
-      {children}
-    </button>
+      {/* HOOK */}
+      <>{children}</>
+    </Link>
   );
 };
-export default Button;
+export default LinkButton;

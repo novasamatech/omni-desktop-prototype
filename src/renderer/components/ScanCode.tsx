@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSetRecoilState, useRecoilValue } from 'recoil';
-import { Link, useHistory } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { QrScanSignature } from '@polkadot/react-qr';
 import { GenericExtrinsic } from '@polkadot/types';
 import {
@@ -16,12 +16,14 @@ import {
   currentTransactionState,
   currentUnsignedState,
 } from '../store/currentTransaction';
-import Button from '../ui/Button';
+import { HexString } from '../../common/types';
+import LinkButton from '../ui/LinkButton';
+import { Routes } from '../../common/consts';
 
 // TODO: Move this function to utils
 function createSignedTx(
   unsigned: UnsignedTransaction,
-  signature: `0x${string}`,
+  signature: HexString,
   options: OptionsWithMeta
 ): GenericExtrinsic {
   const {
@@ -86,7 +88,7 @@ const ScanCode: React.FC = () => {
           setTransactions((trxs) => {
             return trxs.filter((t) => t !== transaction);
           });
-          history.push('/busket');
+          history.push(Routes.BUSKET);
         }
       }
     }
@@ -95,9 +97,9 @@ const ScanCode: React.FC = () => {
   return (
     <div className="h-screen flex flex-col">
       <div className="flex justify-center items-center">
-        <Link className="ml-2 absolute left-0" to="/show-code">
-          <Button>Back</Button>
-        </Link>
+        <LinkButton className="ml-2 absolute left-0" to={Routes.SHOW_CODE}>
+          Back
+        </LinkButton>
         <h2 className="h-16 p-4 font-light text-lg">
           Upload signed operations via Parity Signer
         </h2>

@@ -184,13 +184,13 @@ const Chat: React.FC = () => {
         />
       </div>
       <div className="p-2">
-        <Button fat submit disabled={authInProgress}>
+        <Button size="lg" submit disabled={authInProgress}>
           Login
         </Button>
-        <Button className="mt-2" fat disabled={authInProgress} onClick={onCreateRoom}>
+        <Button className="mt-2" size="lg" disabled={authInProgress} onClick={onCreateRoom}>
           Create room
         </Button>
-        <Button className="mt-2" fat disabled={authInProgress} onClick={onMessageSend}>
+        <Button className="mt-2" size="lg" disabled={authInProgress} onClick={onMessageSend}>
           Send message
         </Button>
       </div>

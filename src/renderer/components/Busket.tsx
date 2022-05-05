@@ -1,9 +1,8 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { useRecoilState } from 'recoil';
-import Button from '../ui/Button';
 import { transactionBusketState } from '../store/transactionBusket';
 import Transaction from './Transaction';
+import LinkButton from '../ui/LinkButton';
 
 const ThirdColumn: React.FC = () => {
   const [transactions] = useRecoilState(transactionBusketState);
@@ -11,9 +10,9 @@ const ThirdColumn: React.FC = () => {
   return (
     <>
       <div className="flex justify-center items-center">
-        <Link className="ml-2 absolute left-0" to="/">
-          <Button>Back</Button>
-        </Link>
+        <LinkButton className="ml-2 absolute left-0" to="/">
+          Back
+        </LinkButton>
         <h2 className="h-16 p-4 font-light text-lg">
           Review your operations before signing
         </h2>

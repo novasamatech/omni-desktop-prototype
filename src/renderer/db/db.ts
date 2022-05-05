@@ -1,20 +1,20 @@
 import Dexie, { Table } from 'dexie';
 import { HexString } from '../../common/types';
 
-export enum CryptoType {
+export const enum CryptoType {
   SR25519,
   ED25519,
   ECDSA,
   ETHEREUM,
 }
 
-export enum SubstrateCryptoType {
+export const enum SubstrateCryptoType {
   SR25519,
   ED25519,
   ECDSA,
 }
 
-export enum ChainClass {
+export const enum ChainClass {
   ETHERIUM,
   SUBSTRATE,
 }
@@ -24,6 +24,11 @@ export interface Wallet {
   name: string;
   mainAccounts: Account[];
   chainAccounts: ChainAccount[];
+}
+
+export interface MultisigWallet extends Wallet {
+  originContacts: Contact[];
+  threshold: number;
 }
 
 export interface StatemineExtras {
@@ -51,6 +56,7 @@ export interface Asset {
   assetId: number;
   symbol: string;
   precision: number;
+  icon?: string;
   priceId?: string;
   staking?: string;
   type?: string;
@@ -110,20 +116,41 @@ export interface Chain {
   options?: ChainOptions[];
   externalApi?: ExternalApiSet;
   explorers?: Expolorer[];
+  // TODO: Store connection information in separate table
   activeType: ActiveType;
   addressPrefix?: number;
 }
 
+export interface ChainConnection {
+  id?: number;
+  chainId: HexString;
+  activeType: ActiveType;
+}
+
+export type Contact = {
+  id?: number;
+  name: string;
+  mainAccounts: Account[];
+  chainAccounts: ChainAccount[];
+  secureProtocolId: string;
+};
+
 export class OmniDexie extends Dexie {
-  wallets!: Table<Wallet>;
+  wallets!: Table<Wallet | MultisigWallet>;
 
   chains!: Table<Chain>;
 
+  connections!: Table<ChainConnection>;
+
+  contacts!: Table<Contact>;
+
   constructor() {
     super('omniDatabase');
-    this.version(2).stores({
+    this.version(51).stores({
       wallets: '++id,name',
       chains: '++id,&chainId,parentId,name,activeType',
+      connections: '++id,&chainId,activeType',
+      contacts: '++id,name,secureProtocolId',
     });
   }
 }

@@ -5,20 +5,21 @@
 import React, { useEffect, useState } from 'react';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import { QrDisplayPayload } from '@polkadot/react-qr';
+import { hexToU8a } from '@polkadot/util';
 import {
   construct,
   getRegistry,
   methods,
   GetRegistryOpts,
 } from '@substrate/txwrapper-polkadot';
-import { Link } from 'react-router-dom';
 import { ApiPromise } from '@polkadot/api';
 import { connectionState } from '../store/api';
 import {
   currentTransactionState,
   currentUnsignedState,
 } from '../store/currentTransaction';
-import Button from '../ui/Button';
+import LinkButton from '../ui/LinkButton';
+import { Routes } from '../../common/consts';
 
 const ShowCode: React.FC = () => {
   const [api, setApi] = useState<ApiPromise>();
@@ -84,18 +85,7 @@ const ShowCode: React.FC = () => {
             registry,
           });
 
-          const fromHexString = (hexString: string) => {
-            const array = hexString.match(/.{1,2}/g);
-            if (array && array.length > 0) {
-              array.shift();
-              return new Uint8Array(array.map((byte) => parseInt(byte, 16)));
-            }
-
-            return new Uint8Array([]);
-          };
-
-          setPayload(fromHexString(signingPayloadHex));
-
+          setPayload(hexToU8a(signingPayloadHex));
           setUnsigned(unsigned);
         }
       }
@@ -107,9 +97,9 @@ const ShowCode: React.FC = () => {
   return (
     <div className="h-screen flex flex-col">
       <div className="flex justify-center items-center">
-        <Link className="ml-2 absolute left-0" to="/busket">
-          <Button>Back</Button>
-        </Link>
+        <LinkButton className="ml-2 absolute left-0" to={Routes.BUSKET}>
+          Back
+        </LinkButton>
         <h2 className="h-16 p-4 font-light text-lg">
           Sign your operations using Parity Signer
         </h2>
@@ -129,9 +119,9 @@ const ShowCode: React.FC = () => {
             />
           </div>
         )}
-        <Link to="/scan-code">
-          <Button fat>Done, upload signed operations</Button>
-        </Link>
+        <LinkButton to={Routes.SCAN_CODE} size="lg">
+          Done, upload signed operations
+        </LinkButton>
       </div>
     </div>
   );
