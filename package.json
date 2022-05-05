@@ -190,7 +190,6 @@
     "eslint-plugin-promise": "^5.1.1",
     "eslint-plugin-react": "^7.26.1",
     "eslint-plugin-react-hooks": "^4.2.0",
-    "file-loader": "^6.2.0",
     "html-webpack-plugin": "^5.5.0",
     "husky": "7.0.4",
     "identity-obj-proxy": "^3.0.0",
@@ -239,8 +238,7 @@
     "electron-store": "^8.0.1",
     "electron-updater": "^4.3.9",
     "history": "4.x.x",
-    "import-wasm": "^0.2.0",
-    "matrix-js-sdk": "^17.0.0",
+    "matrix-js-sdk": "^17.1.0",
     "postcss": "^8.3.8",
     "postcss-loader": "^6.2.0",
     "react": "^17.0.2",
@@ -257,20 +255,6 @@
     "npm": ">=7.x"
   },
   "browserslist": [],
-  "prettier": {
-    "overrides": [
-      {
-        "files": [
-          ".prettierrc",
-          ".eslintrc"
-        ],
-        "options": {
-          "parser": "json"
-        }
-      }
-    ],
-    "singleQuote": true
-  },
   "husky": {
     "hooks": {
       "pre-commit": "lint-staged"

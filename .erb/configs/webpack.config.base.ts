@@ -41,6 +41,8 @@ export default {
       "crypto": require.resolve("crypto-browserify"),
       "stream": require.resolve("stream-browserify"),
       "url": false,
+      "fs": false,
+      "path": false,
     },
     alias: {
       'react/jsx-runtime': require.resolve('react/jsx-runtime')
@@ -55,8 +57,7 @@ export default {
       'process.env': {
         VERSION: JSON.stringify(version),
         WS_URL: JSON.stringify(process.env.WS_URL)
-      }
+      },
     }),
-
   ],
 };
