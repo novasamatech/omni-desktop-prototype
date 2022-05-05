@@ -228,7 +228,7 @@
     "@polkadot/react-qr": "^2.0.1",
     "@polkadot/rpc-provider": "^8.0.2",
     "@polkadot/types": "^8.0.2",
-    "@substrate/connect": "^0.7.2",
+    "@substrate/connect": "^0.7.3",
     "@substrate/txwrapper-polkadot": "^2.0.2",
     "@types/crypto-js": "^4.1.1",
     "autoprefixer": "^10.4.0",
