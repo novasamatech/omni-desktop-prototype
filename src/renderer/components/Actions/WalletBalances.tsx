@@ -16,22 +16,22 @@ const WalletBalances: React.FC<Props> = ({ wallet }: Props) => {
   const networks = useRecoilValue(connectionState);
   const walletFromDb = useLiveQuery(() => db.wallets.get(Number(wallet.id)));
 
-  return (
-    <>
-      {walletFromDb && (
-        <Card>
-          <div className="mb-2 text-2xl font-light">{walletFromDb?.name}</div>
+  if (!walletFromDb) {
+    return null;
+  }
 
-          {Object.values(networks).map((network) => (
-            <NetworkBalances
-              key={network.network.chainId}
-              wallet={walletFromDb}
-              connection={network}
-            />
-          ))}
-        </Card>
-      )}
-    </>
+  return (
+    <Card>
+      <div className="mb-2 text-2xl font-light">{walletFromDb.name}</div>
+
+      {Object.values(networks).map((network) => (
+        <NetworkBalances
+          key={network.network.chainId}
+          wallet={walletFromDb}
+          connection={network}
+        />
+      ))}
+    </Card>
   );
 };
 

@@ -16,14 +16,11 @@ const getRelaychain = (
   networks: Connection[],
   network: Chain
 ): Connection | undefined => {
-  if (network.parentId) {
-    const parent = networks.find((n) => n.network.chainId === network.parentId);
-    if (parent) {
-      return parent;
-    }
+  if (!network.parentId) {
+    return undefined;
   }
 
-  return undefined;
+  return networks.find((n) => n.network.chainId === network.parentId);
 };
 
 const NetworkBalances: React.FC<Props> = ({ wallet, connection }: Props) => {
@@ -61,7 +58,6 @@ const NetworkBalances: React.FC<Props> = ({ wallet, connection }: Props) => {
               <AssetBalance
                 key={asset.assetId}
                 asset={asset}
-                wallet={wallet}
                 account={account}
                 connection={connection}
                 relayChain={relayChain}
