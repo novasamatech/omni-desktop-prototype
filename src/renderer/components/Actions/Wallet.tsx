@@ -285,15 +285,6 @@ const Wallet: React.FC = () => {
           />
         </div>
         <div className="p-2">
-          <InputText
-            className="w-full"
-            label="Account address"
-            placeholder="Account address"
-            value={address}
-            onChange={onChangeAccountAddress}
-          />
-        </div>
-        <div className="p-2">
           {accountType === AccountTypes.CHAIN && (
             <Select
               className="w-full"
@@ -314,6 +305,15 @@ const Wallet: React.FC = () => {
             onChange={onChangeNetworkType}
           />
         )} */}
+        </div>
+        <div className="p-2">
+          <InputText
+            className="w-full"
+            label="Account address"
+            placeholder="Account address"
+            value={address}
+            onChange={onChangeAccountAddress}
+          />
         </div>
         <div className="p-2">
           <Button size="lg" submit>
