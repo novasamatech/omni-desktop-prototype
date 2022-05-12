@@ -6,6 +6,7 @@ import { db, MultisigWallet } from '../../db/db';
 import LinkButton from '../../ui/LinkButton';
 import mst from '../../../../assets/mst.svg';
 import { Routes, withId } from '../../../common/consts';
+import { isMultisig } from '../../utils/dataValidation';
 
 const WalletList: React.FC = () => {
   const wallets = useLiveQuery(() => db.wallets.toArray());
@@ -20,7 +21,7 @@ const WalletList: React.FC = () => {
               <div className="w-full flex items-center justify-between">
                 <div className="flex items-center">
                   {name}
-                  {(wallet as MultisigWallet).originContacts?.length && (
+                  {isMultisig(wallet as MultisigWallet) && (
                     <div className="flex items-center">
                       <img src={mst} alt="mst" className="h-4 ml-2" />
                     </div>
@@ -28,7 +29,7 @@ const WalletList: React.FC = () => {
                 </div>
                 <LinkButton
                   to={
-                    (wallet as MultisigWallet).originContacts
+                    isMultisig(wallet as MultisigWallet)
                       ? withId(Routes.EDIT_MULTISIG_WALLET, id)
                       : withId(Routes.WALLET, id)
                   }

@@ -1,77 +1,179 @@
-import React, { useEffect, useState } from 'react';
-import { useRecoilValue, useSetRecoilState } from 'recoil';
+/* eslint-disable promise/always-return */
+import React, { useCallback, useEffect, useState } from 'react';
+import { useRecoilValue } from 'recoil';
 import { decodeAddress, encodeAddress } from '@polkadot/keyring';
+import { formatBalance } from '@polkadot/util';
+
 import { Connection, connectionState } from '../../store/api';
 import { selectedWalletsState } from '../../store/selectedWallets';
-import { transactionBusketState } from '../../store/transactionBusket';
 import Button from '../../ui/Button';
 import InputText from '../../ui/Input';
 import Select, { OptionType } from '../../ui/Select';
+import {
+  TransactionType,
+  TransactionStatus,
+  db,
+  Asset,
+  AssetType,
+} from '../../db/db';
+import { isMultisig } from '../../utils/dataValidation';
+import { getAddressFromWallet } from '../../utils/account';
 
 const Transfer: React.FC = () => {
   const [address, setAddress] = useState('');
   const [amount, setAmount] = useState(0);
+  const [transactionFee, setTransactionFee] = useState('0');
+  const [existentialDeposit, setExistentialDeposit] = useState('0');
   const [currentNetwork, setCurrentNetwork] = useState<Connection | undefined>(
     undefined
   );
+  const [currentAsset, setCurrentAsset] = useState<Asset | undefined>(
+    undefined
+  );
   const [networkOptions, setNetworkOptions] = useState<OptionType[]>([]);
+  const [assetOptions, setAssetOptions] = useState<OptionType[]>([]);
 
   const networks = useRecoilValue(connectionState);
   const wallets = useRecoilValue(selectedWalletsState);
-  const setTransactions = useSetRecoilState(transactionBusketState);
+
+  const setPartialFee = useCallback(
+    ({ partialFee }) => {
+      setTransactionFee(
+        formatBalance(partialFee.toString(), {
+          withUnit: false,
+          decimals: currentAsset?.precision,
+        })
+      );
+    },
+    [currentAsset]
+  );
+
+  useEffect(() => {
+    if (address && amount && currentNetwork && currentAsset && wallets.length) {
+      const fromAddress = getAddressFromWallet(
+        wallets[0],
+        currentNetwork.network
+      );
+
+      if (currentAsset.type === AssetType.STATEMINE) {
+        currentNetwork.api.tx.assets
+          .transfer(currentAsset.assetId, address, amount)
+          .paymentInfo(fromAddress)
+          .then(setPartialFee)
+          .catch((e) => {
+            console.log(e);
+            setTransactionFee('0');
+          });
+      } else if (currentAsset.type === AssetType.ORML) {
+        currentNetwork.api.tx.currencies
+          .transfer(address, currentAsset.assetId, amount)
+          .paymentInfo(fromAddress)
+          .then(setPartialFee)
+          .catch((e) => {
+            console.log(e);
+            setTransactionFee('0');
+          });
+      } else {
+        currentNetwork.api.tx.balances
+          .transfer(address, amount)
+          .paymentInfo(fromAddress)
+          .then(setPartialFee)
+          .catch((e) => {
+            console.log(e);
+            setTransactionFee('0');
+          });
+      }
+    }
+
+    setExistentialDeposit(
+      formatBalance(
+        currentNetwork?.api.consts.balances.existentialDeposit.toString(),
+        {
+          withUnit: false,
+          decimals: currentAsset?.precision,
+        }
+      )
+    );
+  }, [amount, wallets, currentNetwork, currentAsset, address, setPartialFee]);
+
+  const setNetwork = useCallback(
+    (value: string) => {
+      const network = Object.values(networks).find(
+        (n) => n.network.chainId === value
+      );
+
+      if (network) {
+        setCurrentNetwork(network);
+        setAssetOptions(
+          network.network.assets.map((a) => ({
+            label: a.symbol,
+            value: a.assetId.toString(),
+          }))
+        );
+        setCurrentAsset(network.network.assets[0]);
+      }
+    },
+    [networks]
+  );
 
   useEffect(() => {
     setNetworkOptions(
       Object.values(networks).map((n) => ({
         label: n.network.name,
-        value: n.network.name,
+        value: n.network.chainId,
       }))
     );
 
     if (!currentNetwork) {
-      setCurrentNetwork(networks[Object.keys(networks)[0]]);
+      setNetwork(networks[Object.keys(networks)[0]]?.network.chainId);
     }
-  }, [networks, currentNetwork, setCurrentNetwork]);
+  }, [networks, currentNetwork, setNetwork]);
 
-  const setNetwork = (value: string) => {
-    const network = Object.values(networks).find(
-      (n) => n.network.name === value
+  const setAsset = (value: number) => {
+    const asset = currentNetwork?.network.assets.find(
+      (a) => a.assetId === value
     );
 
-    if (network) {
-      setCurrentNetwork(network);
-    }
+    setCurrentAsset(asset);
   };
 
   const addTransaction = async () => {
-    if (currentNetwork) {
-      setTransactions((transactions) => {
-        return [
-          ...transactions,
-          ...wallets.map((w) => {
-            const account =
-              w.chainAccounts.find(
-                (a) => a.chainId === currentNetwork.network.chainId
-              ) || w.mainAccounts[0];
+    if (currentNetwork && currentAsset) {
+      const transactions = wallets.map((w) => {
+        const account =
+          w.chainAccounts.find(
+            (a) => a.chainId === currentNetwork.network.chainId
+          ) || w.mainAccounts[0];
 
-            const addressFrom =
-              encodeAddress(
-                decodeAddress(account.accountId),
-                currentNetwork.network.addressPrefix
-              ) || '';
+        const addressFrom =
+          encodeAddress(
+            decodeAddress(account.accountId),
+            currentNetwork.network.addressPrefix
+          ) || '';
 
-            return {
-              type: 'transfer',
-              network: currentNetwork.network.name,
-              address: addressFrom,
-              payload: {
-                address,
-                amount,
-              },
-            };
-          }),
-        ];
+        const type = isMultisig(w)
+          ? TransactionType.MULTISIG_TRANSFER
+          : TransactionType.TRANSFER;
+
+        return {
+          createdAt: new Date(),
+          status: TransactionStatus.CREATED,
+          type,
+          chainId: currentNetwork.network.chainId,
+          address: addressFrom,
+          wallet: w,
+          data: {
+            assetId: currentAsset?.assetId,
+            address,
+            amount,
+          },
+        };
       });
+
+      db.transactions.bulkAdd(transactions);
+
+      setAddress('');
+      setAmount(0);
     }
   };
 
@@ -86,6 +188,17 @@ const Transfer: React.FC = () => {
           value={currentNetwork?.network.name}
           options={networkOptions}
           onChange={(event) => setNetwork(event.target.value)}
+        />
+      </div>
+      <div className="p-2">
+        <Select
+          label="Asset"
+          className="w-full"
+          placeholder="Asset"
+          disabled={assetOptions.length === 1}
+          value={currentAsset?.assetId.toString()}
+          options={assetOptions}
+          onChange={(event) => setAsset(Number(event.target.value))}
         />
       </div>
       <div className="p-2">
@@ -108,6 +221,16 @@ const Transfer: React.FC = () => {
           onChange={(event) => setAmount(parseFloat(event.target.value))}
         />
       </div>
+      <div className="p-2 text-gray-500 flex justify-between">
+        <div>Transaction fee:</div>
+        <div>{transactionFee}</div>
+      </div>
+      {wallets?.find(isMultisig) && (
+        <div className="p-2 text-gray-500 flex justify-between">
+          <div>Existential deposit:</div>
+          <div>{existentialDeposit}</div>
+        </div>
+      )}
       <div className="p-2">
         <Button
           onClick={addTransaction}

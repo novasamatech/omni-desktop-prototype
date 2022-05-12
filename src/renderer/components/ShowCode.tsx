@@ -20,10 +20,13 @@ import {
 } from '../store/currentTransaction';
 import LinkButton from '../ui/LinkButton';
 import { Routes } from '../../common/consts';
+import { getAddressFromWallet } from '../utils/account';
+// import { isMultisig } from '../utils/dataValidation';
 
 const ShowCode: React.FC = () => {
   const [api, setApi] = useState<ApiPromise>();
   const [payload, setPayload] = useState<Uint8Array>();
+  const [address, setAddress] = useState('');
   const networks = useRecoilValue(connectionState);
   const transaction = useRecoilValue(currentTransactionState);
   const [, setUnsigned] = useRecoilState(currentUnsignedState);
@@ -33,7 +36,7 @@ const ShowCode: React.FC = () => {
     const setupTransaction = async () => {
       if (transaction && Object.values(networks).length) {
         const network = Object.values(networks).find(
-          (n) => n.network.name === transaction.network
+          (n) => n.network.chainId === transaction.chainId
         );
 
         setApi(network?.api);
@@ -53,17 +56,18 @@ const ShowCode: React.FC = () => {
             metadataRpc: metadataRpc.toHex(),
           });
 
-          const { nonce } = await network?.api?.query.system.account(
-            transaction.address
-          );
+          setAddress(getAddressFromWallet(transaction.wallet, network.network));
 
+          // const isMST = isMultisig(transaction.wallet);
+
+          const { nonce } = await network?.api?.query.system.account(address);
           const unsigned = methods.balances.transfer(
             {
-              value: transaction.payload.amount,
-              dest: transaction.payload.address,
+              value: transaction.data.amount,
+              dest: transaction.data.address,
             },
             {
-              address: transaction.address,
+              address,
               blockHash: blockHash.toString(),
               blockNumber: registry
                 .createType('BlockNumber', block.header.number)
@@ -92,7 +96,7 @@ const ShowCode: React.FC = () => {
     };
 
     setupTransaction();
-  }, [networks, transaction, setUnsigned]);
+  }, [networks, transaction, setUnsigned, address, setAddress]);
 
   return (
     <div className="h-screen flex flex-col">
@@ -112,7 +116,7 @@ const ShowCode: React.FC = () => {
         {api && payload && transaction && (
           <div className="w-80 h-80 m-4">
             <QrDisplayPayload
-              address={transaction.address || ''}
+              address={address}
               cmd={0}
               genesisHash={api.genesisHash.toHex() || ''}
               payload={payload}
