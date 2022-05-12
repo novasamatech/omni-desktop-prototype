@@ -9,7 +9,9 @@ const AddWallet: React.FC = () => {
   const [walletName, setWalletName] = useState('');
   const history = useHistory();
 
-  const addWallet = async () => {
+  const addWallet = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
     if (walletName.length > 0) {
       await db.wallets.add({
         name: walletName,

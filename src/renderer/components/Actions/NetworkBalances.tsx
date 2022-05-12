@@ -1,19 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useRecoilValue } from 'recoil';
-import { formatBalance } from '@polkadot/util';
 import '@polkadot/api-augment';
-import { decodeAddress, encodeAddress } from '@polkadot/keyring';
 
 import { Connection, connectionState } from '../../store/api';
-import { Asset, Chain, Wallet, StatemineExtras, OrmlExtras } from '../../db/db';
-import { validate } from '../../utils/dataValidation';
+import { Asset, Chain, Wallet, Account } from '../../db/db';
 import Card from '../../ui/Card';
-import Shimmer from '../../ui/Shimmer';
-
-type Balance = {
-  free: any;
-  isValid: boolean;
-};
+import AssetBalance from './AssetBalance';
 
 type Props = {
   wallet: Wallet;
@@ -23,137 +15,31 @@ type Props = {
 const getRelaychain = (
   networks: Connection[],
   network: Chain
-): Connection | null => {
-  if (network.parentId) {
-    const parent = networks.find((n) => n.network.chainId === network.parentId);
-    if (parent) {
-      return parent;
-    }
+): Connection | undefined => {
+  if (!network.parentId) {
+    return undefined;
   }
 
-  return null;
+  return networks.find((n) => n.network.chainId === network.parentId);
 };
 
-const NetworkBalances: React.FC<Props> = ({
-  wallet,
-  connection: { api, network },
-}: Props) => {
+const NetworkBalances: React.FC<Props> = ({ wallet, connection }: Props) => {
   const networks = useRecoilValue(connectionState);
+  const { network } = connection;
 
-  const [balances, setBalances] = useState<Record<string, Balance>>({});
-  const [relayChain, setRelayChain] = useState<Connection | null>(null);
+  const [relayChain, setRelayChain] = useState<Connection>();
+  const [account, setAccount] = useState<Account>();
 
   useEffect(() => {
     setRelayChain(getRelaychain(Object.values(networks), network));
   }, [networks, network]);
 
   useEffect(() => {
-    const updateBalance = (asset: Asset, balance: any) => {
-      setBalances((b) => {
-        return {
-          ...b,
-          [asset.assetId]: {
-            free: formatBalance(balance, {
-              withUnit: false,
-              decimals: asset.precision,
-            }),
-            isValid: false,
-          },
-        };
-      });
-    };
-
-    const validateAssetBalance = async (
-      data: any,
-      storageKey: string,
-      asset: Asset
-    ) => {
-      if (relayChain) {
-        console.log('validation started');
-        const isValid = await validate(relayChain?.api, api, data, storageKey);
-        console.log('validation finished', isValid);
-
-        setBalances((b) => {
-          return {
-            ...b,
-            [asset.assetId]: {
-              ...b[asset.assetId],
-              isValid,
-            },
-          };
-        });
-      } else {
-        console.log('no relay chain');
-        setBalances((b) => {
-          return {
-            ...b,
-            [asset.assetId]: {
-              ...b[asset.assetId],
-              isValid: true,
-            },
-          };
-        });
-      }
-    };
-
-    const account =
+    setAccount(
       wallet.chainAccounts.find((a) => a.chainId === network.chainId) ||
-      wallet.mainAccounts[0];
-
-    const address =
-      encodeAddress(decodeAddress(account.accountId), network.addressPrefix) ||
-      '';
-
-    network.assets.forEach((asset: Asset) => {
-      if (!asset.type) {
-        api.query.system.account(address, async (data) => {
-          const {
-            data: { free: currentFree },
-          } = data;
-
-          updateBalance(asset, currentFree);
-          const storageKey = await api.query.system.account.key(address);
-          validateAssetBalance(data, storageKey, asset);
-        });
-      }
-
-      if (asset.type === 'statemine') {
-        // eslint-disable-next-line prefer-destructuring
-        const statemineAssetId = (asset?.typeExtras as StatemineExtras).assetId;
-        api.query.assets.account(statemineAssetId, address, async (data) => {
-          let currentFree = '0';
-
-          if (!data.isNone) {
-            currentFree = data.unwrap().balance.toString();
-          }
-          updateBalance(asset, currentFree);
-
-          const storageKey = await api.query.assets.account.key(
-            statemineAssetId,
-            address
-          );
-
-          validateAssetBalance(data, storageKey, asset);
-        });
-      }
-
-      if (asset.type === 'orml') {
-        // eslint-disable-next-line prefer-destructuring
-        const ormlAssetId = (asset?.typeExtras as OrmlExtras).currencyIdScale;
-        api.query.tokens.accounts(address, ormlAssetId, async (data: any) => {
-          const currentFree = data.free;
-
-          updateBalance(asset, currentFree);
-
-          const storageKey = await api.query.tokens.accounts.key(
-            address,
-            ormlAssetId
-          );
-          validateAssetBalance(data, storageKey, asset);
-        });
-      }
-    });
-  }, [wallet, api, network, relayChain]);
+        wallet.mainAccounts[0]
+    );
+  }, [wallet, network]);
 
   return (
     <>
@@ -167,30 +53,17 @@ const NetworkBalances: React.FC<Props> = ({
       </div>
 
       <Card>
-        {network.assets.map((asset: Asset) => (
-          <div
-            key={asset.assetId}
-            className="flex w-full items-center justify-between h-11"
-          >
-            <div className="font-normal text-xl flex items-center">
-              <img
-                className="w-7 h-7 invert mr-3"
-                src={asset.icon || network.icon}
-                alt={asset.symbol}
+        {account
+          ? network.assets.map((asset: Asset) => (
+              <AssetBalance
+                key={asset.assetId}
+                asset={asset}
+                account={account}
+                connection={connection}
+                relayChain={relayChain}
               />
-              {asset.symbol}
-            </div>
-            <div className="font-normal text-xl">
-              {!balances[asset.assetId]?.isValid ? (
-                <div className="w-12">
-                  <Shimmer />
-                </div>
-              ) : (
-                <>{balances[asset.assetId]?.free}</>
-              )}
-            </div>
-          </div>
-        ))}
+            ))
+          : "This wallet doesn't have an account for this network"}
       </Card>
     </>
   );

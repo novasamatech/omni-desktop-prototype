@@ -19,6 +19,11 @@ export const enum ChainClass {
   SUBSTRATE,
 }
 
+export const enum AssetType {
+  ORML = 'orml',
+  STATEMINE = 'statemine',
+}
+
 export interface Wallet {
   id?: number;
   name: string;
@@ -59,7 +64,7 @@ export interface Asset {
   icon?: string;
   priceId?: string;
   staking?: string;
-  type?: string;
+  type?: AssetType;
   typeExtras?: StatemineExtras | OrmlExtras;
 }
 

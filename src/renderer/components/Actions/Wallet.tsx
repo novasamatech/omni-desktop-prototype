@@ -5,6 +5,7 @@ import { useHistory } from 'react-router';
 import { decodeAddress, encodeAddress } from '@polkadot/keyring';
 import { u8aToHex } from '@polkadot/util';
 import { Dialog } from '@headlessui/react';
+import { useSetRecoilState } from 'recoil';
 
 import { Account, ChainAccount, Chain, db } from '../../db/db';
 import InputText from '../../ui/Input';
@@ -15,6 +16,7 @@ import Select, { OptionType } from '../../ui/Select';
 import Address from '../../ui/Address';
 import DialogContent from '../../ui/DialogContent';
 import { Routes } from '../../../common/consts';
+import { selectedWalletsState } from '../../store/selectedWallets';
 
 const enum AccountTypes {
   MAIN = 'MAIN',
@@ -48,6 +50,7 @@ const Wallet: React.FC = () => {
       network: Chain;
     }>
   >();
+  const setSelectedWallets = useSetRecoilState(selectedWalletsState);
 
   const networks = useLiveQuery(async () => {
     const networkList = await db.chains.toArray();
@@ -68,7 +71,11 @@ const Wallet: React.FC = () => {
   const forgetWallet = async () => {
     if (wallet?.id) {
       await db.wallets.delete(wallet.id);
+      setSelectedWallets((selectedWallets) =>
+        selectedWallets.filter((w) => w.id !== wallet.id)
+      );
     }
+
     setIsRemoveDialogOpen(false);
     history.push(Routes.WALLETS);
   };
@@ -150,7 +157,8 @@ const Wallet: React.FC = () => {
     setAccounts(accountList);
   }, [networks, wallet]);
 
-  const addAccount = async () => {
+  const addAccount = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     // TODO: Add validation for account address
     // const keyring = new Keyring();
     // const pair = keyring.addFromAddress(address);
@@ -204,7 +212,9 @@ const Wallet: React.FC = () => {
     }
   };
 
-  const updateWallet = async () => {
+  const updateWallet = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
     if (wallet?.id) {
       await db.wallets.update(wallet.id, {
         name,
@@ -275,15 +285,6 @@ const Wallet: React.FC = () => {
           />
         </div>
         <div className="p-2">
-          <InputText
-            className="w-full"
-            label="Account address"
-            placeholder="Account address"
-            value={address}
-            onChange={onChangeAccountAddress}
-          />
-        </div>
-        <div className="p-2">
           {accountType === AccountTypes.CHAIN && (
             <Select
               className="w-full"
@@ -304,6 +305,15 @@ const Wallet: React.FC = () => {
             onChange={onChangeNetworkType}
           />
         )} */}
+        </div>
+        <div className="p-2">
+          <InputText
+            className="w-full"
+            label="Account address"
+            placeholder="Account address"
+            value={address}
+            onChange={onChangeAccountAddress}
+          />
         </div>
         <div className="p-2">
           <Button size="lg" submit>
