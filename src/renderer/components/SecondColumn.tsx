@@ -50,11 +50,12 @@ const SecondColumn: React.FC = () => {
             </Link>
           </li>
         )}
-        <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
-          <Link className="inline-block p-2 w-full" to={Routes.CHAT}>
-            Chat
-          </Link>
-        </li>
+        {/* Enable for chat testing */}
+        {/* <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg"> */}
+        {/*   <Link className="inline-block p-2 w-full" to={Routes.CHAT}> */}
+        {/*     Chat */}
+        {/*   </Link> */}
+        {/* </li> */}
 
         <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
           <Link className="inline-block p-2 w-full" to={Routes.CONTACTS}>

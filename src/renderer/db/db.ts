@@ -140,6 +140,19 @@ export type Contact = {
   secureProtocolId: string;
 };
 
+export const enum AuthState {
+  NOT_LOGGED_IN = 0,
+  LOGGED_IN = 1,
+}
+
+export type Credential = {
+  id?: number;
+  userId: string;
+  accessToken: string;
+  deviceId: string;
+  isLoggedIn: AuthState;
+};
+
 export class OmniDexie extends Dexie {
   wallets!: Table<Wallet | MultisigWallet>;
 
@@ -149,13 +162,16 @@ export class OmniDexie extends Dexie {
 
   contacts!: Table<Contact>;
 
+  matrixCredentials!: Table<Credential>;
+
   constructor() {
     super('omniDatabase');
-    this.version(51).stores({
+    this.version(6).stores({
       wallets: '++id,name',
       chains: '++id,&chainId,parentId,name,activeType',
       connections: '++id,&chainId,activeType',
       contacts: '++id,name,secureProtocolId',
+      matrixCredentials: '++id,userId,accessToken,deviceId,isLoggedIn',
     });
   }
 }
