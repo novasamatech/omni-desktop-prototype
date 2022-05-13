@@ -1,5 +1,5 @@
 /* eslint-disable promise/always-return */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRecoilValue } from 'recoil';
 import { decodeAddress, encodeAddress } from '@polkadot/keyring';
 import { formatBalance } from '@polkadot/util';
@@ -36,16 +36,21 @@ const Transfer: React.FC = () => {
   const networks = useRecoilValue(connectionState);
   const wallets = useRecoilValue(selectedWalletsState);
 
+  const defaultAsset = useMemo(
+    () => currentNetwork?.network.assets[0],
+    [currentNetwork]
+  );
+
   const setPartialFee = useCallback(
     ({ partialFee }) => {
       setTransactionFee(
         formatBalance(partialFee.toString(), {
           withUnit: false,
-          decimals: currentAsset?.precision,
+          decimals: defaultAsset?.precision,
         })
       );
     },
-    [currentAsset]
+    [defaultAsset]
   );
 
   useEffect(() => {
@@ -55,46 +60,57 @@ const Transfer: React.FC = () => {
         currentNetwork.network
       );
 
-      if (currentAsset.type === AssetType.STATEMINE) {
-        currentNetwork.api.tx.assets
-          .transfer(currentAsset.assetId, address, amount)
-          .paymentInfo(fromAddress)
-          .then(setPartialFee)
-          .catch((e) => {
-            console.log(e);
-            setTransactionFee('0');
-          });
-      } else if (currentAsset.type === AssetType.ORML) {
-        currentNetwork.api.tx.currencies
-          .transfer(address, currentAsset.assetId, amount)
-          .paymentInfo(fromAddress)
-          .then(setPartialFee)
-          .catch((e) => {
-            console.log(e);
-            setTransactionFee('0');
-          });
-      } else {
-        currentNetwork.api.tx.balances
-          .transfer(address, amount)
-          .paymentInfo(fromAddress)
-          .then(setPartialFee)
-          .catch((e) => {
-            console.log(e);
-            setTransactionFee('0');
-          });
-      }
-    }
+      let transferExtrinsic;
+      let deposit;
 
-    setExistentialDeposit(
-      formatBalance(
-        currentNetwork?.api.consts.balances.existentialDeposit.toString(),
-        {
+      if (currentAsset.type === AssetType.STATEMINE) {
+        transferExtrinsic = currentNetwork.api.tx.assets.transfer(
+          currentAsset.assetId,
+          address,
+          amount
+        );
+        deposit = currentNetwork?.api.consts.assets.existentialDeposit;
+      } else if (currentAsset.type === AssetType.ORML) {
+        transferExtrinsic = currentNetwork.api.tx.currencies.transfer(
+          address,
+          currentAsset.assetId,
+          amount
+        );
+
+        deposit = currentNetwork?.api.consts.currencies.existentialDeposit;
+      } else {
+        transferExtrinsic = currentNetwork.api.tx.balances.transfer(
+          address,
+          amount
+        );
+
+        deposit = currentNetwork?.api.consts.balances.existentialDeposit;
+      }
+
+      transferExtrinsic
+        .paymentInfo(fromAddress)
+        .then(setPartialFee)
+        .catch((e) => {
+          console.log(e);
+          setTransactionFee('0');
+        });
+
+      setExistentialDeposit(
+        formatBalance(deposit.toString(), {
           withUnit: false,
           decimals: currentAsset?.precision,
-        }
-      )
-    );
-  }, [amount, wallets, currentNetwork, currentAsset, address, setPartialFee]);
+        })
+      );
+    }
+  }, [
+    amount,
+    wallets,
+    currentNetwork,
+    currentAsset,
+    address,
+    setPartialFee,
+    defaultAsset,
+  ]);
 
   const setNetwork = useCallback(
     (value: string) => {
@@ -223,12 +239,16 @@ const Transfer: React.FC = () => {
       </div>
       <div className="p-2 text-gray-500 flex justify-between">
         <div>Transaction fee:</div>
-        <div>{transactionFee}</div>
+        <div>
+          {transactionFee} {defaultAsset?.symbol}
+        </div>
       </div>
       {wallets?.find(isMultisig) && (
         <div className="p-2 text-gray-500 flex justify-between">
           <div>Existential deposit:</div>
-          <div>{existentialDeposit}</div>
+          <div>
+            {existentialDeposit} {defaultAsset?.symbol}
+          </div>
         </div>
       )}
       <div className="p-2">
