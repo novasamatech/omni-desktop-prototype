@@ -14,7 +14,7 @@ const AddWallet: React.FC = () => {
 
     if (walletName.length > 0) {
       await db.wallets.add({
-        name: walletName,
+        name: walletName.trim(),
         mainAccounts: [],
         chainAccounts: [],
       });
@@ -24,7 +24,7 @@ const AddWallet: React.FC = () => {
   };
 
   const onChangeWalletName = (event: ChangeEvent<HTMLInputElement>) => {
-    setWalletName(event.target.value.trim());
+    setWalletName(event.target.value);
   };
 
   return (

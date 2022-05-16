@@ -6,6 +6,7 @@ import { decodeAddress, encodeAddress } from '@polkadot/keyring';
 import { u8aToHex } from '@polkadot/util';
 import { Dialog } from '@headlessui/react';
 import { useSetRecoilState } from 'recoil';
+import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 
 import { Account, ChainAccount, Chain, db } from '../../db/db';
 import InputText from '../../ui/Input';
@@ -15,8 +16,10 @@ import ListItem from '../../ui/ListItem';
 import Select, { OptionType } from '../../ui/Select';
 import Address from '../../ui/Address';
 import DialogContent from '../../ui/DialogContent';
-import { Routes } from '../../../common/consts';
+import { Routes, ErrorTypes } from '../../../common/consts';
 import { selectedWalletsState } from '../../store/selectedWallets';
+import { validateAddress } from '../../utils/dataValidation';
+import ErrorMessage from '../../ui/ErrorMessage';
 
 const enum AccountTypes {
   MAIN = 'MAIN',
@@ -34,11 +37,23 @@ const AccountTypeOptions = [
   },
 ];
 
+type AddressForm = {
+  address: string;
+};
+
 const Wallet: React.FC = () => {
   const history = useHistory();
   const { id } = useParams<{ id: string }>();
 
-  const [address, setAddress] = useState('');
+  const {
+    handleSubmit,
+    control,
+    reset,
+    formState: { isValid, errors },
+  } = useForm<AddressForm>({
+    mode: 'onChange',
+  });
+
   const [name, setName] = useState('');
   const [networkOptions, setNetworkOptions] = useState<OptionType[]>([]);
   const [accountNetwork, setAccountNetwork] = useState<string>();
@@ -152,8 +167,7 @@ const Wallet: React.FC = () => {
     setAccounts(accountList);
   }, [networks, wallet]);
 
-  const addAccount = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const addAccount: SubmitHandler<AddressForm> = async ({ address }) => {
     // TODO: Add validation for account address
     // const keyring = new Keyring();
     // const pair = keyring.addFromAddress(address);
@@ -191,7 +205,7 @@ const Wallet: React.FC = () => {
           ],
         });
 
-        setAddress('');
+        reset();
       }
     }
   };
@@ -209,20 +223,17 @@ const Wallet: React.FC = () => {
 
   const updateWallet = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
     if (wallet?.id) {
+      const trimmedName = name.trim();
       await db.wallets.update(wallet.id, {
-        name,
+        name: trimmedName,
       });
+      setName(trimmedName);
     }
   };
 
   const onChangeWalletName = (event: ChangeEvent<HTMLInputElement>) => {
     setName(event.target.value);
-  };
-
-  const onChangeAccountAddress = (event: ChangeEvent<HTMLInputElement>) => {
-    setAddress(event.target.value);
   };
 
   const onChangeAccountNetwork = (event: ChangeEvent<HTMLSelectElement>) => {
@@ -253,7 +264,7 @@ const Wallet: React.FC = () => {
         </div>
 
         <div className="p-2 flex items-center">
-          <Button size="lg" submit>
+          <Button size="lg" disabled={name === wallet?.name} submit>
             Update
           </Button>
           <Button
@@ -268,7 +279,7 @@ const Wallet: React.FC = () => {
 
       <h2 className="font-light text-xl p-4">Accounts</h2>
 
-      <form onSubmit={addAccount}>
+      <form onSubmit={handleSubmit(addAccount)}>
         <div className="p-2">
           <Select
             className="w-full"
@@ -279,8 +290,8 @@ const Wallet: React.FC = () => {
             onChange={onChangeAccountType}
           />
         </div>
-        <div className="p-2">
-          {accountType === AccountTypes.CHAIN && (
+        {accountType === AccountTypes.CHAIN && (
+          <div className="p-2">
             <Select
               className="w-full"
               label="Network"
@@ -289,29 +300,47 @@ const Wallet: React.FC = () => {
               options={networkOptions}
               onChange={onChangeAccountNetwork}
             />
-          )}
-          {/* {accountType === AccountTypes.MAIN && (
-          <Select
-            className="w-full"
-            label="Network type"
-            placeholder="Network type"
-            value={networkType}
-            options={networkOptions}
-            onChange={onChangeNetworkType}
+
+            {/* {accountType === AccountTypes.MAIN && (
+              <Select
+                className="w-full"
+                label="Network type"
+                placeholder="Network type"
+                value={networkType}
+                options={networkOptions}
+                onChange={onChangeNetworkType}
+              />
+            )} */}
+          </div>
+        )}
+        <div className="p-2">
+          <Controller
+            name="address"
+            control={control}
+            rules={{ required: true, validate: validateAddress }}
+            render={({ field: { onChange, onBlur, value } }) => (
+              <InputText
+                onChange={onChange}
+                onBlur={onBlur}
+                value={value}
+                invalid={!!errors.address}
+                address
+                name="address"
+                className="w-full"
+                label="Account address"
+                placeholder="Account address"
+              />
+            )}
           />
-        )} */}
+          <ErrorMessage show={errors.address?.type === ErrorTypes.VALIDATE}>
+            The address is not valid, please type it again
+          </ErrorMessage>
+          <ErrorMessage show={errors.address?.type === ErrorTypes.REQUIRED}>
+            The address is required
+          </ErrorMessage>
         </div>
         <div className="p-2">
-          <InputText
-            className="w-full"
-            label="Account address"
-            placeholder="Account address"
-            value={address}
-            onChange={onChangeAccountAddress}
-          />
-        </div>
-        <div className="p-2">
-          <Button size="lg" submit>
+          <Button size="lg" submit disabled={!isValid}>
             Add account
           </Button>
         </div>

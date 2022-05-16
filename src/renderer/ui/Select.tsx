@@ -1,5 +1,5 @@
 /* eslint-disable react/require-default-props */
-import React, { ChangeEvent } from 'react';
+import React, { ChangeEvent, FocusEvent } from 'react';
 
 export type OptionType = {
   value: string;
@@ -16,6 +16,7 @@ interface Props {
   disabled?: boolean;
   value?: string | number;
   onChange?: (event: ChangeEvent<HTMLSelectElement>) => void;
+  onBlur?: (event: FocusEvent<HTMLSelectElement>) => void;
   className?: string;
   inputClassName?: string;
   options: OptionType[];
@@ -32,6 +33,7 @@ const Select: React.FC<Props> = ({
   options,
   value,
   onChange,
+  onBlur,
   className = '',
   inputClassName = '',
 }) => {
@@ -57,6 +59,7 @@ const Select: React.FC<Props> = ({
         defaultValue={value}
         disabled={disabled}
         onChange={onChange}
+        onBlur={onBlur}
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
