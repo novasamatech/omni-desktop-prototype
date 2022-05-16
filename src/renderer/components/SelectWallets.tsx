@@ -4,8 +4,9 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import Checkbox from '../ui/Checkbox';
 
 import { selectedWalletsState } from '../store/selectedWallets';
-import { db, MultisigWallet, Wallet } from '../db/db';
+import { db, Wallet } from '../db/db';
 import mst from '../../../assets/mst.svg';
+import { isMultisig } from '../utils/dataValidation';
 
 const SelectWallets: React.FC = () => {
   // TODO: select wallets after hot update on interface
@@ -39,7 +40,7 @@ const SelectWallets: React.FC = () => {
               />
               <div>{wallet.name}</div>
             </div>
-            {(wallet as MultisigWallet).originContacts?.length && (
+            {isMultisig(wallet) && (
               <div className="flex items-center">
                 <img src={mst} alt="mst" className="h-4 ml-2" />
               </div>

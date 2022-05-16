@@ -1,21 +1,22 @@
 // import { useEffect, useState } from 'react';
 // import { useLiveQuery } from 'dexie-react-hooks';
 import { MemoryRouter as Router, Route, Switch } from 'react-router-dom';
-import { RecoilRoot, useRecoilValue } from 'recoil';
+import { RecoilRoot } from 'recoil';
+import { useLiveQuery } from 'dexie-react-hooks';
 // import { ApiPromise, WsProvider } from '@polkadot/api';
 // import { ProviderInterface } from '@polkadot/rpc-provider/types';
 import React from 'react';
 import FirstColumn from './components/FirstColumn';
 import SecondColumn from './components/SecondColumn';
 import ThirdColumn from './components/ThirdColumn';
-import Busket from './components/Busket';
+import Basket from './components/Basket';
 // import { connectionState } from './store/api';
-import { transactionBusketDataState } from './store/transactionBusket';
 import './App.css';
 import ShowCode from './components/ShowCode';
 import ScanCode from './components/ScanCode';
 import LinkButton from './ui/LinkButton';
 import { Routes } from '../common/consts';
+import { db } from './db/db';
 import MatrixProvider from './modules/matrixProvider';
 // import { ActiveType, db } from './db/db';
 // import { getChainSpec, getKnownChainId } from '../common/networks';
@@ -26,8 +27,7 @@ const Main = () => {
   // const [connections, setConnections] = useRecoilState(connectionState);
   // const [inited, setInited] = useState(false);
 
-  const { transactionsAmount } = useRecoilValue(transactionBusketDataState);
-
+  const transactions = useLiveQuery(() => db.transactions.toArray());
   // const activeNetworks = useLiveQuery(() => {
   //   return db.chains
   //     .where('activeType')
@@ -87,14 +87,14 @@ const Main = () => {
         </div>
       )} */}
 
-      {transactionsAmount > 0 && (
+      {transactions?.length && (
         <div className="flex justify-center items-center fixed bottom-0 w-screen h-20 bg-gray-100">
           <div className="mr-12 w-36">
-            View your {transactionsAmount} pending{' '}
-            {transactionsAmount > 1 ? 'operations' : 'operation'}
+            View your {transactions.length} pending{' '}
+            {transactions.length > 1 ? 'operations' : 'operation'}
           </div>
-          <LinkButton to={Routes.BUSKET} size="lg">
-            View {transactionsAmount > 1 ? 'operations' : 'operation'}
+          <LinkButton to={Routes.BASKET} size="lg">
+            View {transactions.length > 1 ? 'operations' : 'operation'}
           </LinkButton>
         </div>
       )}
@@ -108,7 +108,7 @@ const App: React.FC = () => {
       <MatrixProvider>
         <Router>
           <Switch>
-            <Route path={Routes.BUSKET} component={Busket} />
+            <Route path={Routes.BASKET} component={Basket} />
             <Route path={Routes.SHOW_CODE} component={ShowCode} />
             <Route path={Routes.SCAN_CODE} component={ScanCode} />
             <Route path="/*" component={Main} />

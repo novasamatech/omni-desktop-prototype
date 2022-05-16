@@ -1,12 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { useSetRecoilState, useRecoilValue } from 'recoil';
+import React from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { useSetRecoilState } from 'recoil';
 import { useHistory } from 'react-router';
+import { format } from 'date-fns';
 import Button from '../ui/Button';
-import { TransactionData } from '../../common/types';
 import { currentTransactionState } from '../store/currentTransaction';
-import { connectionState, Connection } from '../store/api';
 import Address from '../ui/Address';
 import { Routes } from '../../common/consts';
+import { db, Transaction as TransactionData, TransactionType } from '../db/db';
+import { getAddressFromWallet } from '../utils/account';
 
 type Props = {
   transaction: TransactionData;
@@ -14,29 +16,14 @@ type Props = {
 
 const Transaction: React.FC<Props> = ({ transaction }: Props) => {
   const setCurrentTransaction = useSetRecoilState(currentTransactionState);
-  const networks = useRecoilValue(connectionState);
+  const network = useLiveQuery(() =>
+    db.chains.get({ chainId: transaction.chainId })
+  );
+
   const history = useHistory();
-
-  const [transactionNetwork, setNetwork] = useState<Connection>();
-  const [tokenSymbol, setTokenSymbol] = useState('');
-
-  useEffect(() => {
-    const getTokenSymbol = async () => {
-      const chainProperties =
-        await transactionNetwork?.api.registry.getChainProperties();
-      const symbol = chainProperties?.tokenSymbol.unwrap()[0].toString();
-      setTokenSymbol(symbol || '');
-    };
-
-    const network = Object.values(networks).find(
-      (n: Connection) => n.network.name === transaction.network
-    );
-
-    if (network) {
-      setNetwork(network);
-      getTokenSymbol();
-    }
-  }, [networks, transactionNetwork, transaction]);
+  const tokenSymbol =
+    network?.assets.find((a) => a.assetId === transaction.data.assetId)
+      ?.symbol || '';
 
   const showQR = () => {
     setCurrentTransaction(transaction);
@@ -46,21 +33,29 @@ const Transaction: React.FC<Props> = ({ transaction }: Props) => {
   return (
     <div className="bg-gray-100 p-4 m-4 rounded-lg">
       <div>
-        <div className="text-gray-500">Selected account</div>
-        <div>
-          <Address address={transaction.address} />
+        <div className="text-gray-500 text-sm">
+          {format(transaction.createdAt, 'HH:mm:ss dd MMM, yyyy')}
         </div>
+        <div className="text-gray-500">Selected account</div>
+        {network && (
+          <div>
+            <Address
+              address={getAddressFromWallet(transaction.wallet, network)}
+            />
+          </div>
+        )}
       </div>
       <div className="text-gray-500">Operations details:</div>
-      {transaction.type === 'transfer' ? (
+      {transaction.type === TransactionType.TRANSFER ||
+      transaction.type === TransactionType.MULTISIG_TRANSFER ? (
         <div className="flex">
-          Transfer {transaction.payload.amount} {tokenSymbol} to{' '}
-          <Address address={transaction.payload.address} />
+          Transfer {transaction.data.amount} {tokenSymbol} to{' '}
+          <Address address={transaction.data.address} />
         </div>
       ) : (
         <div>
           <div>Type: {transaction.type}</div>
-          {Object.entries(transaction.payload).map((type, value) => (
+          {Object.entries(transaction.data).map((type, value) => (
             <div>
               {type}: {value}
             </div>

@@ -16,11 +16,7 @@ import { getChainSpec, getKnownChainId } from '../../../common/networks';
 const NetworkList: React.FC = () => {
   const [connections, setConnections] = useRecoilState(connectionState);
 
-  const networks = useLiveQuery(async () => {
-    const networkList = await db.chains.toArray();
-
-    return networkList;
-  });
+  const networks = useLiveQuery(() => db.chains.toArray());
 
   useEffect(() => {
     const loadChains = async () => {

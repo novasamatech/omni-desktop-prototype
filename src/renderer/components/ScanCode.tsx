@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSetRecoilState, useRecoilValue } from 'recoil';
+import { useRecoilValue } from 'recoil';
 import { useHistory } from 'react-router-dom';
 import { QrScanSignature } from '@polkadot/react-qr';
 import { GenericExtrinsic } from '@polkadot/types';
@@ -11,7 +11,6 @@ import {
   UnsignedTransaction,
 } from '@substrate/txwrapper-polkadot';
 import { connectionState } from '../store/api';
-import { transactionBusketState } from '../store/transactionBusket';
 import {
   currentTransactionState,
   currentUnsignedState,
@@ -19,6 +18,7 @@ import {
 import { HexString } from '../../common/types';
 import LinkButton from '../ui/LinkButton';
 import { Routes } from '../../common/consts';
+import { db, TransactionStatus } from '../db/db';
 
 // TODO: Move this function to utils
 function createSignedTx(
@@ -52,8 +52,6 @@ const ScanCode: React.FC = () => {
   const networks = useRecoilValue(connectionState);
   const history = useHistory();
 
-  const setTransactions = useSetRecoilState(transactionBusketState);
-
   const transaction = useRecoilValue(currentTransactionState);
   const unsigned = useRecoilValue(currentUnsignedState);
 
@@ -62,7 +60,7 @@ const ScanCode: React.FC = () => {
     const signature = payload.signature || '';
     if (transaction && unsigned && Object.values(networks).length) {
       const network = Object.values(networks).find(
-        (n) => n.network.name === transaction.network
+        (n) => n.network.chainId === transaction.chainId
       );
 
       if (network && network.api) {
@@ -84,11 +82,13 @@ const ScanCode: React.FC = () => {
 
         const actualTxHash = await network.api.rpc.author.submitExtrinsic(tx);
 
-        if (actualTxHash) {
-          setTransactions((trxs) => {
-            return trxs.filter((t) => t !== transaction);
+        if (actualTxHash && transaction.id) {
+          db.transactions.update(transaction.id, {
+            ...transaction,
+            status: TransactionStatus.CONFIRMED,
           });
-          history.push(Routes.BUSKET);
+
+          history.push(Routes.BASKET);
         }
       }
     }

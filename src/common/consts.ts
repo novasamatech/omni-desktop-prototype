@@ -1,6 +1,6 @@
 /* eslint-disable import/prefer-default-export */
 export const Routes = {
-  BUSKET: '/basket',
+  BASKET: '/basket',
   SHOW_CODE: '/show-code',
   SCAN_CODE: '/scan-code',
   TRANSFER: '/transfer',
