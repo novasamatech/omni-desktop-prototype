@@ -42,7 +42,7 @@ type RoomCreation = {
   inviterPublicKey: string;
   threshold: number;
   signatories: {
-    matrixAddress: `@${string}:matrix.org`;
+    matrixAddress: `@${string}`;
     networkAddress: HexString;
     isInviter: boolean;
   }[];
@@ -69,7 +69,7 @@ type Subscriptions = {
   onSyncEnd: () => void;
   onSyncProgress: () => void;
   onInvite: (roomId: string) => void;
-  onMessage: (test: string) => void;
+  onMessage: (message: string) => void;
   onMstInitiate: (data: any) => void;
   onMstApprove: (data: any) => void;
   onMstFinalApprove: (data: any) => void;
@@ -231,13 +231,13 @@ class Matrix implements SecureMessenger {
   /**
    * Create a room for new MST account
    * @param params room configuration
-   * @param signWithParity create signature with Parity Signer
+   * @param signWithColdWallet create signature with cold wallet
    * @return {Promise}
    * @throws {Error}
    */
   async createRoom(
     params: RoomCreation,
-    signWithParity: (value: string) => Promise<string>,
+    signWithColdWallet: (value: string) => Promise<string>,
   ): Promise<void | never> {
     this.checkClientLoggedIn();
 
@@ -248,7 +248,7 @@ class Matrix implements SecureMessenger {
         preset: Preset.TrustedPrivateChat,
       });
 
-      const signature = await signWithParity(
+      const signature = await signWithColdWallet(
         `${params.mstAccountAddress}${roomId}`,
       );
       await this.initialStateEvents(roomId, params, signature);
@@ -373,13 +373,11 @@ class Matrix implements SecureMessenger {
   listOfOmniRooms(type: Membership.INVITE | Membership.JOIN): Room[] {
     this.checkClientLoggedIn();
 
-    const omniRooms = this.matrixClient
+    return this.matrixClient
       .getRooms()
-      .filter((room) => this.isOmniRoom(room.name));
-
-    if (omniRooms.length === 0) return [];
-
-    return omniRooms.filter((room) => room.getMyMembership() === type);
+      .filter(
+        (room) => this.isOmniRoom(room.name) && room.getMyMembership() === type,
+      );
   }
 
   /**
