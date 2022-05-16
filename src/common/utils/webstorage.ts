@@ -68,7 +68,7 @@ function getJsonItem(store: Storage, key: string) {
 
 function getKeysWithPrefix(
   store: { length: number; key: (arg0: number) => any },
-  prefix: string
+  prefix: string,
 ) {
   const results = [];
   for (let i = 0; i < store.length; ++i) {
@@ -84,7 +84,7 @@ function removeByPrefix(
     key: (arg0: number) => any;
     removeItem: (arg0: any) => void;
   },
-  prefix: string
+  prefix: string,
 ) {
   const toRemove = [];
   for (let i = 0; i < store.length; ++i) {
@@ -118,7 +118,7 @@ export default class WebStorageSessionStore {
       typeof webStore.length !== 'number'
     ) {
       throw new Error(
-        'Supplied webStore does not meet the WebStorage API interface'
+        'Supplied webStore does not meet the WebStorage API interface',
       );
     }
   }

@@ -4,7 +4,10 @@
 
 import webpack from 'webpack';
 import webpackPaths from './webpack.paths';
-import { dependencies as externals, version } from '../../release/app/package.json';
+import {
+  dependencies as externals,
+  version,
+} from '../../release/app/package.json';
 
 export default {
   externals: [...Object.keys(externals || {})],
@@ -38,12 +41,14 @@ export default {
     extensions: ['.js', '.jsx', '.json', '.ts', '.tsx'],
     modules: [webpackPaths.srcPath, 'node_modules'],
     fallback: {
-      "crypto": require.resolve("crypto-browserify"),
-      "stream": require.resolve("stream-browserify"),
-      "url": false,
+      crypto: require.resolve('crypto-browserify'),
+      stream: require.resolve('stream-browserify'),
+      url: false,
+      fs: false,
+      path: false,
     },
     alias: {
-      'react/jsx-runtime': require.resolve('react/jsx-runtime')
+      'react/jsx-runtime': require.resolve('react/jsx-runtime'),
     },
   },
 
@@ -54,9 +59,8 @@ export default {
     new webpack.DefinePlugin({
       'process.env': {
         VERSION: JSON.stringify(version),
-        WS_URL: JSON.stringify(process.env.WS_URL)
-      }
+        WS_URL: JSON.stringify(process.env.WS_URL),
+      },
     }),
-
   ],
 };

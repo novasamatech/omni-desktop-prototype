@@ -5,10 +5,10 @@ import HtmlWebpackPlugin from 'html-webpack-plugin';
 import chalk from 'chalk';
 import { merge } from 'webpack-merge';
 import { spawn, execSync } from 'child_process';
+import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin';
 import baseConfig from './webpack.config.base';
 import webpackPaths from './webpack.paths';
 import checkNodeEnv from '../scripts/check-node-env';
-import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin';
 
 // When an ESLint server is running, we can't set the NODE_ENV so we'll check if it's
 // at the dev webpack config is not accidentally run in a production environment
@@ -19,7 +19,7 @@ if (process.env.NODE_ENV === 'production') {
 const port = process.env.PORT || 1212;
 const manifest = path.resolve(webpackPaths.dllPath, 'renderer.json');
 const requiredByDLLConfig = module.parent.filename.includes(
-  'webpack.config.renderer.dev.dll'
+  'webpack.config.renderer.dev.dll',
 );
 
 /**
@@ -31,8 +31,8 @@ if (
 ) {
   console.log(
     chalk.black.bgYellow.bold(
-      'The DLL files are missing. Sit back while we build them for you with "npm run build-dll"'
-    )
+      'The DLL files are missing. Sit back while we build them for you with "npm run build-dll"',
+    ),
   );
   execSync('npm run postinstall');
 }
@@ -76,7 +76,7 @@ export default merge(baseConfig, {
             },
           },
           'sass-loader',
-          'postcss-loader'
+          'postcss-loader',
         ],
         include: /\.module\.s?(c|a)ss$/,
       },
@@ -85,7 +85,7 @@ export default merge(baseConfig, {
         use: ['style-loader', 'css-loader', 'sass-loader', 'postcss-loader'],
         exclude: /\.module\.s?(c|a)ss$/,
       },
-      //Font Loader
+      // Font Loader
       {
         test: /\.(woff|woff2|eot|ttf|otf)$/i,
         type: 'asset/resource',
@@ -101,10 +101,10 @@ export default merge(baseConfig, {
           },
         },
       },
-      // Common Image Formats
+      // Common Image Formats + WASM
       {
-        test: /\.(?:ico|gif|png|jpg|jpeg|webp)$/,
-        use: 'url-loader',
+        test: /\.(ico|gif|png|jpg|jpeg|webp|wasm)$/,
+        type: 'asset/resource',
       },
     ],
   },

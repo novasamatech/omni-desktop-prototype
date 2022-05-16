@@ -1,12 +1,11 @@
 // import { useEffect, useState } from 'react';
 // import { useLiveQuery } from 'dexie-react-hooks';
-import { MemoryRouter as Router, Switch, Route } from 'react-router-dom';
+import { MemoryRouter as Router, Route, Switch } from 'react-router-dom';
 import { RecoilRoot } from 'recoil';
 import { useLiveQuery } from 'dexie-react-hooks';
-
 // import { ApiPromise, WsProvider } from '@polkadot/api';
 // import { ProviderInterface } from '@polkadot/rpc-provider/types';
-
+import React from 'react';
 import FirstColumn from './components/FirstColumn';
 import SecondColumn from './components/SecondColumn';
 import ThirdColumn from './components/ThirdColumn';
@@ -18,6 +17,8 @@ import ScanCode from './components/ScanCode';
 import LinkButton from './ui/LinkButton';
 import { Routes } from '../common/consts';
 import { db } from './db/db';
+import MatrixProvider from './modules/matrixProvider';
+// import { ActiveType, db } from './db/db';
 // import { getChainSpec, getKnownChainId } from '../common/networks';
 
 const Main = () => {
@@ -101,17 +102,21 @@ const Main = () => {
   );
 };
 
-export default function App() {
+const App: React.FC = () => {
   return (
     <RecoilRoot>
-      <Router>
-        <Switch>
-          <Route path={Routes.BASKET} component={Basket} />
-          <Route path={Routes.SHOW_CODE} component={ShowCode} />
-          <Route path={Routes.SCAN_CODE} component={ScanCode} />
-          <Route path="/*" component={Main} />
-        </Switch>
-      </Router>
+      <MatrixProvider>
+        <Router>
+          <Switch>
+            <Route path={Routes.BASKET} component={Basket} />
+            <Route path={Routes.SHOW_CODE} component={ShowCode} />
+            <Route path={Routes.SCAN_CODE} component={ScanCode} />
+            <Route path="/*" component={Main} />
+          </Switch>
+        </Router>
+      </MatrixProvider>
     </RecoilRoot>
   );
-}
+};
+
+export default App;

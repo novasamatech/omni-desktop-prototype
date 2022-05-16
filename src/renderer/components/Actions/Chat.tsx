@@ -1,182 +1,221 @@
-/* eslint-disable no-await-in-loop */
-/* eslint-disable guard-for-in */
-/* eslint-disable no-restricted-syntax */
-import React, { ChangeEvent, useState } from 'react';
-import * as sdk from 'matrix-js-sdk';
+import React, { ChangeEvent, FormEvent, useEffect, useState } from 'react';
+import { Room } from 'matrix-js-sdk';
 import InputText from '../../ui/Input';
 import Button from '../../ui/Button';
-import WebStorageSessionStore from '../../../common/utils/webstorage';
-
-enum Visibility {
-  Public = 'public',
-  Private = 'private',
-}
-
-const ROOM_CRYPTO_CONFIG = { algorithm: 'm.megolm.v1.aes-sha2' };
+import { useMatrix } from '../../modules/matrixProvider';
+import { Membership } from '../../modules/matrix';
 
 const Chat: React.FC = () => {
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
+  const [roomList, setRoomList] = useState<Room[]>([]);
 
-  const onLoginClick = () => {
-    const extendMatrixClient = (matrixClient: sdk.MatrixClient) => {
-      // automatic join
-      matrixClient.on(sdk.RoomMemberEvent.Membership, async (_, member) => {
-        if (
-          member.membership === 'invite' &&
-          member.userId === matrixClient.getUserId()
-        ) {
-          await matrixClient.joinRoom(member.roomId);
-          // setting up of room encryption seems to be triggered automatically
-          // but if we don't wait for it the first messages we send are unencrypted
-          await matrixClient.setRoomEncryption(
-            member.roomId,
-            ROOM_CRYPTO_CONFIG
-          );
-        }
+  const matrix = useMatrix();
+
+  useEffect(() => {
+    if (matrix.isLoggedIn()) {
+      matrix.setupSubscribers({
+        onSyncProgress: () => console.log('=== 🟢 progess'),
+        onSyncEnd: () => console.log('=== 🟢 end'),
+        onMessage: () => console.log('=== 🟢 message'),
+        onInvite: () => console.log('=== 🟢 invite'),
+        onMstInitiate: (value) =>
+          console.log(`=== 🟢 OmniMstEvents.INIT ${value.toString()}`),
+        onMstApprove: (value) =>
+          console.log(`=== 🟢 OmniMstEvents.APPROVE ${value.toString()}`),
+        onMstFinalApprove: (value) =>
+          console.log(`=== 🟢 OmniMstnts.FINAL_APPROVE ${value.toString()}`),
+        onMstCancel: (value) =>
+          console.log(`=== 🟢 OmniMstEvents.CANCEL ${value.toString()}`),
       });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-      matrixClient.on(sdk.MatrixEventEvent.Decrypted, (event: any) => {
-        if (event.getType() === 'm.room.message') {
-          console.log('Got encrypted message: ', event.getContent().body);
-        } else {
-          console.log('decrypted an event of type', event.getType());
-          console.log(event);
-        }
-      });
+  useEffect(() => {
+    if (matrix.isLoggedIn()) {
+      setRoomList(matrix.listOfOmniRooms(Membership.JOIN));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-      // matrixClient.sendTextMessage = async (message, roomId: string) => {
-      //   return matrixClient.sendMessage(roomId, {
-      //     body: message,
-      //     msgtype: 'm.text',
-      //   });
-      // };
-    };
-
-    const createEncryptedRoom = async (
-      matrixClient: sdk.MatrixClient,
-      usersToInvite: string[]
-    ) => {
-      const { room_id: roomId } = await matrixClient.createRoom({
-        visibility: Visibility.Public,
-        invite: usersToInvite,
-      });
-
-      console.log(roomId);
-
-      // matrixClient.setRoomEncryption() only updates local state
-      // but does not send anything to the server
-      // (see https://github.com/matrix-org/matrix-js-sdk/issues/905)
-      // so we do it ourselves with 'sendStateEvent'
-      await matrixClient.sendStateEvent(
-        roomId,
-        'm.room.encryption',
-        ROOM_CRYPTO_CONFIG
-      );
-      await matrixClient.setRoomEncryption(roomId, ROOM_CRYPTO_CONFIG);
-
-      // Marking all devices as verified
-      const room = matrixClient.getRoom(roomId);
-      if (room) {
-        const members = (await room.getEncryptionTargetMembers()).map(
-          (x) => x.userId
-        );
-        const memberkeys = await matrixClient.downloadKeys(members);
-        for (const userId in memberkeys) {
-          for (const deviceId in memberkeys[userId]) {
-            await matrixClient.setDeviceVerified(userId, deviceId);
-          }
-        }
-
-        return roomId;
-      }
-
-      return roomId;
-    };
-
-    const startClient = async () => {
-      const loginClient = sdk.createClient({
-        baseUrl: 'https://matrix.org',
-      });
-      const userLoginResult = await loginClient.loginWithPassword(
-        login,
-        password
-      );
-
-      const client = sdk.createClient({
-        baseUrl: 'https://matrix.org',
-        userId: userLoginResult.user_id,
-        accessToken: userLoginResult.access_token,
-        deviceId: userLoginResult.device_id,
-        sessionStore: new WebStorageSessionStore(window.localStorage),
-        cryptoStore: new sdk.MemoryCryptoStore(),
-      });
-
-      extendMatrixClient(client);
-      console.log(1);
-
-      await client.initCrypto();
-      await window.Olm.init();
-      console.log(2);
-      await client.startClient({ initialSyncLimit: 10 });
-      console.log(3);
-      const roomId = await createEncryptedRoom(client, []);
-
-      if (roomId) {
-        client.sendTextMessage(roomId, 'Hello');
-        client.sendEvent(roomId, 'm.room.message', {
-          body: 'Hello',
-          msgtype: 'm.text',
-        });
-      }
-
-      // client.on('sync', async (state: any) => {
-      //   if (state === 'PREPARED') {
-      //     console.log('prepared');
-      //   } else {
-      //     console.log(state);
-      //   }
-      // });
-    };
-
-    startClient();
+  const onLoginClick = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    try {
+      await matrix.loginWithCreds(login, password);
+    } catch (e) {
+      console.log(e);
+    }
   };
-
+  const onCreateRoom = () => {
+    matrix.createRoom(
+      {
+        mstAccountAddress: '0xCCCC',
+        inviterPublicKey: '0x24dsfb',
+        threshold: 2,
+        signatories: [
+          {
+            isInviter: true,
+            matrixAddress: '@tuul_wq:matrix.org',
+            networkAddress: '0x8acac2',
+          },
+          {
+            isInviter: false,
+            matrixAddress: '@pamelo:matrix.org',
+            networkAddress: '0x2340dfa',
+          },
+          // {
+          //   isInviter: false,
+          //   matrixAddress: '@asmadek:matrix.org',
+          //   networkAddress: '0xabc24',
+          // },
+        ],
+      },
+      (value) => Promise.resolve(`SIGNATURE ${value}`),
+    );
+  };
   const onChangeLogin = (event: ChangeEvent<HTMLInputElement>) => {
     setLogin(event.target.value);
   };
-
   const onChangePassword = (event: ChangeEvent<HTMLInputElement>) => {
     setPassword(event.target.value);
+  };
+  const onInvite = () => {
+    matrix.invite('123', 'asd');
+  };
+
+  const onSetRoom = (roomId: string) => () => {
+    matrix.setRoom(roomId);
+    const messages = matrix.timelineMessages();
+    console.log(messages);
+  };
+
+  const onMstInit = () => {
+    matrix.mstInitiate({
+      callData: '0x12',
+      callHash: '0x233',
+      chainId: '0xdsfsf',
+      description: 'maaan',
+    });
+  };
+
+  const onMstApprove = () => {
+    matrix.mstCancel({
+      callHash: '0x233',
+      chainId: '0xdsfsf',
+      description: 'maaan',
+    });
+  };
+
+  const onMstFinal = () => {
+    matrix.mstFinalApprove({
+      chainId: '0xdfd',
+      callHash: '0x21dsf',
+    });
+  };
+
+  const onMstCancel = () => {
+    matrix.mstCancel({
+      callHash: '0x233',
+      chainId: '0xdsfsf',
+      description: 'CANCEL',
+    });
+  };
+
+  const onSendText = () => {
+    matrix.sendMessage('TEST 123');
   };
 
   return (
     <>
-      <h2 className="font-light text-xl p-4">Chat</h2>
-      <div className="p-2">
-        <InputText
-          className="w-full"
-          label="Login"
-          placeholder="Login"
-          value={login}
-          onChange={onChangeLogin}
-        />
+      <form onSubmit={onLoginClick}>
+        <h2 className="font-light text-xl p-4">Chat</h2>
+        <div className="p-2 flex gap-3">
+          <InputText
+            className="w-full"
+            label="Login"
+            placeholder="Login"
+            value={login}
+            onChange={onChangeLogin}
+          />
+
+          <InputText
+            className="w-full"
+            label="Password"
+            placeholder="Password"
+            type="password"
+            value={password}
+            onChange={onChangePassword}
+          />
+        </div>
+
+        <div className="p-2">
+          <Button submit>Login</Button>
+          <Button className="mt-2" onClick={onCreateRoom}>
+            Create room
+          </Button>
+        </div>
+      </form>
+
+      <div className="p-2 flex gap-2">
+        <button
+          className="border-2 border-b-blue-700"
+          type="button"
+          onClick={onInvite}
+        >
+          Invite
+        </button>
+        <button
+          className="border-2 border-b-blue-700"
+          type="button"
+          onClick={onMstInit}
+        >
+          MST init
+        </button>
+        <button
+          className="border-2 border-b-blue-700"
+          type="button"
+          onClick={onMstApprove}
+        >
+          MST approve
+        </button>
+        <button
+          className="border-2 border-b-blue-700"
+          type="button"
+          onClick={onMstFinal}
+        >
+          MST final approve
+        </button>
+        <button
+          className="border-2 border-b-blue-700"
+          type="button"
+          onClick={onMstCancel}
+        >
+          MST cancel
+        </button>
+        <button
+          className="border-2 border-b-blue-700"
+          type="button"
+          onClick={onSendText}
+        >
+          Send text
+        </button>
       </div>
-      <div className="p-2">
-        <InputText
-          className="w-full"
-          label="Password"
-          placeholder="Password"
-          type="password"
-          value={password}
-          onChange={onChangePassword}
-        />
-      </div>
-      <div className="p-2">
-        <Button size="lg" onClick={onLoginClick}>
-          Login
-        </Button>
-      </div>
+
+      <ul>
+        {roomList.map((room) => (
+          <li key={room.roomId} className="flex gap-3">
+            <span>{room.name}</span>
+            <button
+              className="border-2 border-b-blue-700"
+              type="button"
+              onClick={onSetRoom(room.roomId)}
+            >
+              Set room
+            </button>
+          </li>
+        ))}
+      </ul>
     </>
   );
 };
