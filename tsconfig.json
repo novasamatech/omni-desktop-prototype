@@ -24,7 +24,7 @@
     "skipLibCheck": true,
     "outDir": "release/app/dist",
     "paths": {
-      "@common": ["./src/common/*"]
+      "@common/*": ["/common/*"]
     }
   },
   "exclude": ["test", "release/build", "release/app/dist", ".erb/dll"]

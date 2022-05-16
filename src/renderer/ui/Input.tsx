@@ -1,6 +1,6 @@
 /* eslint-disable react/jsx-props-no-spreading */
 /* eslint-disable react/require-default-props */
-import { ChangeEvent } from 'react';
+import { ChangeEvent, FocusEvent } from 'react';
 import Identicon from '@polkadot/react-identicon';
 
 interface Props {
@@ -14,8 +14,9 @@ interface Props {
   address?: boolean;
   id?: string;
   value?: string | number;
+  invalid?: boolean;
+  onBlur?: (event: FocusEvent<HTMLInputElement>) => void;
   onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
-  onBlur?: (event: any) => void;
   className?: string;
   inputClassName?: string;
 }
@@ -33,6 +34,7 @@ const InputText = ({
   className = '',
   inputClassName = '',
   value,
+  invalid = false,
   onChange,
   onBlur,
 }: Props) => {
@@ -57,7 +59,9 @@ const InputText = ({
         id={id}
         disabled={disabled}
         className={`
-            flex-1 appearance-none w-full mt-1 text-black placeholder-gray-400 text-xl focus:outline-none
+            flex-1 appearance-none w-full mt-1
+            ${invalid ? 'text-red-500' : 'text-black'}
+            placeholder-gray-400 text-xl focus:outline-none
             ${disabled ? 'bg-gray-100' : ''}
             ${inputClassName}
           `}
@@ -65,8 +69,8 @@ const InputText = ({
         type={type}
         name={name}
         placeholder={placeholder}
-        onChange={onChange}
         onBlur={onBlur}
+        onChange={onChange}
       />
 
       {error && (

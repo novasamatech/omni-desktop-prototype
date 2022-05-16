@@ -20,3 +20,8 @@ export const Routes = {
 export const withId = (link: string, id: any, replacer = ':id'): string => {
   return link.replace(replacer, id.toString());
 };
+
+export const enum ErrorTypes {
+  REQUIRED = 'required',
+  VALIDATE = 'validate',
+}
