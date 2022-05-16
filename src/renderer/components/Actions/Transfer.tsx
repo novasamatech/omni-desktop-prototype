@@ -1,5 +1,5 @@
 /* eslint-disable promise/always-return */
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useRecoilValue } from 'recoil';
 import { decodeAddress, encodeAddress } from '@polkadot/keyring';
 import { formatBalance } from '@polkadot/util';
@@ -35,11 +35,7 @@ const Transfer: React.FC = () => {
 
   const networks = useRecoilValue(connectionState);
   const wallets = useRecoilValue(selectedWalletsState);
-
-  const defaultAsset = useMemo(
-    () => currentNetwork?.network.assets[0],
-    [currentNetwork]
-  );
+  const defaultAsset = currentNetwork?.network.assets[0];
 
   const setPartialFee = useCallback(
     ({ partialFee }) => {

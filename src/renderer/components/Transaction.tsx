@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useSetRecoilState } from 'recoil';
 import { useHistory } from 'react-router';
@@ -21,14 +21,9 @@ const Transaction: React.FC<Props> = ({ transaction }: Props) => {
   );
 
   const history = useHistory();
-
-  const tokenSymbol = useMemo(() => {
-    const asset = network?.assets.find(
-      (a) => a.assetId === transaction.data.assetId
-    );
-
-    return asset?.symbol;
-  }, [network, transaction]);
+  const tokenSymbol =
+    network?.assets.find((a) => a.assetId === transaction.data.assetId)
+      ?.symbol || '';
 
   const showQR = () => {
     setCurrentTransaction(transaction);
