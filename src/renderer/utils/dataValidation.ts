@@ -76,4 +76,4 @@ export const validateAddress = (address: string): boolean => {
 };
 
 export const isMultisig = (wallet: Wallet | MultisigWallet): boolean =>
-  !!(wallet as MultisigWallet).originContacts;
+  'originContacts' in wallet;

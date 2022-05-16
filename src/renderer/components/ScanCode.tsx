@@ -82,15 +82,13 @@ const ScanCode: React.FC = () => {
 
         const actualTxHash = await network.api.rpc.author.submitExtrinsic(tx);
 
-        if (actualTxHash) {
-          if (transaction.id) {
-            db.transactions.update(transaction.id, {
-              ...transaction,
-              status: TransactionStatus.CONFIRMED,
-            });
+        if (actualTxHash && transaction.id) {
+          db.transactions.update(transaction.id, {
+            ...transaction,
+            status: TransactionStatus.CONFIRMED,
+          });
 
-            history.push(Routes.BUSKET);
-          }
+          history.push(Routes.BASKET);
         }
       }
     }

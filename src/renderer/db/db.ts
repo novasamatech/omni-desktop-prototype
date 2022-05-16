@@ -40,13 +40,13 @@ export const enum TransactionStatus {
   FAILED = 'failed',
 }
 
-export enum ChainOptions {
+export const enum ChainOptions {
   crowloans = 'crowloans',
   etheriumBased = 'etheriumBased',
   testnet = 'testnet',
 }
 
-export enum ActiveType {
+export const enum ActiveType {
   DISABLED = 'disabled',
   LOCAL_NODE = 'localNode',
   EXTERNAL_NODE = 'externalNode',
@@ -59,10 +59,10 @@ export type Wallet = {
   chainAccounts: ChainAccount[];
 };
 
-export interface MultisigWallet extends Wallet {
+export type MultisigWallet = Wallet & {
   originContacts: Contact[];
   threshold: number;
-}
+};
 
 export type StatemineExtras = {
   assetId: string;
@@ -81,9 +81,9 @@ export type Account = {
   cryptoType: CryptoType;
 };
 
-export interface ChainAccount extends Account {
+export type ChainAccount = Account & {
   chainId: HexString;
-}
+};
 
 export type Asset = {
   assetId: number;

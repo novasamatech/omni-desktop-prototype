@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useSetRecoilState } from 'recoil';
 import { useHistory } from 'react-router';
@@ -16,23 +16,18 @@ type Props = {
 
 const Transaction: React.FC<Props> = ({ transaction }: Props) => {
   const setCurrentTransaction = useSetRecoilState(currentTransactionState);
-  const network = useLiveQuery(async () => {
-    const n = await db.chains.get({ chainId: transaction.chainId });
-
-    return n;
-  });
+  const network = useLiveQuery(() =>
+    db.chains.get({ chainId: transaction.chainId })
+  );
 
   const history = useHistory();
-  const [tokenSymbol, setTokenSymbol] = useState('');
 
-  useEffect(() => {
-    if (network) {
-      network.assets.forEach((asset) => {
-        if (asset.assetId === transaction.data.assetId) {
-          setTokenSymbol(asset.symbol);
-        }
-      });
-    }
+  const tokenSymbol = useMemo(() => {
+    const asset = network?.assets.find(
+      (a) => a.assetId === transaction.data.assetId
+    );
+
+    return asset?.symbol;
   }, [network, transaction]);
 
   const showQR = () => {

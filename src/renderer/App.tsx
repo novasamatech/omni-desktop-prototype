@@ -10,7 +10,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import FirstColumn from './components/FirstColumn';
 import SecondColumn from './components/SecondColumn';
 import ThirdColumn from './components/ThirdColumn';
-import Busket from './components/Busket';
+import Basket from './components/Basket';
 // import { connectionState } from './store/api';
 import './App.css';
 import ShowCode from './components/ShowCode';
@@ -92,7 +92,7 @@ const Main = () => {
             View your {transactions.length} pending{' '}
             {transactions.length > 1 ? 'operations' : 'operation'}
           </div>
-          <LinkButton to={Routes.BUSKET} size="lg">
+          <LinkButton to={Routes.BASKET} size="lg">
             View {transactions.length > 1 ? 'operations' : 'operation'}
           </LinkButton>
         </div>
@@ -106,7 +106,7 @@ export default function App() {
     <RecoilRoot>
       <Router>
         <Switch>
-          <Route path={Routes.BUSKET} component={Busket} />
+          <Route path={Routes.BASKET} component={Basket} />
           <Route path={Routes.SHOW_CODE} component={ShowCode} />
           <Route path={Routes.SCAN_CODE} component={ScanCode} />
           <Route path="/*" component={Main} />

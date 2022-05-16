@@ -41,7 +41,7 @@ const ShowCode: React.FC = () => {
 
         setApi(network?.api);
 
-        if (network && network.api) {
+        if (network?.api) {
           const { block } = await network.api.rpc.chain.getBlock();
           const blockHash = await network.api.rpc.chain.getBlockHash();
           const genesisHash = await network.api.rpc.chain.getBlockHash(0);
@@ -60,7 +60,7 @@ const ShowCode: React.FC = () => {
 
           // const isMST = isMultisig(transaction.wallet);
 
-          const { nonce } = await network?.api?.query.system.account(address);
+          const { nonce } = await network.api.query.system.account(address);
           const unsigned = methods.balances.transfer(
             {
               value: transaction.data.amount,
@@ -101,7 +101,7 @@ const ShowCode: React.FC = () => {
   return (
     <div className="h-screen flex flex-col">
       <div className="flex justify-center items-center">
-        <LinkButton className="ml-2 absolute left-0" to={Routes.BUSKET}>
+        <LinkButton className="ml-2 absolute left-0" to={Routes.BASKET}>
           Back
         </LinkButton>
         <h2 className="h-16 p-4 font-light text-lg">
