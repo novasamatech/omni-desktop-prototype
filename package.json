@@ -103,7 +103,10 @@
     "email": "asmadek@novawallet.io"
   },
   "contributors": [],
-  "license": "Apache 2",
+  "license":  {
+    "type": "Apache-2.0",
+    "url": "https://opensource.org/licenses/apache2.0.php"
+  },
   "bugs": {
     "url": "https://github.com/nova-wallet/omni-desktop/issues"
   },
