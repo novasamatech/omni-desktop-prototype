@@ -1,11 +1,11 @@
 import React from 'react';
-import { useRecoilState } from 'recoil';
-import { transactionBusketState } from '../store/transactionBusket';
+import { useLiveQuery } from 'dexie-react-hooks';
 import Transaction from './Transaction';
 import LinkButton from '../ui/LinkButton';
+import { db } from '../db/db';
 
 const ThirdColumn: React.FC = () => {
-  const [transactions] = useRecoilState(transactionBusketState);
+  const transactions = useLiveQuery(() => db.transactions.toArray());
 
   return (
     <>
@@ -19,8 +19,8 @@ const ThirdColumn: React.FC = () => {
       </div>
 
       <div className="m-auto w-1/2">
-        {transactions.map((t) => (
-          <Transaction key={`${t.address}_${t.type}`} transaction={t} />
+        {transactions?.map((t) => (
+          <Transaction key={`${t.createdAt}_${t.type}`} transaction={t} />
         ))}
       </div>
     </>

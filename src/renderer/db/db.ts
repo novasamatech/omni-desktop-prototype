@@ -24,40 +24,68 @@ export const enum AssetType {
   STATEMINE = 'statemine',
 }
 
-export interface Wallet {
+export const enum TransactionType {
+  TRANSFER = 'transfer',
+  ASSET_TRANSFER = 'asset_transfer',
+  MULTISIG_TRANSFER = 'multisig_transfer',
+  MULTISIG_SIGN = 'multisig_sign',
+  MULTISIG_CANCEL = 'multisig_cancel',
+}
+
+export const enum TransactionStatus {
+  CREATED = 'created',
+  PENDING = 'pending',
+  CONFIRMED = 'confirmed',
+  CANCELLED = 'cancelled',
+  FAILED = 'failed',
+}
+
+export const enum ChainOptions {
+  crowloans = 'crowloans',
+  etheriumBased = 'etheriumBased',
+  testnet = 'testnet',
+}
+
+export const enum ActiveType {
+  DISABLED = 'disabled',
+  LOCAL_NODE = 'localNode',
+  EXTERNAL_NODE = 'externalNode',
+}
+
+export type Wallet = {
   id?: number;
   name: string;
   mainAccounts: Account[];
   chainAccounts: ChainAccount[];
-}
+};
 
-export interface MultisigWallet extends Wallet {
+export type MultisigWallet = Wallet & {
   originContacts: Contact[];
   threshold: number;
-}
+};
 
-export interface StatemineExtras {
+export type StatemineExtras = {
   assetId: string;
-}
+};
 
-export interface OrmlExtras {
+export type OrmlExtras = {
   currencyIdScale: string;
   currencyIdType: string;
   existentialDeposit: string;
   transfersEnabled?: boolean;
-}
+};
 
-export interface Account {
+export type Account = {
   accountId: string;
   publicKey: string;
   cryptoType: CryptoType;
-}
+};
 
-export interface ChainAccount extends Account {
+export type ChainAccount = Account & {
   chainId: HexString;
-}
+};
 
-export interface Asset {
+export type Asset = {
   assetId: number;
   symbol: string;
   precision: number;
@@ -66,50 +94,38 @@ export interface Asset {
   staking?: string;
   type?: AssetType;
   typeExtras?: StatemineExtras | OrmlExtras;
-}
+};
 
-export interface NodeApiKey {
+export type NodeApiKey = {
   queryName: string;
   keyName: string;
-}
+};
 
-export interface ChainNode {
+export type ChainNode = {
   name: string;
   url: string;
   apiKey: NodeApiKey;
-}
+};
 
-export enum ChainOptions {
-  crowloans = 'crowloans',
-  etheriumBased = 'etheriumBased',
-  testnet = 'testnet',
-}
-
-export interface ExternalApi {
+export type ExternalApi = {
   type: string;
   url: string;
-}
+};
 
-export interface ExternalApiSet {
+export type ExternalApiSet = {
   history?: ExternalApi;
   stacking?: ExternalApi;
   crowdloans?: ExternalApi;
-}
+};
 
-export interface Expolorer {
+export type Expolorer = {
   name: string;
   account?: string;
   extrinsic?: string;
   event?: string;
-}
+};
 
-export enum ActiveType {
-  DISABLED = 'disabled',
-  LOCAL_NODE = 'localNode',
-  EXTERNAL_NODE = 'externalNode',
-}
-
-export interface Chain {
+export type Chain = {
   id?: number;
   chainId: HexString;
   parentId?: HexString;
@@ -124,13 +140,13 @@ export interface Chain {
   // TODO: Store connection information in separate table
   activeType: ActiveType;
   addressPrefix?: number;
-}
+};
 
-export interface ChainConnection {
+export type ChainConnection = {
   id?: number;
   chainId: HexString;
   activeType: ActiveType;
-}
+};
 
 export type Contact = {
   id?: number;
@@ -138,6 +154,18 @@ export type Contact = {
   mainAccounts: Account[];
   chainAccounts: ChainAccount[];
   secureProtocolId: string;
+};
+
+export type Transaction = {
+  id?: number;
+  wallet: Wallet;
+  chainId: HexString;
+  blockHash?: HexString;
+  transactionHash?: HexString;
+  type: TransactionType;
+  status: TransactionStatus;
+  data: Record<string, any>;
+  createdAt: Date;
 };
 
 export class OmniDexie extends Dexie {
@@ -149,13 +177,16 @@ export class OmniDexie extends Dexie {
 
   contacts!: Table<Contact>;
 
+  transactions!: Table<Transaction>;
+
   constructor() {
     super('omniDatabase');
-    this.version(51).stores({
+    this.version(53).stores({
       wallets: '++id,name',
       chains: '++id,&chainId,parentId,name,activeType',
       connections: '++id,&chainId,activeType',
       contacts: '++id,name,secureProtocolId',
+      transactions: '++id,chainId,address,type,status',
     });
   }
 }

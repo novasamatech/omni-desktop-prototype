@@ -52,12 +52,7 @@ const Wallet: React.FC = () => {
   >();
   const setSelectedWallets = useSetRecoilState(selectedWalletsState);
 
-  const networks = useLiveQuery(async () => {
-    const networkList = await db.chains.toArray();
-
-    return networkList;
-  });
-
+  const networks = useLiveQuery(() => db.chains.toArray());
   const wallet = useLiveQuery(() => db.wallets.get(Number(id)));
 
   useEffect(() => {

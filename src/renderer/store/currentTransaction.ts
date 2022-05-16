@@ -1,9 +1,9 @@
 /* eslint-disable import/prefer-default-export */
 import { atom } from 'recoil';
 import { UnsignedTransaction } from '@substrate/txwrapper-polkadot';
-import { TransactionData } from '../../common/types';
+import { Transaction } from '../db/db';
 
-export const currentTransactionState = atom<TransactionData | undefined>({
+export const currentTransactionState = atom<Transaction | undefined>({
   key: 'currentTransactionState',
   default: undefined,
 });

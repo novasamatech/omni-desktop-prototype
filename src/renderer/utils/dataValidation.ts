@@ -2,6 +2,7 @@
 import { ApiPromise } from '@polkadot/api';
 import { decodeAddress, encodeAddress } from '@polkadot/keyring';
 import { Header, BlockNumber } from '@polkadot/types/interfaces';
+import { Wallet, MultisigWallet } from '../db/db';
 import {
   getBlockHash,
   getHeader,
@@ -73,3 +74,6 @@ export const validateAddress = (address: string): boolean => {
     return false;
   }
 };
+
+export const isMultisig = (wallet: Wallet | MultisigWallet): boolean =>
+  'originContacts' in wallet;
