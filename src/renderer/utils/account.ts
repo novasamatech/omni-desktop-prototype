@@ -4,10 +4,10 @@ import { Wallet, Chain } from '../db/db';
 
 export const getAddressFromWallet = (
   wallet: Wallet,
-  network: Chain
+  network: Chain,
 ): string => {
   const chainAccount = wallet.chainAccounts.find(
-    (c) => c.chainId === network.chainId
+    (c) => c.chainId === network.chainId,
   );
   const account = chainAccount || wallet.mainAccounts[0];
 

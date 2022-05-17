@@ -73,7 +73,7 @@ const ManageMultisigWallet: React.FC = () => {
       await db.wallets.put(updatedWallet);
     } else {
       const addresses = selectedContacts?.map(
-        (c) => c.mainAccounts[0].accountId
+        (c) => c.mainAccounts[0].accountId,
       );
       if (addresses) {
         const multiAddress = createKeyMulti(addresses, threshold);
@@ -170,7 +170,7 @@ const ManageMultisigWallet: React.FC = () => {
                   <Checkbox
                     disabled={!!wallet}
                     checked={wallet?.originContacts?.some(
-                      (c) => c.id === contact.id
+                      (c) => c.id === contact.id,
                     )}
                     onChange={() => updateSelectedContact(contact)}
                   />
