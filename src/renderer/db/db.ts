@@ -173,6 +173,7 @@ export type Transaction = {
   id?: number;
   wallet: Wallet;
   chainId: HexString;
+  address: string;
   blockHash?: HexString;
   transactionHash?: HexString;
   type: TransactionType;

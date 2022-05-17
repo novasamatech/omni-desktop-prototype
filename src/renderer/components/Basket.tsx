@@ -4,7 +4,7 @@ import Transaction from './Transaction';
 import LinkButton from '../ui/LinkButton';
 import { db } from '../db/db';
 
-const ThirdColumn: React.FC = () => {
+const Basket: React.FC = () => {
   const transactions = useLiveQuery(() => db.transactions.toArray());
 
   return (
@@ -19,12 +19,12 @@ const ThirdColumn: React.FC = () => {
       </div>
 
       <div className="m-auto w-1/2">
-        {transactions?.map((t) => (
-          <Transaction key={`${t.createdAt}_${t.type}`} transaction={t} />
+        {transactions?.reverse().map((t) => (
+          <Transaction key={`${t.createdAt}_${t.address}`} transaction={t} />
         ))}
       </div>
     </>
   );
 };
 
-export default ThirdColumn;
+export default Basket;

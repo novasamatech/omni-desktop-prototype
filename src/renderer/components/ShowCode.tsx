@@ -21,6 +21,7 @@ import {
 import LinkButton from '../ui/LinkButton';
 import { Routes } from '../../common/consts';
 import { getAddressFromWallet } from '../utils/account';
+import { formatAmount } from '../utils/amount';
 // import { isMultisig } from '../utils/dataValidation';
 
 const ShowCode: React.FC = () => {
@@ -36,7 +37,7 @@ const ShowCode: React.FC = () => {
     const setupTransaction = async () => {
       if (transaction && Object.values(networks).length) {
         const network = Object.values(networks).find(
-          (n) => n.network.chainId === transaction.chainId
+          (n) => n.network.chainId === transaction.chainId,
         );
 
         setApi(network?.api);
@@ -63,7 +64,10 @@ const ShowCode: React.FC = () => {
           const { nonce } = await network.api.query.system.account(address);
           const unsigned = methods.balances.transfer(
             {
-              value: transaction.data.amount,
+              value: formatAmount(
+                transaction.data.amount.toString(),
+                transaction.data.precision,
+              ),
               dest: transaction.data.address,
             },
             {
@@ -83,7 +87,7 @@ const ShowCode: React.FC = () => {
             {
               metadataRpc: metadataRpc.toHex(),
               registry,
-            }
+            },
           );
           const signingPayloadHex = construct.signingPayload(unsigned, {
             registry,
