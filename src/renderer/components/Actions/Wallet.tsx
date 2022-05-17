@@ -82,7 +82,7 @@ const Wallet: React.FC = () => {
     if (wallet?.id) {
       await db.wallets.delete(wallet.id);
       setSelectedWallets((selectedWallets) =>
-        selectedWallets.filter((w) => w.id !== wallet.id)
+        selectedWallets.filter((w) => w.id !== wallet.id),
       );
     }
 
@@ -113,7 +113,7 @@ const Wallet: React.FC = () => {
     const options =
       networks
         ?.filter(
-          (n) => !wallet?.chainAccounts.find((c) => c.chainId === n.chainId)
+          (n) => !wallet?.chainAccounts.find((c) => c.chainId === n.chainId),
         )
         .map((n) => ({
           label: n.name,
@@ -130,7 +130,7 @@ const Wallet: React.FC = () => {
     const accountList = networks
       ?.map((n) => {
         const chainAccount = wallet?.chainAccounts.find(
-          (c) => c.chainId === n.chainId
+          (c) => c.chainId === n.chainId,
         );
 
         if (chainAccount) {
@@ -145,7 +145,7 @@ const Wallet: React.FC = () => {
         if (mainAccount) {
           const updatedAccountId = encodeAddress(
             decodeAddress(mainAccount.accountId),
-            n.addressPrefix
+            n.addressPrefix,
           );
           const updatedMainAccount = {
             ...mainAccount,
@@ -175,7 +175,7 @@ const Wallet: React.FC = () => {
     const publicKeyHex = u8aToHex(publicKey);
 
     const doesntExists = !wallet?.chainAccounts.find(
-      (c) => c.chainId === accountNetwork || c.accountId === address
+      (c) => c.chainId === accountNetwork || c.accountId === address,
     );
 
     if (address && wallet?.id) {
@@ -215,7 +215,7 @@ const Wallet: React.FC = () => {
     if (wallet?.id) {
       await db.wallets.update(wallet.id, {
         chainAccounts: wallet.chainAccounts.filter(
-          (c) => c.accountId !== accountId
+          (c) => c.accountId !== accountId,
         ),
       });
     }
@@ -332,10 +332,10 @@ const Wallet: React.FC = () => {
               />
             )}
           />
-          <ErrorMessage show={errors.address?.type === ErrorTypes.VALIDATE}>
+          <ErrorMessage visible={errors.address?.type === ErrorTypes.VALIDATE}>
             The address is not valid, please type it again
           </ErrorMessage>
-          <ErrorMessage show={errors.address?.type === ErrorTypes.REQUIRED}>
+          <ErrorMessage visible={errors.address?.type === ErrorTypes.REQUIRED}>
             The address is required
           </ErrorMessage>
         </div>
