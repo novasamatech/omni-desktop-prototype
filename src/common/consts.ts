@@ -24,4 +24,5 @@ export const withId = (link: string, id: any, replacer = ':id'): string => {
 export const enum ErrorTypes {
   REQUIRED = 'required',
   VALIDATE = 'validate',
+  PATTERN = 'pattern',
 }

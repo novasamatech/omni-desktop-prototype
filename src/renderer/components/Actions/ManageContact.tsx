@@ -14,7 +14,8 @@ import { Contact, CryptoType, db } from '../../db/db';
 import useToggle from '../../hooks/toggle';
 import DialogContent from '../../ui/DialogContent';
 import { validateAddress } from '../../utils/dataValidation';
-import { Routes } from '../../../common/consts';
+import { ErrorTypes, Routes } from '../../../common/consts';
+import ErrorMessage from '../../ui/ErrorMessage';
 
 type ContactForm = {
   name: string;
@@ -35,7 +36,7 @@ const ManageContact: React.FC = () => {
     handleSubmit,
     control,
     reset,
-    formState: { isValid },
+    formState: { errors, isValid },
   } = useForm<ContactForm>({
     mode: 'onChange',
   });
@@ -134,6 +135,12 @@ const ManageContact: React.FC = () => {
               />
             )}
           />
+          <ErrorMessage show={errors.address?.type === ErrorTypes.VALIDATE}>
+            The address is not valid, please type it again
+          </ErrorMessage>
+          <ErrorMessage show={errors.address?.type === ErrorTypes.REQUIRED}>
+            The address is required
+          </ErrorMessage>
         </div>
         <div className="flex">
           <div className="p-2 w-1/2">
@@ -153,6 +160,9 @@ const ManageContact: React.FC = () => {
                 />
               )}
             />
+            <ErrorMessage show={errors.name?.type === ErrorTypes.REQUIRED}>
+              The name is required
+            </ErrorMessage>
           </div>
           <div className="p-2 w-1/2">
             <Controller
@@ -174,6 +184,12 @@ const ManageContact: React.FC = () => {
                 />
               )}
             />
+            <ErrorMessage show={errors.matrixId?.type === ErrorTypes.PATTERN}>
+              The matrix ID is not valid, please type it again
+            </ErrorMessage>
+            <ErrorMessage show={errors.matrixId?.type === ErrorTypes.REQUIRED}>
+              The matrix ID is required
+            </ErrorMessage>
           </div>
         </div>
 

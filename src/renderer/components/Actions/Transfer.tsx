@@ -3,12 +3,15 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useRecoilValue } from 'recoil';
 import { decodeAddress, encodeAddress } from '@polkadot/keyring';
 import { formatBalance } from '@polkadot/util';
+import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 
 import { Connection, connectionState } from '../../store/api';
 import { selectedWalletsState } from '../../store/selectedWallets';
 import Button from '../../ui/Button';
 import InputText from '../../ui/Input';
 import Select, { OptionType } from '../../ui/Select';
+import ErrorMessage from '../../ui/ErrorMessage';
+import { ErrorTypes } from '../../../common/consts';
 import {
   TransactionType,
   TransactionStatus,
@@ -16,19 +19,22 @@ import {
   Asset,
   AssetType,
 } from '../../db/db';
-import { isMultisig } from '../../utils/dataValidation';
+import { isMultisig, validateAddress } from '../../utils/dataValidation';
 import { getAddressFromWallet } from '../../utils/account';
 
+type TransferForm = {
+  address: string;
+  amount: number;
+};
+
 const Transfer: React.FC = () => {
-  const [address, setAddress] = useState('');
-  const [amount, setAmount] = useState(0);
   const [transactionFee, setTransactionFee] = useState('0');
   const [existentialDeposit, setExistentialDeposit] = useState('0');
   const [currentNetwork, setCurrentNetwork] = useState<Connection | undefined>(
-    undefined
+    undefined,
   );
   const [currentAsset, setCurrentAsset] = useState<Asset | undefined>(
-    undefined
+    undefined,
   );
   const [networkOptions, setNetworkOptions] = useState<OptionType[]>([]);
   const [assetOptions, setAssetOptions] = useState<OptionType[]>([]);
@@ -37,23 +43,32 @@ const Transfer: React.FC = () => {
   const wallets = useRecoilValue(selectedWalletsState);
   const defaultAsset = currentNetwork?.network.assets[0];
 
-  const setPartialFee = useCallback(
-    ({ partialFee }) => {
-      setTransactionFee(
-        formatBalance(partialFee.toString(), {
-          withUnit: false,
-          decimals: defaultAsset?.precision,
-        })
-      );
-    },
-    [defaultAsset]
-  );
+  const {
+    handleSubmit,
+    control,
+    watch,
+    reset,
+    formState: { errors, isValid },
+  } = useForm<TransferForm>({
+    mode: 'onChange',
+  });
+
+  const watchAddress = watch('address');
+  const watchAmount = watch('amount');
+
+  const firstWallet = wallets[0];
 
   useEffect(() => {
-    if (address && amount && currentNetwork && currentAsset && wallets.length) {
+    if (
+      validateAddress(watchAddress) &&
+      currentNetwork &&
+      currentAsset &&
+      isValid &&
+      firstWallet
+    ) {
       const fromAddress = getAddressFromWallet(
-        wallets[0],
-        currentNetwork.network
+        firstWallet,
+        currentNetwork.network,
       );
 
       let transferExtrinsic;
@@ -62,22 +77,23 @@ const Transfer: React.FC = () => {
       if (currentAsset.type === AssetType.STATEMINE) {
         transferExtrinsic = currentNetwork.api.tx.assets.transfer(
           currentAsset.assetId,
-          address,
-          amount
+          watchAddress,
+          watchAmount,
         );
+
         deposit = currentNetwork?.api.consts.assets.existentialDeposit;
       } else if (currentAsset.type === AssetType.ORML) {
         transferExtrinsic = currentNetwork.api.tx.currencies.transfer(
-          address,
+          watchAddress,
           currentAsset.assetId,
-          amount
+          watchAmount,
         );
 
         deposit = currentNetwork?.api.consts.currencies.existentialDeposit;
       } else {
         transferExtrinsic = currentNetwork.api.tx.balances.transfer(
-          address,
-          amount
+          watchAddress,
+          watchAmount,
         );
 
         deposit = currentNetwork?.api.consts.balances.existentialDeposit;
@@ -85,7 +101,14 @@ const Transfer: React.FC = () => {
 
       transferExtrinsic
         .paymentInfo(fromAddress)
-        .then(setPartialFee)
+        .then(({ partialFee }) => {
+          setTransactionFee(
+            formatBalance(partialFee.toString(), {
+              withUnit: false,
+              decimals: defaultAsset?.precision,
+            }),
+          );
+        })
         .catch((e) => {
           console.log(e);
           setTransactionFee('0');
@@ -95,23 +118,23 @@ const Transfer: React.FC = () => {
         formatBalance(deposit.toString(), {
           withUnit: false,
           decimals: currentAsset?.precision,
-        })
+        }),
       );
     }
   }, [
-    amount,
-    wallets,
+    watchAmount,
+    watchAddress,
+    firstWallet,
     currentNetwork,
     currentAsset,
-    address,
-    setPartialFee,
     defaultAsset,
+    isValid,
   ]);
 
   const setNetwork = useCallback(
     (value: string) => {
       const network = Object.values(networks).find(
-        (n) => n.network.chainId === value
+        (n) => n.network.chainId === value,
       );
 
       if (network) {
@@ -120,12 +143,12 @@ const Transfer: React.FC = () => {
           network.network.assets.map((a) => ({
             label: a.symbol,
             value: a.assetId.toString(),
-          }))
+          })),
         );
         setCurrentAsset(network.network.assets[0]);
       }
     },
-    [networks]
+    [networks],
   );
 
   useEffect(() => {
@@ -133,7 +156,7 @@ const Transfer: React.FC = () => {
       Object.values(networks).map((n) => ({
         label: n.network.name,
         value: n.network.chainId,
-      }))
+      })),
     );
 
     if (!currentNetwork) {
@@ -143,24 +166,27 @@ const Transfer: React.FC = () => {
 
   const setAsset = (value: number) => {
     const asset = currentNetwork?.network.assets.find(
-      (a) => a.assetId === value
+      (a) => a.assetId === value,
     );
 
     setCurrentAsset(asset);
   };
 
-  const addTransaction = async () => {
+  const addTransaction: SubmitHandler<TransferForm> = async ({
+    address,
+    amount,
+  }) => {
     if (currentNetwork && currentAsset) {
       const transactions = wallets.map((w) => {
         const account =
           w.chainAccounts.find(
-            (a) => a.chainId === currentNetwork.network.chainId
+            (a) => a.chainId === currentNetwork.network.chainId,
           ) || w.mainAccounts[0];
 
         const addressFrom =
           encodeAddress(
             decodeAddress(account.accountId),
-            currentNetwork.network.addressPrefix
+            currentNetwork.network.addressPrefix,
           ) || '';
 
         const type = isMultisig(w)
@@ -184,13 +210,12 @@ const Transfer: React.FC = () => {
 
       db.transactions.bulkAdd(transactions);
 
-      setAddress('');
-      setAmount(0);
+      reset();
     }
   };
 
   return (
-    <>
+    <form onSubmit={handleSubmit(addTransaction)}>
       <h2 className="font-light text-xl p-4">Transfer</h2>
       <div className="p-2">
         <Select
@@ -214,24 +239,51 @@ const Transfer: React.FC = () => {
         />
       </div>
       <div className="p-2">
-        <InputText
-          address
-          label="Account id"
-          className="w-full"
-          placeholder="Account id"
-          value={address}
-          onChange={(event) => setAddress(event.target.value)}
+        <Controller
+          name="address"
+          control={control}
+          rules={{ required: true, validate: validateAddress }}
+          render={({ field: { onChange, onBlur, value } }) => (
+            <InputText
+              onChange={onChange}
+              onBlur={onBlur}
+              value={value}
+              address
+              name="address"
+              className="w-full"
+              label="Recipient"
+              placeholder="Recipient"
+            />
+          )}
         />
+        <ErrorMessage show={errors.address?.type === ErrorTypes.VALIDATE}>
+          The address is not valid, please type it again
+        </ErrorMessage>
+        <ErrorMessage show={errors.address?.type === ErrorTypes.REQUIRED}>
+          The address is required
+        </ErrorMessage>
       </div>
       <div className="p-2">
-        <InputText
-          label="Amount"
-          className="w-full"
-          placeholder="Amount"
-          value={amount}
-          type="number"
-          onChange={(event) => setAmount(parseFloat(event.target.value))}
+        <Controller
+          name="amount"
+          control={control}
+          rules={{ validate: (v) => v > 0 }}
+          render={({ field: { onChange, onBlur, value } }) => (
+            <InputText
+              onChange={onChange}
+              onBlur={onBlur}
+              value={value}
+              type="number"
+              name="amount"
+              className="w-full"
+              label="Amount"
+              placeholder="Amount"
+            />
+          )}
         />
+        <ErrorMessage show={errors.amount?.type === ErrorTypes.VALIDATE}>
+          The amount is not valid, please type it again
+        </ErrorMessage>
       </div>
       <div className="p-2 text-gray-500 flex justify-between">
         <div>Transaction fee:</div>
@@ -248,15 +300,11 @@ const Transfer: React.FC = () => {
         </div>
       )}
       <div className="p-2">
-        <Button
-          onClick={addTransaction}
-          size="lg"
-          disabled={wallets.length === 0}
-        >
+        <Button submit size="lg" disabled={!isValid}>
           Add transaction
         </Button>
       </div>
-    </>
+    </form>
   );
 };
 
