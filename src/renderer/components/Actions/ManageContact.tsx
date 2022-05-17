@@ -135,10 +135,10 @@ const ManageContact: React.FC = () => {
               />
             )}
           />
-          <ErrorMessage show={errors.address?.type === ErrorTypes.VALIDATE}>
+          <ErrorMessage visible={errors.address?.type === ErrorTypes.VALIDATE}>
             The address is not valid, please type it again
           </ErrorMessage>
-          <ErrorMessage show={errors.address?.type === ErrorTypes.REQUIRED}>
+          <ErrorMessage visible={errors.address?.type === ErrorTypes.REQUIRED}>
             The address is required
           </ErrorMessage>
         </div>
@@ -160,7 +160,7 @@ const ManageContact: React.FC = () => {
                 />
               )}
             />
-            <ErrorMessage show={errors.name?.type === ErrorTypes.REQUIRED}>
+            <ErrorMessage visible={errors.name?.type === ErrorTypes.REQUIRED}>
               The name is required
             </ErrorMessage>
           </div>
@@ -184,10 +184,14 @@ const ManageContact: React.FC = () => {
                 />
               )}
             />
-            <ErrorMessage show={errors.matrixId?.type === ErrorTypes.PATTERN}>
+            <ErrorMessage
+              visible={errors.matrixId?.type === ErrorTypes.PATTERN}
+            >
               The matrix ID is not valid, please type it again
             </ErrorMessage>
-            <ErrorMessage show={errors.matrixId?.type === ErrorTypes.REQUIRED}>
+            <ErrorMessage
+              visible={errors.matrixId?.type === ErrorTypes.REQUIRED}
+            >
               The matrix ID is required
             </ErrorMessage>
           </div>

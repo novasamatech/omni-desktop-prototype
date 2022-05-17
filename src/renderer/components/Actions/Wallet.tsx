@@ -332,10 +332,10 @@ const Wallet: React.FC = () => {
               />
             )}
           />
-          <ErrorMessage show={errors.address?.type === ErrorTypes.VALIDATE}>
+          <ErrorMessage visible={errors.address?.type === ErrorTypes.VALIDATE}>
             The address is not valid, please type it again
           </ErrorMessage>
-          <ErrorMessage show={errors.address?.type === ErrorTypes.REQUIRED}>
+          <ErrorMessage visible={errors.address?.type === ErrorTypes.REQUIRED}>
             The address is required
           </ErrorMessage>
         </div>

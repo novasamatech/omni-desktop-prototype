@@ -4,16 +4,16 @@
 import { PropsWithChildren } from 'react';
 
 interface Props {
-  show: boolean;
+  visible: boolean;
   className?: string;
 }
 
 const ErrorMessage = ({
   children,
-  show = false,
+  visible = false,
   className,
 }: PropsWithChildren<Props>) => {
-  return show ? (
+  return visible ? (
     <div className={`text-red-500 text-sm italic ${className}`}>{children}</div>
   ) : null;
 };
