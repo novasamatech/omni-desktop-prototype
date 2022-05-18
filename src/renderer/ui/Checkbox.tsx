@@ -14,7 +14,7 @@ const Checkbox: React.FC<Props> = ({
   onChange,
 }) => {
   return (
-    <div className={`flex-1 hover:cursor-pointer ${className}`}>
+    <div className={`hover:cursor-pointer ${className}`}>
       <label className="flex items-center">
         <input
           type="checkbox"

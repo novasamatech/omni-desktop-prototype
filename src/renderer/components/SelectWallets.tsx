@@ -39,6 +39,7 @@ const SelectWallets: React.FC = () => {
         >
           <div className="flex items-center justify-between select-none">
             <Checkbox
+              className="flex-1"
               label={wallet.name}
               checked={isWalletSelected(wallet.id)}
               onChange={() => selectWallet(wallet)}
