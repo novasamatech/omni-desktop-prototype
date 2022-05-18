@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { renderRoutes, RouteConfig } from 'react-router-config';
-import { db } from '../../db/db';
+import { db, TransactionStatus } from '../../db/db';
 import FirstColumn from '../FirstColumn';
 import SecondColumn from '../SecondColumn';
 import LinkButton from '../../ui/LinkButton';
@@ -17,7 +17,12 @@ const MainLayout: React.FC<Props> = ({ route }) => {
   // const [connections, setConnections] = useRecoilState(connectionState);
   // const [inited, setInited] = useState(false);
 
-  const transactions = useLiveQuery(() => db.transactions.toArray());
+  const transactions = useLiveQuery(() =>
+    db.transactions
+      .where('status')
+      .notEqual(TransactionStatus.CONFIRMED)
+      .toArray(),
+  );
   // const activeNetworks = useLiveQuery(() => {
   //   return db.chains
   //     .where('activeType')
@@ -67,17 +72,15 @@ const MainLayout: React.FC<Props> = ({ route }) => {
 
   return (
     <div className="flex h-screen">
-      <FirstColumn />
-      <SecondColumn />
-      <div className="flex-1 overflow-auto">{renderRoutes(route?.routes)}</div>
-
-      {/* {api.length === 0 && (
-        <div className="flex justify-center items-center fixed bottom-0 w-screen h-16 bg-red-100">
-          Connecting
+      <div className={`flex h-screen ${transactions?.length && 'pb-20'}`}>
+        <FirstColumn />
+        <SecondColumn />
+        <div className="flex-1 overflow-auto">
+          {renderRoutes(route?.routes)}
         </div>
-      )} */}
+      </div>
 
-      {transactions && transactions.length > 0 && (
+      {transactions?.length && (
         <div className="flex justify-center items-center fixed bottom-0 w-screen h-20 bg-gray-100">
           <div className="mr-12 w-36">
             View your {transactions.length} pending{' '}
