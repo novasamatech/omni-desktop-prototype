@@ -66,6 +66,7 @@ const InputText = ({
             ${inputClassName}
           `}
         value={value}
+        step="any"
         type={type}
         name={name}
         placeholder={placeholder}

@@ -18,6 +18,8 @@ import {
   db,
   Asset,
   AssetType,
+  OrmlExtras,
+  StatemineExtras,
 } from '../../db/db';
 import { isMultisig, validateAddress } from '../../utils/dataValidation';
 import { getAddressFromWallet } from '../../utils/account';
@@ -25,12 +27,11 @@ import { formatAmount } from '../../utils/amount';
 
 type TransferForm = {
   address: string;
-  amount: number;
+  amount: string;
 };
 
 const Transfer: React.FC = () => {
   const [transactionFee, setTransactionFee] = useState('0');
-  const [existentialDeposit, setExistentialDeposit] = useState('0');
   const [currentNetwork, setCurrentNetwork] = useState<Connection | undefined>(
     undefined,
   );
@@ -52,6 +53,7 @@ const Transfer: React.FC = () => {
     formState: { errors, isValid },
   } = useForm<TransferForm>({
     mode: 'onChange',
+    defaultValues: { amount: '', address: '' },
   });
 
   const watchAddress = watch('address');
@@ -73,31 +75,24 @@ const Transfer: React.FC = () => {
       );
 
       let transferExtrinsic;
-      let deposit;
 
       if (currentAsset.type === AssetType.STATEMINE) {
         transferExtrinsic = currentNetwork.api.tx.assets.transfer(
-          currentAsset.assetId,
+          (currentAsset.typeExtras as StatemineExtras).assetId,
           watchAddress,
-          formatAmount(watchAmount.toString(), currentAsset.precision),
+          formatAmount(watchAmount, currentAsset.precision),
         );
-
-        deposit = currentNetwork?.api.consts.assets.existentialDeposit;
       } else if (currentAsset.type === AssetType.ORML) {
         transferExtrinsic = currentNetwork.api.tx.currencies.transfer(
           watchAddress,
-          currentAsset.assetId,
-          formatAmount(watchAmount.toString(), currentAsset.precision),
+          (currentAsset.typeExtras as OrmlExtras).currencyIdScale,
+          formatAmount(watchAmount, currentAsset.precision),
         );
-
-        deposit = currentNetwork?.api.consts.currencies.existentialDeposit;
       } else {
         transferExtrinsic = currentNetwork.api.tx.balances.transfer(
           watchAddress,
-          formatAmount(watchAmount.toString(), currentAsset.precision),
+          formatAmount(watchAmount, currentAsset.precision),
         );
-
-        deposit = currentNetwork?.api.consts.balances.existentialDeposit;
       }
 
       transferExtrinsic
@@ -114,13 +109,6 @@ const Transfer: React.FC = () => {
           console.log(e);
           setTransactionFee('0');
         });
-
-      setExistentialDeposit(
-        formatBalance(deposit.toString(), {
-          withUnit: false,
-          decimals: currentAsset?.precision,
-        }),
-      );
     }
   }, [
     watchAmount,
@@ -194,6 +182,18 @@ const Transfer: React.FC = () => {
           ? TransactionType.MULTISIG_TRANSFER
           : TransactionType.TRANSFER;
 
+        let assetId;
+        switch (currentAsset.type) {
+          case AssetType.STATEMINE:
+            assetId = (currentAsset.typeExtras as StatemineExtras).assetId;
+            break;
+          case AssetType.ORML:
+            assetId = (currentAsset.typeExtras as OrmlExtras).currencyIdScale;
+            break;
+          default:
+            assetId = currentAsset.assetId;
+        }
+
         return {
           createdAt: new Date(),
           status: TransactionStatus.CREATED,
@@ -202,7 +202,7 @@ const Transfer: React.FC = () => {
           address: addressFrom,
           wallet: w,
           data: {
-            assetId: currentAsset.assetId,
+            assetId,
             precision: currentAsset.precision,
             address,
             amount,
@@ -269,7 +269,7 @@ const Transfer: React.FC = () => {
         <Controller
           name="amount"
           control={control}
-          rules={{ validate: (v) => v > 0 }}
+          rules={{ validate: (v) => Number(v) > 0 }}
           render={({ field: { onChange, onBlur, value } }) => (
             <InputText
               onChange={onChange}
@@ -293,13 +293,35 @@ const Transfer: React.FC = () => {
           {transactionFee} {defaultAsset?.symbol}
         </div>
       </div>
-      {wallets?.find(isMultisig) && (
-        <div className="p-2 text-gray-500 flex justify-between">
-          <div>Existential deposit:</div>
-          <div>
-            {existentialDeposit} {defaultAsset?.symbol}
+      {wallets?.find(isMultisig) && currentNetwork && (
+        <>
+          <div className="p-2 text-gray-500 flex justify-between">
+            <div>Base deposit:</div>
+            <div>
+              {formatBalance(
+                currentNetwork.api.consts.multisig.depositBase.toString(),
+                {
+                  withUnit: false,
+                  decimals: currentAsset?.precision,
+                },
+              )}{' '}
+              {defaultAsset?.symbol}
+            </div>
           </div>
-        </div>
+          <div className="p-2 text-gray-500 flex justify-between">
+            <div>Deposit factor:</div>
+            <div>
+              {formatBalance(
+                currentNetwork.api.consts.multisig.depositFactor.toString(),
+                {
+                  withUnit: false,
+                  decimals: currentAsset?.precision,
+                },
+              )}{' '}
+              {defaultAsset?.symbol}
+            </div>
+          </div>
+        </>
       )}
       <div className="p-2">
         <Button submit size="lg" disabled={!isValid}>

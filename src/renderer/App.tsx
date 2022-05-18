@@ -16,7 +16,7 @@ import ShowCode from './components/ShowCode';
 import ScanCode from './components/ScanCode';
 import LinkButton from './ui/LinkButton';
 import { Routes } from '../common/consts';
-import { db } from './db/db';
+import { db, TransactionStatus } from './db/db';
 import MatrixProvider from './modules/matrixProvider';
 // import { ActiveType, db } from './db/db';
 // import { getChainSpec, getKnownChainId } from '../common/networks';
@@ -27,7 +27,12 @@ const Main = () => {
   // const [connections, setConnections] = useRecoilState(connectionState);
   // const [inited, setInited] = useState(false);
 
-  const transactions = useLiveQuery(() => db.transactions.toArray());
+  const transactions = useLiveQuery(() =>
+    db.transactions
+      .where('status')
+      .notEqual(TransactionStatus.CONFIRMED)
+      .toArray(),
+  );
   // const activeNetworks = useLiveQuery(() => {
   //   return db.chains
   //     .where('activeType')
@@ -76,16 +81,12 @@ const Main = () => {
   // }, [activeNetworks, connections, setConnections, inited]);
 
   return (
-    <div className="flex h-screen">
-      <FirstColumn />
-      <SecondColumn />
-      <ThirdColumn />
-
-      {/* {api.length === 0 && (
-        <div className="flex justify-center items-center fixed bottom-0 w-screen h-16 bg-red-100">
-          Connecting
-        </div>
-      )} */}
+    <div className="h-screen">
+      <div className={`flex h-screen ${transactions?.length && 'pb-20'}`}>
+        <FirstColumn />
+        <SecondColumn />
+        <ThirdColumn />
+      </div>
 
       {transactions?.length && (
         <div className="flex justify-center items-center fixed bottom-0 w-screen h-20 bg-gray-100">

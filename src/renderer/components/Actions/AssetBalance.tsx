@@ -53,7 +53,7 @@ const AssetBalance: React.FC<Props> = ({
         validationStatus: ValidationStatus.VALIDATION,
       });
     },
-    [asset]
+    [asset],
   );
 
   const validateAssetBalance = useCallback(
@@ -81,7 +81,7 @@ const AssetBalance: React.FC<Props> = ({
         });
       }
     },
-    [relayChain, api]
+    [relayChain, api],
   );
 
   const subscribeBalanceChange = useCallback(
@@ -96,7 +96,7 @@ const AssetBalance: React.FC<Props> = ({
         validateAssetBalance(data, storageKey);
       });
     },
-    [api, updateBalance, validateAssetBalance]
+    [api, updateBalance, validateAssetBalance],
   );
 
   const subscribeStatemineAssetChange = useCallback(
@@ -113,12 +113,12 @@ const AssetBalance: React.FC<Props> = ({
 
         const storageKey = await api.query.assets.account.key(
           statemineAssetId,
-          address
+          address,
         );
         validateAssetBalance(data, storageKey);
       });
     },
-    [asset, api, updateBalance, validateAssetBalance]
+    [asset, api, updateBalance, validateAssetBalance],
   );
 
   const subscribeOrmlAssetChange = useCallback(
@@ -131,12 +131,12 @@ const AssetBalance: React.FC<Props> = ({
 
         const storageKey = await api.query.tokens.accounts.key(
           address,
-          ormlAssetId
+          ormlAssetId,
         );
         validateAssetBalance(data, storageKey);
       });
     },
-    [asset, api, validateAssetBalance, updateBalance]
+    [asset, api, validateAssetBalance, updateBalance],
   );
 
   useEffect(() => {
@@ -144,7 +144,7 @@ const AssetBalance: React.FC<Props> = ({
       const address =
         encodeAddress(
           decodeAddress(account.accountId),
-          network.addressPrefix
+          network.addressPrefix,
         ) || '';
 
       if (!asset.type) {
@@ -183,7 +183,7 @@ const AssetBalance: React.FC<Props> = ({
       </div>
       <div className="font-normal text-xl">
         {balance?.validationStatus === ValidationStatus.VALIDATION ? (
-          <div className="w-12">
+          <div className="w-12 h-7">
             <Shimmer />
           </div>
         ) : (

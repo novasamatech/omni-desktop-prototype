@@ -24,7 +24,7 @@ import { db, TransactionStatus } from '../db/db';
 function createSignedTx(
   unsigned: UnsignedTransaction,
   signature: HexString,
-  options: OptionsWithMeta
+  options: OptionsWithMeta,
 ): GenericExtrinsic {
   const {
     metadataRpc,
@@ -40,7 +40,7 @@ function createSignedTx(
   const extrinsic = registry.createType(
     'Extrinsic',
     { method: unsigned.method },
-    { version: unsigned.version }
+    { version: unsigned.version },
   );
 
   extrinsic.addSignature(unsigned.address, signature, unsigned);
@@ -60,7 +60,7 @@ const ScanCode: React.FC = () => {
     const signature = payload.signature || '';
     if (transaction && unsigned && Object.values(networks).length) {
       const network = Object.values(networks).find(
-        (n) => n.network.chainId === transaction.chainId
+        (n) => n.network.chainId === transaction.chainId,
       );
 
       if (network && network.api) {

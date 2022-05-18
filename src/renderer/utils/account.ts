@@ -2,6 +2,9 @@
 import { decodeAddress, encodeAddress } from '@polkadot/keyring';
 import { Wallet, Chain } from '../db/db';
 
+export const formatAddress = (address: string, prefix: number): string =>
+  encodeAddress(decodeAddress(address), prefix) || address;
+
 export const getAddressFromWallet = (
   wallet: Wallet,
   network: Chain,
@@ -11,7 +14,5 @@ export const getAddressFromWallet = (
   );
   const account = chainAccount || wallet.mainAccounts[0];
 
-  return (
-    encodeAddress(decodeAddress(account.accountId), network.addressPrefix) || ''
-  );
+  return formatAddress(account.accountId, network.addressPrefix);
 };

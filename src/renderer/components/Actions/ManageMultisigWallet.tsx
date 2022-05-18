@@ -51,6 +51,10 @@ const ManageMultisigWallet: React.FC = () => {
     formState: { isValid },
   } = useForm<MultisigWalletForm>({
     mode: 'onChange',
+    defaultValues: {
+      name: '',
+      threshold: DEFAULT_THRESHOLD,
+    },
   });
 
   useEffect(() => {
