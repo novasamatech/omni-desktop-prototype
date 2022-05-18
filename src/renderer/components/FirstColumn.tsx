@@ -3,6 +3,7 @@ import { useHistory } from 'react-router';
 import SelectWallets from './SelectWallets';
 import { useMatrix } from '../modules/matrixProvider';
 import Button from '../ui/Button';
+import { Routes } from '../../common/constants';
 
 const FirstColumn: React.FC = () => {
   const matrix = useMatrix();
@@ -15,9 +16,10 @@ const FirstColumn: React.FC = () => {
 
     try {
       await matrix.shutdown();
-      history.push('/login');
+      history.push(Routes.LOGIN);
     } catch (error) {
       console.log(error);
+      setIsShutdownInProgress(false);
     }
   };
 
