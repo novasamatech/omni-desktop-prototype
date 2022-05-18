@@ -5,18 +5,29 @@ import ListItem from '../../ui/ListItem';
 import { db, MultisigWallet } from '../../db/db';
 import LinkButton from '../../ui/LinkButton';
 import mst from '../../../../assets/mst.svg';
-import { Routes, withId } from '../../../common/consts';
-import { isMultisig } from '../../utils/dataValidation';
+import { Routes, withId } from '../../../common/constants';
+import { isMultisig } from '../../utils/validation';
 
 const WalletList: React.FC = () => {
   const wallets = useLiveQuery(() => db.wallets.toArray());
+
+  if (!wallets || wallets.length === 0) {
+    return (
+      <>
+        <h2 className="font-light text-xl p-4">List of wallets</h2>
+        <div className="ml-2 mr-2">
+          <List />
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
       <h2 className="font-light text-xl p-4">List of wallets</h2>
       <div className="ml-2 mr-2">
         <List>
-          {wallets?.map(({ id, name, ...wallet }) => (
+          {wallets.map(({ id, name, ...wallet }) => (
             <ListItem className="w-full justify-between items-center" key={id}>
               <div className="w-full flex items-center justify-between">
                 <div className="flex items-center">
@@ -30,8 +41,8 @@ const WalletList: React.FC = () => {
                 <LinkButton
                   to={
                     isMultisig(wallet as MultisigWallet)
-                      ? withId(Routes.EDIT_MULTISIG_WALLET, id)
-                      : withId(Routes.WALLET, id)
+                      ? withId(Routes.EDIT_MULTISIG_WALLET, id || '')
+                      : withId(Routes.WALLET, id || '')
                   }
                 >
                   Edit

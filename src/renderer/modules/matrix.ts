@@ -81,9 +81,8 @@ interface SecureMessenger {
   init: () => Promise<void | never>;
   loginWithCreds: (login: string, password: string) => Promise<void | never>;
   loginFromCache: () => Promise<void | never>;
-  isLoggedIn: () => boolean;
-  logout: () => Promise<void | never>;
-  terminate: () => void;
+  isLoggedIn: boolean;
+  shutdown: () => Promise<void | never>;
   createRoom: (
     params: RoomCreation,
     signWithParity: (value: string) => Promise<string>,
@@ -95,6 +94,7 @@ interface SecureMessenger {
   timelineMessages: () => Record<string, unknown>[] | never;
   sendMessage: (message: string) => void;
   setupSubscribers: (handlers: Subscriptions) => void;
+  clearSubscribers: () => void;
 
   // MST operations
   mstInitiate: (params: MstInitParams) => void;
@@ -194,38 +194,37 @@ class Matrix implements SecureMessenger {
    * Is Matrix user logged in
    * @return {Boolean}
    */
-  isLoggedIn(): boolean {
+  get isLoggedIn(): boolean {
     return Boolean(this.matrixClient?.isLoggedIn());
   }
 
   /**
-   * Logout user from Matrix
+   * Logout user from Matrix,
+   * terminate client,
+   * stop synchronization polling
    * @return {Promise}
    * @throws {Error}
    */
-  async logout(): Promise<void | never> {
-    this.checkClientLoggedIn();
-
-    try {
-      await this.matrixClient.logout();
-    } catch (error) {
-      throw this.createError('Logout failed', error);
-    }
-  }
-
-  /**
-   * Terminate client and stop polling
-   * @return {Promise}
-   */
-  async terminate(): Promise<void> {
+  async shutdown(): Promise<void | never> {
     if (!this.matrixClient) {
       throw this.createError('Client is not active');
     }
 
-    this.matrixClient.removeAllListeners();
-    this.matrixClient.stopClient();
-    await this.matrixClient.clearStores();
-    // TODO: this.matrixClient = undefined;
+    this.checkClientLoggedIn();
+
+    try {
+      await this.matrixClient.logout();
+      this.matrixClient.stopClient();
+      this.clearSubscribers();
+      await this.matrixClient.clearStores();
+      await this.storage.matrixCredentials
+        .where({ userId: this.matrixUserId })
+        .delete();
+      // TODO: handle proper typing
+      this.matrixClient = undefined as unknown as MatrixClient;
+    } catch (error) {
+      throw this.createError('Logout failed', error);
+    }
   }
 
   /**
@@ -424,6 +423,14 @@ class Matrix implements SecureMessenger {
    */
   setupSubscribers(handlers: Subscriptions): void {
     this.subscribeHandlers = handlers;
+  }
+
+  /**
+   * Clear subscription
+   */
+  clearSubscribers(): void {
+    this.matrixClient.removeAllListeners();
+    this.subscribeHandlers = undefined;
   }
 
   /**
@@ -693,6 +700,14 @@ class Matrix implements SecureMessenger {
     if (!roomName) return false;
 
     return /^OMNI MST \| 0x[a-fA-F\d]+$/.test(roomName);
+  }
+
+  /**
+   * Get matrix userId
+   * @return {string}
+   */
+  private get matrixUserId(): string {
+    return this.matrixClient.getUserId();
   }
 }
 

@@ -14,7 +14,7 @@ import Checkbox from '../../ui/Checkbox';
 import Address from '../../ui/Address';
 import DialogContent from '../../ui/DialogContent';
 import useToggle from '../../hooks/toggle';
-import { Routes } from '../../../common/consts';
+import { Routes } from '../../../common/constants';
 
 const SS58Prefix = 42;
 const DEFAULT_THRESHOLD = 2;
@@ -205,7 +205,7 @@ const ManageMultisigWallet: React.FC = () => {
           </Card>
         </div>
         <div className="p-2 flex">
-          <Button size="lg" disabled={!isValid} submit>
+          <Button size="lg" disabled={!isValid} type="submit">
             {wallet ? 'Update' : 'Create'}
           </Button>
           {wallet && (

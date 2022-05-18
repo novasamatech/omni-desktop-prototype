@@ -13,7 +13,7 @@ const Chat: React.FC = () => {
   const matrix = useMatrix();
 
   useEffect(() => {
-    if (matrix.isLoggedIn()) {
+    if (matrix.isLoggedIn) {
       matrix.setupSubscribers({
         onSyncProgress: () => console.log('=== 🟢 progess'),
         onSyncEnd: () => console.log('=== 🟢 end'),
@@ -30,10 +30,10 @@ const Chat: React.FC = () => {
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [matrix?.isLoggedIn]);
 
   useEffect(() => {
-    if (matrix.isLoggedIn()) {
+    if (matrix.isLoggedIn) {
       setRoomList(matrix.listOfOmniRooms(Membership.JOIN));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -150,7 +150,7 @@ const Chat: React.FC = () => {
         </div>
 
         <div className="p-2">
-          <Button submit>Login</Button>
+          <Button type="submit">Login</Button>
           <Button className="mt-2" onClick={onCreateRoom}>
             Create room
           </Button>

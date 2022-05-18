@@ -11,7 +11,7 @@ import {
   Account,
   AssetType,
 } from '../../db/db';
-import { validate } from '../../utils/dataValidation';
+import { validate } from '../../utils/validation';
 import Shimmer from '../../ui/Shimmer';
 
 const enum ValidationStatus {

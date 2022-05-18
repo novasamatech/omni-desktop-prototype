@@ -4,7 +4,7 @@ import DataTable from 'react-data-table-component';
 import { db } from '../../db/db';
 import Address from '../../ui/Address';
 import LinkButton from '../../ui/LinkButton';
-import { withId, Routes } from '../../../common/consts';
+import { withId, Routes } from '../../../common/constants';
 
 type ContactTable = {
   id: string;
@@ -49,7 +49,7 @@ const WalletList: React.FC = () => {
           name: c.name,
           address: c.mainAccounts[0].accountId,
           matrixId: c.secureProtocolId,
-        } as ContactTable)
+        } as ContactTable),
     );
     if (data) {
       setTableData(data);

@@ -3,7 +3,7 @@ import { useHistory } from 'react-router';
 import InputText from '../../ui/Input';
 import Button from '../../ui/Button';
 import { db } from '../../db/db';
-import { Routes } from '../../../common/consts';
+import { Routes } from '../../../common/constants';
 import ErrorMessage from '../../ui/ErrorMessage';
 
 const AddWallet: React.FC = () => {
@@ -45,7 +45,7 @@ const AddWallet: React.FC = () => {
         </ErrorMessage>
       </div>
       <div className="p-2">
-        <Button size="lg" disabled={walletName.length === 0} submit>
+        <Button size="lg" type="submit" disabled={walletName.length === 0}>
           Add wallet
         </Button>
       </div>

@@ -1,20 +1,27 @@
-/* eslint-disable react/require-default-props */
-/* eslint-disable jsx-a11y/label-has-associated-control */
+import React from 'react';
+import cn from 'classnames';
 
-import { PropsWithChildren } from 'react';
-
-interface Props {
+type Props = {
   visible: boolean;
+  italic?: boolean;
   className?: string;
-}
-
-const ErrorMessage = ({
-  children,
-  visible = false,
-  className,
-}: PropsWithChildren<Props>) => {
-  return visible ? (
-    <div className={`text-red-500 text-sm italic ${className}`}>{children}</div>
-  ) : null;
 };
+
+const ErrorMessage: React.FC<Props> = ({
+  visible = false,
+  italic = true,
+  className,
+  children,
+}) => {
+  if (!visible) {
+    return null;
+  }
+
+  return (
+    <div className={cn('text-red-500 text-sm', italic && 'italic', className)}>
+      {children}
+    </div>
+  );
+};
+
 export default ErrorMessage;

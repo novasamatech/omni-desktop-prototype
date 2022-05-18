@@ -6,7 +6,7 @@ import { format } from 'date-fns';
 import Button from '../ui/Button';
 import { currentTransactionState } from '../store/currentTransaction';
 import Address from '../ui/Address';
-import { Routes } from '../../common/consts';
+import { Routes } from '../../common/constants';
 import { db, Transaction as TransactionData, TransactionType } from '../db/db';
 import { formatAddress, getAddressFromWallet } from '../utils/account';
 

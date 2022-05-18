@@ -6,7 +6,7 @@ import Checkbox from '../ui/Checkbox';
 import { selectedWalletsState } from '../store/selectedWallets';
 import { db, Wallet } from '../db/db';
 import mst from '../../../assets/mst.svg';
-import { isMultisig } from '../utils/dataValidation';
+import { isMultisig } from '../utils/validation';
 
 const SelectWallets: React.FC = () => {
   const [selectedWallets, setSelectedWallets] =

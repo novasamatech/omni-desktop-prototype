@@ -1,12 +1,18 @@
-/* eslint-disable import/prefer-default-export */
+export const MatrixIdRegex =
+  /@[\w\d\-_]*:(?:[a-z\d](?:[a-z\d-]{0,61}[a-z\d])?\.)+[a-z\d][a-z\d-]{0,61}[a-z\d]/i;
+
 export const Routes = {
+  // Independent routes
+  LOGIN: '/login',
   BASKET: '/basket',
   SHOW_CODE: '/show-code',
   SCAN_CODE: '/scan-code',
+
+  // Composite routes
   TRANSFER: '/transfer',
   WALLETS: '/wallets',
   WALLET: '/wallet/:id',
-  CREATE_WALLET: '/wallets/create',
+  CREATE_WALLET: '/wallet/create',
   CREATE_MULTISIG_WALLET: '/multisig-wallet/create',
   EDIT_MULTISIG_WALLET: '/multisig-wallet/edit/:id',
   CHAT: '/chat',
@@ -17,9 +23,13 @@ export const Routes = {
   EDIT_CONTACT: '/edit-contact/:id',
 };
 
-export const withId = (link: string, id: any, replacer = ':id'): string => {
+export function withId(
+  link: string,
+  id: { toString: () => string },
+  replacer = ':id',
+): string {
   return link.replace(replacer, id.toString());
-};
+}
 
 export const enum ErrorTypes {
   REQUIRED = 'required',

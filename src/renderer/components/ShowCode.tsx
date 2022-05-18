@@ -18,7 +18,7 @@ import {
   currentUnsignedState,
 } from '../store/currentTransaction';
 import LinkButton from '../ui/LinkButton';
-import { Routes } from '../../common/consts';
+import { Routes } from '../../common/constants';
 import { getAddressFromWallet } from '../utils/account';
 import { formatAmount } from '../utils/amount';
 import Shimmer from '../ui/Shimmer';

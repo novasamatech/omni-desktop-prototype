@@ -17,7 +17,7 @@ import {
 } from '../store/currentTransaction';
 import { HexString } from '../../common/types';
 import LinkButton from '../ui/LinkButton';
-import { Routes } from '../../common/consts';
+import { Routes } from '../../common/constants';
 import { db, TransactionStatus } from '../db/db';
 
 // TODO: Move this function to utils

@@ -16,9 +16,9 @@ import ListItem from '../../ui/ListItem';
 import Select, { OptionType } from '../../ui/Select';
 import Address from '../../ui/Address';
 import DialogContent from '../../ui/DialogContent';
-import { Routes, ErrorTypes } from '../../../common/consts';
+import { Routes, ErrorTypes } from '../../../common/constants';
 import { selectedWalletsState } from '../../store/selectedWallets';
-import { validateAddress } from '../../utils/dataValidation';
+import { validateAddress } from '../../utils/validation';
 import ErrorMessage from '../../ui/ErrorMessage';
 
 const enum AccountTypes {
@@ -273,7 +273,7 @@ const Wallet: React.FC = () => {
         </div>
 
         <div className="p-2 flex items-center">
-          <Button size="lg" disabled={name === wallet?.name} submit>
+          <Button size="lg" disabled={name === wallet?.name} type="submit">
             Update
           </Button>
           <Button
@@ -349,7 +349,7 @@ const Wallet: React.FC = () => {
           </ErrorMessage>
         </div>
         <div className="p-2">
-          <Button size="lg" submit disabled={!isValid}>
+          <Button size="lg" type="submit" disabled={!isValid}>
             Add account
           </Button>
         </div>

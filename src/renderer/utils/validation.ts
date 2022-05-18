@@ -1,4 +1,3 @@
-/* eslint-disable import/prefer-default-export */
 import { ApiPromise } from '@polkadot/api';
 import { decodeAddress, encodeAddress } from '@polkadot/keyring';
 import { Header, BlockNumber } from '@polkadot/types/interfaces';
@@ -10,18 +9,19 @@ import {
   checkRootExists,
   getParachainId,
 } from './merkle';
+import { MatrixIdRegex } from '../../common/constants';
 
 export const validateWithBlockNumber = async (
   relaychainApi: ApiPromise,
   parachainApi: ApiPromise,
   blockNumber: BlockNumber,
-  storageKey: string
+  storageKey: string,
 ): Promise<boolean> => {
   const parachainId = await getParachainId(parachainApi);
   const header = await getHeader(relaychainApi, parachainId);
   const decodedHeader: Header = parachainApi.registry.createType(
     'Header',
-    header.toString()
+    header.toString(),
   );
 
   if (decodedHeader.number.toBn().gte(blockNumber.toBn())) {
@@ -31,7 +31,7 @@ export const validateWithBlockNumber = async (
     const proofs = await getProofs(
       parachainApi,
       storageKey,
-      parachainBlockHash.toString()
+      parachainBlockHash.toString(),
     );
 
     // TODO: Switch this version with real merkle trie verification
@@ -43,7 +43,7 @@ export const validateWithBlockNumber = async (
     relaychainApi,
     parachainApi,
     blockNumber,
-    storageKey
+    storageKey,
   );
 };
 
@@ -51,7 +51,7 @@ export const validate = async (
   relaychainApi: ApiPromise,
   parachainApi: ApiPromise,
   data: any,
-  storageKey: string
+  storageKey: string,
 ) => {
   const accountBlockHash = data.createdAtHash;
   const accountBlock = await parachainApi.rpc.chain.getBlock(accountBlockHash);
@@ -61,7 +61,7 @@ export const validate = async (
     relaychainApi,
     parachainApi,
     accountBlockNumber.unwrap(),
-    storageKey
+    storageKey,
   );
 };
 
@@ -77,3 +77,7 @@ export const validateAddress = (address: string): boolean => {
 
 export const isMultisig = (wallet: Wallet | MultisigWallet): boolean =>
   'originContacts' in wallet;
+
+export const validateMatrixLogin = (matrixId: string): boolean => {
+  return MatrixIdRegex.test(matrixId);
+};

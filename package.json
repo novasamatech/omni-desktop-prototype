@@ -103,7 +103,7 @@
     "email": "asmadek@novawallet.io"
   },
   "contributors": [],
-  "license":  {
+  "license": {
     "type": "Apache-2.0",
     "url": "https://opensource.org/licenses/apache2.0.php"
   },
@@ -163,6 +163,7 @@
     "@types/react": "^17.0.33",
     "@types/react-dom": "^17.0.10",
     "@types/react-router": "^5.1.17",
+    "@types/react-router-config": "^5.0.6",
     "@types/react-router-dom": "^5.3.2",
     "@types/react-test-renderer": "^17.0.1",
     "@types/terser-webpack-plugin": "^5.0.4",
@@ -234,6 +235,7 @@
     "@substrate/txwrapper-polkadot": "^2.0.2",
     "@types/crypto-js": "^4.1.1",
     "autoprefixer": "^10.4.0",
+    "classnames": "^2.3.1",
     "crypto-browserify": "^3.12.0",
     "crypto-js": "^4.1.1",
     "date-fns": "^2.28.0",
@@ -251,6 +253,7 @@
     "react-data-table-component": "^7.5.0",
     "react-dom": "^17.0.2",
     "react-hook-form": "^7.30.0",
+    "react-router-config": "^5.1.1",
     "react-router-dom": "^5.3.0",
     "react-shimmer-effects": "^1.0.2",
     "recoil": "^0.5.2",
