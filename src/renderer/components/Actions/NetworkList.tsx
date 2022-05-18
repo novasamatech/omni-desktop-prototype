@@ -13,6 +13,21 @@ import Dropdown from '../../ui/Dropdown';
 import { connectionState } from '../../store/api';
 import { getChainSpec, getKnownChainId } from '../../../common/networks';
 
+const NETWORK_OPTIONS = [
+  {
+    label: 'Disabled',
+    value: ActiveType.DISABLED,
+  },
+  {
+    label: 'Local node',
+    value: ActiveType.LOCAL_NODE,
+  },
+  {
+    label: 'External node',
+    value: ActiveType.EXTERNAL_NODE,
+  },
+];
+
 const NetworkList: React.FC = () => {
   const [connections, setConnections] = useRecoilState(connectionState);
 
@@ -96,22 +111,9 @@ const NetworkList: React.FC = () => {
               {network.name}
               <Dropdown
                 className="w-40 ml-auto"
-                options={[
-                  {
-                    label: 'Disabled',
-                    value: ActiveType.DISABLED,
-                  },
-                  {
-                    label: 'Local node',
-                    value: ActiveType.LOCAL_NODE,
-                  },
-                  {
-                    label: 'External node',
-                    value: ActiveType.EXTERNAL_NODE,
-                  },
-                ]}
+                options={NETWORK_OPTIONS}
                 value={network.activeType || ActiveType.DISABLED}
-                onChange={(event: any) => {
+                onChange={(event) => {
                   if (network.id) {
                     db.chains.update(network.id, {
                       activeType: event.target.value,

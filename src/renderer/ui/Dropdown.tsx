@@ -1,19 +1,12 @@
 /* eslint-disable react/require-default-props */
-import React, { ChangeEvent } from 'react';
+import React, { SelectHTMLAttributes } from 'react';
 
 export type OptionType = {
   value: string;
   label: string;
 };
 
-interface Props {
-  id?: string;
-  placeholder?: string;
-  name?: string;
-  disabled?: boolean;
-  value?: string | number;
-  onChange?: (event: ChangeEvent<HTMLSelectElement>) => void;
-  className?: string;
+interface Props extends SelectHTMLAttributes<HTMLSelectElement> {
   options: OptionType[];
 }
 
@@ -24,8 +17,8 @@ const Dropdown: React.FC<Props> = ({
   disabled,
   options,
   value,
-  onChange,
   className = '',
+  onChange,
 }) => {
   return (
     <select
