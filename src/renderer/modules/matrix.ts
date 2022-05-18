@@ -82,7 +82,7 @@ interface SecureMessenger {
   loginWithCreds: (login: string, password: string) => Promise<void | never>;
   loginFromCache: () => Promise<void | never>;
   isLoggedIn: boolean;
-  shutdown: () => Promise<void>;
+  shutdown: () => Promise<void | never>;
   createRoom: (
     params: RoomCreation,
     signWithParity: (value: string) => Promise<string>,
@@ -205,7 +205,7 @@ class Matrix implements SecureMessenger {
    * @return {Promise}
    * @throws {Error}
    */
-  async shutdown(): Promise<void> {
+  async shutdown(): Promise<void | never> {
     if (!this.matrixClient) {
       throw this.createError('Client is not active');
     }
