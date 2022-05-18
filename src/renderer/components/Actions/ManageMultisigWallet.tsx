@@ -164,6 +164,17 @@ const ManageMultisigWallet: React.FC = () => {
             />
           </div>
         </div>
+
+        {wallet && (
+          <div className="p-2">
+            <Card className="m-0">
+              <div className="text-gray-500 text-sm mb-2">Address</div>
+
+              <Address full address={wallet.mainAccounts[0].accountId} />
+            </Card>
+          </div>
+        )}
+
         <div className="p-2">
           <Card className={`m-0 ${wallet && 'bg-gray-100'}`}>
             <div className="text-gray-500 text-sm mb-2">Signatures</div>
