@@ -1,24 +1,20 @@
 /* eslint-disable react/require-default-props */
 /* eslint-disable jsx-a11y/label-has-associated-control */
-import { ChangeEvent } from 'react';
+import React, { InputHTMLAttributes } from 'react';
 
-interface Props {
+interface Props extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
-  className?: string;
-  checked?: boolean;
-  disabled?: boolean;
-  onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
 }
 
-const Checkbox = ({
+const Checkbox: React.FC<Props> = ({
   label,
   checked,
   disabled,
+  className,
   onChange,
-  className = '',
-}: Props) => {
+}) => {
   return (
-    <div className={className}>
+    <div className={`flex-1 hover:cursor-pointer ${className}`}>
       <label className="flex items-center">
         <input
           type="checkbox"
@@ -34,7 +30,7 @@ const Checkbox = ({
           `}
         />
         {label && (
-          <span className="text-gray-700 dark:text-white font-normal">
+          <span className="ml-2 text-gray-700 dark:text-white font-normal">
             {label}
           </span>
         )}

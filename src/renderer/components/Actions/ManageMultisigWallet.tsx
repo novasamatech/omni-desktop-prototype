@@ -117,6 +117,10 @@ const ManageMultisigWallet: React.FC = () => {
     }
   };
 
+  const isContactSelected = (contactId?: number) => {
+    return Boolean(wallet?.originContacts?.some((c) => c.id === contactId));
+  };
+
   return (
     <>
       <h2 className="font-light text-xl p-4">
@@ -173,9 +177,7 @@ const ManageMultisigWallet: React.FC = () => {
                 <div className="mr-3">
                   <Checkbox
                     disabled={!!wallet}
-                    checked={wallet?.originContacts?.some(
-                      (c) => c.id === contact.id,
-                    )}
+                    checked={isContactSelected(contact.id)}
                     onChange={() => updateSelectedContact(contact)}
                   />
                 </div>
