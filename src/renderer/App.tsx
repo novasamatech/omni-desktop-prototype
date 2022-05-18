@@ -81,16 +81,12 @@ const Main = () => {
   // }, [activeNetworks, connections, setConnections, inited]);
 
   return (
-    <div className="flex h-screen">
-      <FirstColumn />
-      <SecondColumn />
-      <ThirdColumn />
-
-      {/* {api.length === 0 && (
-        <div className="flex justify-center items-center fixed bottom-0 w-screen h-16 bg-red-100">
-          Connecting
-        </div>
-      )} */}
+    <div className="h-screen">
+      <div className={`flex h-screen ${transactions?.length && 'pb-20'}`}>
+        <FirstColumn />
+        <SecondColumn />
+        <ThirdColumn />
+      </div>
 
       {transactions?.length && (
         <div className="flex justify-center items-center fixed bottom-0 w-screen h-20 bg-gray-100">
