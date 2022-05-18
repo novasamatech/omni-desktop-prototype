@@ -53,6 +53,7 @@ const Transfer: React.FC = () => {
     formState: { errors, isValid },
   } = useForm<TransferForm>({
     mode: 'onChange',
+    defaultValues: { amount: '', address: '' },
   });
 
   const watchAddress = watch('address');
@@ -211,10 +212,7 @@ const Transfer: React.FC = () => {
 
       db.transactions.bulkAdd(transactions);
 
-      reset({
-        amount: '',
-        address: '',
-      });
+      reset();
     }
   };
 

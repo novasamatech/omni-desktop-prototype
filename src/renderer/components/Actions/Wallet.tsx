@@ -52,6 +52,9 @@ const Wallet: React.FC = () => {
     formState: { isValid, errors },
   } = useForm<AddressForm>({
     mode: 'onChange',
+    defaultValues: {
+      address: '',
+    },
   });
 
   const [name, setName] = useState('');
@@ -124,13 +127,11 @@ const Wallet: React.FC = () => {
   }, [networks, wallet]);
 
   useEffect(() => {
-    setAccountNetwork((currentAccountNetwork) => {
-      if (!currentAccountNetwork) {
-        return networkOptions[0]?.value;
-      }
-      return currentAccountNetwork;
-    });
-  }, [networkOptions]);
+    if (!accountNetwork) {
+      setAccountNetwork(networkOptions[0]?.value);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [networkOptions.length]);
 
   useEffect(() => {
     const accountList = networks
@@ -174,7 +175,6 @@ const Wallet: React.FC = () => {
   }, [networks, wallet]);
 
   const addAccount: SubmitHandler<AddressForm> = async ({ address }) => {
-    console.log(1);
     // TODO: Add validation for account address
     // const keyring = new Keyring();
     // const pair = keyring.addFromAddress(address);
@@ -214,9 +214,7 @@ const Wallet: React.FC = () => {
           ],
         });
 
-        reset({
-          address: '',
-        });
+        reset();
       }
     }
   };
