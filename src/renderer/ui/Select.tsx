@@ -56,7 +56,7 @@ const Select: React.FC<Props> = ({
           ${inputClassName}`}
         name={name}
         placeholder={placeholder}
-        defaultValue={value}
+        value={value}
         disabled={disabled}
         onChange={onChange}
         onBlur={onBlur}

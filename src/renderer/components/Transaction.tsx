@@ -8,7 +8,7 @@ import { currentTransactionState } from '../store/currentTransaction';
 import Address from '../ui/Address';
 import { Routes } from '../../common/constants';
 import { db, Transaction as TransactionData, TransactionType } from '../db/db';
-import { getAddressFromWallet } from '../utils/account';
+import { formatAddress, getAddressFromWallet } from '../utils/account';
 
 type Props = {
   transaction: TransactionData;
@@ -30,6 +30,9 @@ const Transaction: React.FC<Props> = ({ transaction }: Props) => {
     history.push(Routes.SHOW_CODE);
   };
 
+  const formatRecipientAddress = (address: string) =>
+    network ? formatAddress(address, network.addressPrefix) : address;
+
   return (
     <div className="bg-gray-100 p-4 m-4 rounded-lg">
       <div>
@@ -50,7 +53,7 @@ const Transaction: React.FC<Props> = ({ transaction }: Props) => {
       transaction.type === TransactionType.MULTISIG_TRANSFER ? (
         <div className="flex">
           Transfer {transaction.data.amount} {tokenSymbol} to{' '}
-          <Address address={transaction.data.address} />
+          <Address address={formatRecipientAddress(transaction.data.address)} />
         </div>
       ) : (
         <div>

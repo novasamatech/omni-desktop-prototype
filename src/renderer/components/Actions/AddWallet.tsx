@@ -4,6 +4,7 @@ import InputText from '../../ui/Input';
 import Button from '../../ui/Button';
 import { db } from '../../db/db';
 import { Routes } from '../../../common/constants';
+import ErrorMessage from '../../ui/ErrorMessage';
 
 const AddWallet: React.FC = () => {
   const [walletName, setWalletName] = useState('');
@@ -39,9 +40,12 @@ const AddWallet: React.FC = () => {
           value={walletName}
           onChange={onChangeWalletName}
         />
+        <ErrorMessage visible={walletName.length === 0}>
+          Wallet name is required
+        </ErrorMessage>
       </div>
       <div className="p-2">
-        <Button size="lg" type="submit">
+        <Button size="lg" type="submit" disabled={walletName.length === 0}>
           Add wallet
         </Button>
       </div>

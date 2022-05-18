@@ -55,6 +55,7 @@ const InputText: React.FC<Props> = ({
           inputClassName,
         )}
         value={value}
+        step="any"
         type={type}
         name={name}
         placeholder={placeholder}

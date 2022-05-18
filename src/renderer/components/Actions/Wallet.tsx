@@ -52,6 +52,9 @@ const Wallet: React.FC = () => {
     formState: { isValid, errors },
   } = useForm<AddressForm>({
     mode: 'onChange',
+    defaultValues: {
+      address: '',
+    },
   });
 
   const [name, setName] = useState('');
@@ -121,10 +124,14 @@ const Wallet: React.FC = () => {
         })) || [];
 
     setNetworkOptions(options);
+  }, [networks, wallet]);
+
+  useEffect(() => {
     if (!accountNetwork) {
-      setAccountNetwork(options[0]?.value);
+      setAccountNetwork(networkOptions[0]?.value);
     }
-  }, [networks, wallet, accountNetwork]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [networkOptions.length]);
 
   useEffect(() => {
     const accountList = networks
@@ -175,7 +182,7 @@ const Wallet: React.FC = () => {
     const publicKeyHex = u8aToHex(publicKey);
 
     const doesntExists = !wallet?.chainAccounts.find(
-      (c) => c.chainId === accountNetwork || c.accountId === address,
+      (c) => c.chainId === accountNetwork,
     );
 
     if (address && wallet?.id) {
@@ -194,6 +201,8 @@ const Wallet: React.FC = () => {
             },
           ],
         });
+
+        setAccountNetwork(undefined);
       } else if (accountType === AccountTypes.MAIN) {
         // TODO: add support for main accounts of different types
         await db.wallets.update(wallet.id, {
@@ -210,12 +219,12 @@ const Wallet: React.FC = () => {
     }
   };
 
-  const removeAccount = async (accountId: string) => {
+  const removeAccount = async (chainId: string) => {
     // TODO: Add possibility to remove main accounts
     if (wallet?.id) {
       await db.wallets.update(wallet.id, {
         chainAccounts: wallet.chainAccounts.filter(
-          (c) => c.accountId !== accountId,
+          (c) => c.chainId !== chainId,
         ),
       });
     }
@@ -363,7 +372,7 @@ const Wallet: React.FC = () => {
               </div>
               <Button
                 className="ml-auto max-w-min"
-                onClick={() => removeAccount(account?.accountId || '')}
+                onClick={() => removeAccount(network.chainId || '')}
               >
                 Remove
               </Button>

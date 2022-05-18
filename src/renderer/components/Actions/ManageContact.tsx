@@ -39,11 +39,8 @@ const ManageContact: React.FC = () => {
     formState: { errors, isValid },
   } = useForm<ContactForm>({
     mode: 'onChange',
+    defaultValues: { name: '', matrixId: '', address: '' },
   });
-
-  useEffect(() => {
-    reset({ name: '', matrixId: '', address: '' });
-  }, [reset]);
 
   useEffect(() => {
     if (id) {
@@ -98,11 +95,7 @@ const ManageContact: React.FC = () => {
       } else {
         await db.contacts.add(contactObject);
 
-        reset({
-          name: '',
-          matrixId: '',
-          address: '',
-        });
+        reset();
       }
     } catch (error) {
       // TODO: Add notification system

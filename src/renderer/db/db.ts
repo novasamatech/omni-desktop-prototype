@@ -139,7 +139,7 @@ export type Chain = {
   explorers?: Expolorer[];
   // TODO: Store connection information in separate table
   activeType: ActiveType;
-  addressPrefix?: number;
+  addressPrefix: number;
 };
 
 export type ChainConnection = {
