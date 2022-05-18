@@ -311,7 +311,7 @@ const Transfer: React.FC = () => {
             </div>
           </div>
           <div className="p-2 text-gray-500 flex justify-between">
-            <div>Base deposit:</div>
+            <div>Deposit factor:</div>
             <div>
               {formatBalance(
                 currentNetwork.api.consts.multisig.depositFactor.toString(),
