@@ -13,8 +13,8 @@ import Button from '../../ui/Button';
 import { Contact, CryptoType, db } from '../../db/db';
 import useToggle from '../../hooks/toggle';
 import DialogContent from '../../ui/DialogContent';
-import { validateAddress } from '../../utils/dataValidation';
-import { ErrorTypes, Routes } from '../../../common/consts';
+import { validateAddress } from '../../utils/validation';
+import { ErrorTypes, Routes } from '../../../common/constants';
 import ErrorMessage from '../../ui/ErrorMessage';
 
 type ContactForm = {
@@ -198,7 +198,7 @@ const ManageContact: React.FC = () => {
         </div>
 
         <div className="flex p-2">
-          <Button className="w-fit" size="lg" submit disabled={!isValid}>
+          <Button className="w-fit" size="lg" type="submit" disabled={!isValid}>
             {contact ? 'Update contact' : 'Add contact'}
           </Button>
           {contact && (

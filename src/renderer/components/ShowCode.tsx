@@ -19,7 +19,7 @@ import {
   currentUnsignedState,
 } from '../store/currentTransaction';
 import LinkButton from '../ui/LinkButton';
-import { Routes } from '../../common/consts';
+import { Routes } from '../../common/constants';
 import { getAddressFromWallet } from '../utils/account';
 // import { isMultisig } from '../utils/dataValidation';
 
@@ -36,7 +36,7 @@ const ShowCode: React.FC = () => {
     const setupTransaction = async () => {
       if (transaction && Object.values(networks).length) {
         const network = Object.values(networks).find(
-          (n) => n.network.chainId === transaction.chainId
+          (n) => n.network.chainId === transaction.chainId,
         );
 
         setApi(network?.api);
@@ -83,7 +83,7 @@ const ShowCode: React.FC = () => {
             {
               metadataRpc: metadataRpc.toHex(),
               registry,
-            }
+            },
           );
           const signingPayloadHex = construct.signingPayload(unsigned, {
             registry,

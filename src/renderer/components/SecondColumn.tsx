@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useRecoilValue } from 'recoil';
 import { selectedWalletsState } from '../store/selectedWallets';
-import { Routes } from '../../common/consts';
+import { Routes } from '../../common/constants';
 
 const SecondColumn: React.FC = () => {
   const selectedAccounts = useRecoilValue(selectedWalletsState);

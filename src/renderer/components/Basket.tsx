@@ -4,7 +4,7 @@ import Transaction from './Transaction';
 import LinkButton from '../ui/LinkButton';
 import { db } from '../db/db';
 
-const ThirdColumn: React.FC = () => {
+const Basket: React.FC = () => {
   const transactions = useLiveQuery(() => db.transactions.toArray());
 
   return (
@@ -27,4 +27,4 @@ const ThirdColumn: React.FC = () => {
   );
 };
 
-export default ThirdColumn;
+export default Basket;

@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useRecoilValue } from 'recoil';
 import { decodeAddress, encodeAddress } from '@polkadot/keyring';
 import { formatBalance } from '@polkadot/util';
-import { useForm, Controller, SubmitHandler } from 'react-hook-form';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 
 import { Connection, connectionState } from '../../store/api';
 import { selectedWalletsState } from '../../store/selectedWallets';
@@ -11,16 +11,16 @@ import Button from '../../ui/Button';
 import InputText from '../../ui/Input';
 import Select, { OptionType } from '../../ui/Select';
 import ErrorMessage from '../../ui/ErrorMessage';
-import { ErrorTypes } from '../../../common/consts';
 import {
-  TransactionType,
-  TransactionStatus,
-  db,
   Asset,
   AssetType,
+  db,
+  TransactionStatus,
+  TransactionType,
 } from '../../db/db';
-import { isMultisig, validateAddress } from '../../utils/dataValidation';
+import { isMultisig, validateAddress } from '../../utils/validation';
 import { getAddressFromWallet } from '../../utils/account';
+import { ErrorTypes } from '../../../common/constants';
 
 type TransferForm = {
   address: string;
@@ -300,7 +300,7 @@ const Transfer: React.FC = () => {
         </div>
       )}
       <div className="p-2">
-        <Button submit size="lg" disabled={!isValid}>
+        <Button type="submit" size="lg" disabled={!isValid}>
           Add transaction
         </Button>
       </div>

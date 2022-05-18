@@ -3,7 +3,7 @@ import { useHistory } from 'react-router';
 import InputText from '../../ui/Input';
 import Button from '../../ui/Button';
 import { db } from '../../db/db';
-import { Routes } from '../../../common/consts';
+import { Routes } from '../../../common/constants';
 
 const AddWallet: React.FC = () => {
   const [walletName, setWalletName] = useState('');
@@ -41,7 +41,7 @@ const AddWallet: React.FC = () => {
         />
       </div>
       <div className="p-2">
-        <Button size="lg" submit>
+        <Button size="lg" type="submit">
           Add wallet
         </Button>
       </div>

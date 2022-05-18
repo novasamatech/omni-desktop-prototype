@@ -1,5 +1,5 @@
-/* eslint-disable react/require-default-props */
-import { PropsWithChildren } from 'react';
+import React, { ButtonHTMLAttributes } from 'react';
+import spinner from '../../../assets/spinner.svg';
 
 const SizeClass = {
   sm: 'text-sm py-1 px-4',
@@ -7,27 +7,31 @@ const SizeClass = {
   lg: 'text-lg py-4 px-8',
 };
 
-type Props = {
-  disabled?: boolean;
-  submit?: boolean;
-  onClick?: () => void;
-  className?: string;
-  size?: keyof typeof SizeClass;
+const LoaderClass = {
+  sm: 'w-5 h-5',
+  md: 'w-6 h-6',
+  lg: 'w-6 h-6',
 };
 
-const Button = ({
+interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
+  isLoading?: boolean;
+  size?: keyof typeof SizeClass;
+}
+
+const Button: React.FC<Props> = ({
   disabled = false,
-  submit = false,
+  isLoading = false,
+  type = 'button',
   onClick,
-  children,
-  className = '',
+  className,
   size = 'md',
-}: PropsWithChildren<Props>) => {
+  children,
+}) => {
   return (
     <button
-      onClick={onClick}
-      type={submit ? 'submit' : 'button'}
+      type={type}
       disabled={disabled}
+      onClick={onClick}
       className={`
         bg-black hover:bg-gray-800
         rounded-lg text-white
@@ -38,8 +42,17 @@ const Button = ({
         ${className}
       `}
     >
-      {children}
+      {isLoading ? (
+        <img
+          className={`animate-spin ${LoaderClass[size]}`}
+          src={spinner}
+          alt=""
+        />
+      ) : (
+        children
+      )}
     </button>
   );
 };
+
 export default Button;

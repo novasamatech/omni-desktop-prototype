@@ -17,14 +17,14 @@ import {
 } from '../store/currentTransaction';
 import { HexString } from '../../common/types';
 import LinkButton from '../ui/LinkButton';
-import { Routes } from '../../common/consts';
+import { Routes } from '../../common/constants';
 import { db, TransactionStatus } from '../db/db';
 
 // TODO: Move this function to utils
 function createSignedTx(
   unsigned: UnsignedTransaction,
   signature: HexString,
-  options: OptionsWithMeta
+  options: OptionsWithMeta,
 ): GenericExtrinsic {
   const {
     metadataRpc,
@@ -40,7 +40,7 @@ function createSignedTx(
   const extrinsic = registry.createType(
     'Extrinsic',
     { method: unsigned.method },
-    { version: unsigned.version }
+    { version: unsigned.version },
   );
 
   extrinsic.addSignature(unsigned.address, signature, unsigned);
@@ -60,7 +60,7 @@ const ScanCode: React.FC = () => {
     const signature = payload.signature || '';
     if (transaction && unsigned && Object.values(networks).length) {
       const network = Object.values(networks).find(
-        (n) => n.network.chainId === transaction.chainId
+        (n) => n.network.chainId === transaction.chainId,
       );
 
       if (network && network.api) {

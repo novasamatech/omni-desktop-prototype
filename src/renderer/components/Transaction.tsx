@@ -6,7 +6,7 @@ import { format } from 'date-fns';
 import Button from '../ui/Button';
 import { currentTransactionState } from '../store/currentTransaction';
 import Address from '../ui/Address';
-import { Routes } from '../../common/consts';
+import { Routes } from '../../common/constants';
 import { db, Transaction as TransactionData, TransactionType } from '../db/db';
 import { getAddressFromWallet } from '../utils/account';
 
@@ -17,7 +17,7 @@ type Props = {
 const Transaction: React.FC<Props> = ({ transaction }: Props) => {
   const setCurrentTransaction = useSetRecoilState(currentTransactionState);
   const network = useLiveQuery(() =>
-    db.chains.get({ chainId: transaction.chainId })
+    db.chains.get({ chainId: transaction.chainId }),
   );
 
   const history = useHistory();

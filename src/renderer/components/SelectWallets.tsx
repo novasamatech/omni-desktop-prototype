@@ -6,7 +6,7 @@ import Checkbox from '../ui/Checkbox';
 import { selectedWalletsState } from '../store/selectedWallets';
 import { db, Wallet } from '../db/db';
 import mst from '../../../assets/mst.svg';
-import { isMultisig } from '../utils/dataValidation';
+import { isMultisig } from '../utils/validation';
 
 const SelectWallets: React.FC = () => {
   // TODO: select wallets after hot update on interface
@@ -21,7 +21,7 @@ const SelectWallets: React.FC = () => {
     setSelectedWallets(
       isExist
         ? selectedWallets.filter((w) => w.id !== wallet.id)
-        : [...selectedWallets, wallet]
+        : [...selectedWallets, wallet],
     );
   };
 

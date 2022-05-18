@@ -14,7 +14,7 @@ import Checkbox from '../../ui/Checkbox';
 import Address from '../../ui/Address';
 import DialogContent from '../../ui/DialogContent';
 import useToggle from '../../hooks/toggle';
-import { Routes } from '../../../common/consts';
+import { Routes } from '../../../common/constants';
 
 const SS58Prefix = 42;
 const DEFAULT_THRESHOLD = 2;
@@ -73,7 +73,7 @@ const ManageMultisigWallet: React.FC = () => {
       await db.wallets.put(updatedWallet);
     } else {
       const addresses = selectedContacts?.map(
-        (c) => c.mainAccounts[0].accountId
+        (c) => c.mainAccounts[0].accountId,
       );
       if (addresses) {
         const multiAddress = createKeyMulti(addresses, threshold);
@@ -170,7 +170,7 @@ const ManageMultisigWallet: React.FC = () => {
                   <Checkbox
                     disabled={!!wallet}
                     checked={wallet?.originContacts?.some(
-                      (c) => c.id === contact.id
+                      (c) => c.id === contact.id,
                     )}
                     onChange={() => updateSelectedContact(contact)}
                   />
@@ -186,7 +186,7 @@ const ManageMultisigWallet: React.FC = () => {
           </Card>
         </div>
         <div className="p-2 flex">
-          <Button size="lg" disabled={!isValid} submit>
+          <Button size="lg" disabled={!isValid} type="submit">
             {wallet ? 'Update' : 'Create'}
           </Button>
           {wallet && (
