@@ -16,7 +16,7 @@ import ShowCode from './components/ShowCode';
 import ScanCode from './components/ScanCode';
 import LinkButton from './ui/LinkButton';
 import { Routes } from '../common/consts';
-import { db } from './db/db';
+import { db, TransactionStatus } from './db/db';
 import MatrixProvider from './modules/matrixProvider';
 // import { ActiveType, db } from './db/db';
 // import { getChainSpec, getKnownChainId } from '../common/networks';
@@ -27,7 +27,12 @@ const Main = () => {
   // const [connections, setConnections] = useRecoilState(connectionState);
   // const [inited, setInited] = useState(false);
 
-  const transactions = useLiveQuery(() => db.transactions.toArray());
+  const transactions = useLiveQuery(() =>
+    db.transactions
+      .where('status')
+      .notEqual(TransactionStatus.CONFIRMED)
+      .toArray(),
+  );
   // const activeNetworks = useLiveQuery(() => {
   //   return db.chains
   //     .where('activeType')

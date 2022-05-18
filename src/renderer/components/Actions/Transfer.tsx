@@ -25,7 +25,7 @@ import { formatAmount } from '../../utils/amount';
 
 type TransferForm = {
   address: string;
-  amount: number;
+  amount: string;
 };
 
 const Transfer: React.FC = () => {
@@ -79,7 +79,7 @@ const Transfer: React.FC = () => {
         transferExtrinsic = currentNetwork.api.tx.assets.transfer(
           currentAsset.assetId,
           watchAddress,
-          formatAmount(watchAmount.toString(), currentAsset.precision),
+          formatAmount(watchAmount, currentAsset.precision),
         );
 
         deposit = currentNetwork?.api.consts.assets.existentialDeposit;
@@ -87,14 +87,14 @@ const Transfer: React.FC = () => {
         transferExtrinsic = currentNetwork.api.tx.currencies.transfer(
           watchAddress,
           currentAsset.assetId,
-          formatAmount(watchAmount.toString(), currentAsset.precision),
+          formatAmount(watchAmount, currentAsset.precision),
         );
 
         deposit = currentNetwork?.api.consts.currencies.existentialDeposit;
       } else {
         transferExtrinsic = currentNetwork.api.tx.balances.transfer(
           watchAddress,
-          formatAmount(watchAmount.toString(), currentAsset.precision),
+          formatAmount(watchAmount, currentAsset.precision),
         );
 
         deposit = currentNetwork?.api.consts.balances.existentialDeposit;
@@ -212,7 +212,10 @@ const Transfer: React.FC = () => {
 
       db.transactions.bulkAdd(transactions);
 
-      reset();
+      reset({
+        amount: '',
+        address: '',
+      });
     }
   };
 
@@ -269,7 +272,7 @@ const Transfer: React.FC = () => {
         <Controller
           name="amount"
           control={control}
-          rules={{ validate: (v) => v > 0 }}
+          rules={{ validate: (v) => Number(v) > 0 }}
           render={({ field: { onChange, onBlur, value } }) => (
             <InputText
               onChange={onChange}

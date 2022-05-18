@@ -205,7 +205,9 @@ const Wallet: React.FC = () => {
           ],
         });
 
-        reset();
+        reset({
+          address: '',
+        });
       }
     }
   };

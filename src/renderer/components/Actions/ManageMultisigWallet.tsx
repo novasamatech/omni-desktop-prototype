@@ -93,7 +93,10 @@ const ManageMultisigWallet: React.FC = () => {
           chainAccounts: [],
         });
 
-        reset();
+        reset({
+          name: '',
+          threshold: DEFAULT_THRESHOLD,
+        });
       }
     }
   };
