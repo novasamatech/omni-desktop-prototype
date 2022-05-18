@@ -42,7 +42,7 @@ const ManageMultisigWallet: React.FC = () => {
   }, [id]);
 
   const contacts = useLiveQuery(() => db.contacts.toArray());
-  const [selectedContacts, setSelectedContacts] = useState<Array<Contact>>();
+  const [selectedContacts, setSelectedContacts] = useState<Contact[]>([]);
 
   const {
     handleSubmit,
@@ -76,7 +76,7 @@ const ManageMultisigWallet: React.FC = () => {
 
       await db.wallets.put(updatedWallet);
     } else {
-      const addresses = selectedContacts?.map(
+      const addresses = selectedContacts.map(
         (c) => c.mainAccounts[0].accountId,
       );
       if (addresses) {
@@ -86,7 +86,7 @@ const ManageMultisigWallet: React.FC = () => {
         db.wallets.add({
           name: name.trim(),
           threshold,
-          originContacts: selectedContacts || [],
+          originContacts: selectedContacts,
           mainAccounts: [
             {
               accountId: Ss58Address,
@@ -103,10 +103,10 @@ const ManageMultisigWallet: React.FC = () => {
   };
 
   const updateSelectedContact = (contact: Contact) => {
-    if (selectedContacts?.includes(contact)) {
+    if (selectedContacts.includes(contact)) {
       setSelectedContacts(selectedContacts.filter((c) => c.id !== contact.id));
     } else {
-      setSelectedContacts((selectedContacts || []).concat(contact));
+      setSelectedContacts(selectedContacts.concat(contact));
     }
   };
 
@@ -115,6 +115,12 @@ const ManageMultisigWallet: React.FC = () => {
       db.wallets.delete(Number(id));
       history.push(Routes.WALLETS);
     }
+  };
+
+  const isContactSelected = (contactId?: number) => {
+    const collection = wallet ? wallet.originContacts : selectedContacts;
+
+    return collection.some((c) => c.id === contactId);
   };
 
   return (
@@ -148,7 +154,7 @@ const ManageMultisigWallet: React.FC = () => {
               name="threshold"
               control={control}
               defaultValue={wallet?.threshold || DEFAULT_THRESHOLD}
-              rules={{ min: 2, max: selectedContacts?.length }}
+              rules={{ min: 2, max: selectedContacts.length }}
               render={({ field: { onChange, onBlur, value } }) => (
                 <InputText
                   type="number"
@@ -184,9 +190,7 @@ const ManageMultisigWallet: React.FC = () => {
                 <div className="mr-3">
                   <Checkbox
                     disabled={!!wallet}
-                    checked={wallet?.originContacts?.some(
-                      (c) => c.id === contact.id,
-                    )}
+                    checked={isContactSelected(contact.id)}
                     onChange={() => updateSelectedContact(contact)}
                   />
                 </div>

@@ -14,7 +14,7 @@ type Props = {
 
 const getRelaychain = (
   networks: Connection[],
-  network: Chain
+  network: Chain,
 ): Connection | undefined => {
   if (!network.parentId) {
     return undefined;
@@ -37,7 +37,7 @@ const NetworkBalances: React.FC<Props> = ({ wallet, connection }: Props) => {
   useEffect(() => {
     setAccount(
       wallet.chainAccounts.find((a) => a.chainId === network.chainId) ||
-        wallet.mainAccounts[0]
+        wallet.mainAccounts[0],
     );
   }, [wallet, network]);
 
