@@ -21,6 +21,7 @@ import {
 import { isMultisig, validateAddress } from '../../utils/validation';
 import { getAddressFromWallet } from '../../utils/account';
 import { ErrorTypes } from '../../../common/constants';
+import { formatAmount } from '../../utils/amount';
 
 type TransferForm = {
   address: string;
@@ -78,7 +79,7 @@ const Transfer: React.FC = () => {
         transferExtrinsic = currentNetwork.api.tx.assets.transfer(
           currentAsset.assetId,
           watchAddress,
-          watchAmount,
+          formatAmount(watchAmount.toString(), currentAsset.precision),
         );
 
         deposit = currentNetwork?.api.consts.assets.existentialDeposit;
@@ -86,14 +87,14 @@ const Transfer: React.FC = () => {
         transferExtrinsic = currentNetwork.api.tx.currencies.transfer(
           watchAddress,
           currentAsset.assetId,
-          watchAmount,
+          formatAmount(watchAmount.toString(), currentAsset.precision),
         );
 
         deposit = currentNetwork?.api.consts.currencies.existentialDeposit;
       } else {
         transferExtrinsic = currentNetwork.api.tx.balances.transfer(
           watchAddress,
-          watchAmount,
+          formatAmount(watchAmount.toString(), currentAsset.precision),
         );
 
         deposit = currentNetwork?.api.consts.balances.existentialDeposit;
@@ -201,7 +202,8 @@ const Transfer: React.FC = () => {
           address: addressFrom,
           wallet: w,
           data: {
-            assetId: currentAsset?.assetId,
+            assetId: currentAsset.assetId,
+            precision: currentAsset.precision,
             address,
             amount,
           },

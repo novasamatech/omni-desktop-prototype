@@ -19,8 +19,8 @@ const Basket: React.FC = () => {
       </div>
 
       <div className="m-auto w-1/2">
-        {transactions?.map((t) => (
-          <Transaction key={`${t.createdAt}_${t.type}`} transaction={t} />
+        {transactions?.reverse().map((t) => (
+          <Transaction key={`${t.createdAt}_${t.address}`} transaction={t} />
         ))}
       </div>
     </>

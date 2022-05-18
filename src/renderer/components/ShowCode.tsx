@@ -21,6 +21,7 @@ import {
 import LinkButton from '../ui/LinkButton';
 import { Routes } from '../../common/constants';
 import { getAddressFromWallet } from '../utils/account';
+import { formatAmount } from '../utils/amount';
 // import { isMultisig } from '../utils/dataValidation';
 
 const ShowCode: React.FC = () => {
@@ -63,7 +64,10 @@ const ShowCode: React.FC = () => {
           const { nonce } = await network.api.query.system.account(address);
           const unsigned = methods.balances.transfer(
             {
-              value: transaction.data.amount,
+              value: formatAmount(
+                transaction.data.amount.toString(),
+                transaction.data.precision,
+              ),
               dest: transaction.data.address,
             },
             {
