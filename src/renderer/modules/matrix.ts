@@ -213,13 +213,13 @@ class Matrix implements SecureMessenger {
     this.checkClientLoggedIn();
 
     try {
+      await this.matrixClient.logout();
+      this.matrixClient.stopClient();
       this.clearSubscribers();
+      await this.matrixClient.clearStores();
       await this.storage.matrixCredentials
         .where({ userId: this.matrixUserId })
         .delete();
-      this.matrixClient.stopClient();
-      await this.matrixClient.clearStores();
-      await this.matrixClient.logout();
       // TODO: handle proper typing
       this.matrixClient = undefined as unknown as MatrixClient;
     } catch (error) {

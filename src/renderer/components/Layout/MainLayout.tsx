@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { renderRoutes, RouteConfig } from 'react-router-config';
+import cn from 'classnames';
 import { db, TransactionStatus } from '../../db/db';
 import FirstColumn from '../FirstColumn';
 import SecondColumn from '../SecondColumn';
@@ -72,12 +73,12 @@ const MainLayout: React.FC<Props> = ({ route }) => {
 
   return (
     <div className="flex h-screen">
-      <div className={`flex h-screen ${transactions?.length && 'pb-20'}`}>
-        <FirstColumn />
-        <SecondColumn />
-        <div className="flex-1 overflow-auto">
-          {renderRoutes(route?.routes)}
-        </div>
+      <FirstColumn />
+      <SecondColumn />
+      <div
+        className={cn('flex-1 overflow-auto', transactions?.length && 'pb-20')}
+      >
+        {renderRoutes(route?.routes)}
       </div>
 
       {transactions?.length && (
