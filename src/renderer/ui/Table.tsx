@@ -4,7 +4,7 @@
 interface Props {
   withBorder?: boolean;
   headers?: string[];
-  data?: Array<Array<string>>;
+  data?: string[][];
   className?: string;
 }
 
