@@ -36,3 +36,5 @@ export const enum ErrorTypes {
   VALIDATE = 'validate',
   PATTERN = 'pattern',
 }
+
+export const DEFAULT = 'default';

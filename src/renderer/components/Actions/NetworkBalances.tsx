@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useRecoilValue } from 'recoil';
 import '@polkadot/api-augment';
 
-import { Connection, connectionState } from '../../store/api';
+import { Connection, connectionState } from '../../store/connections';
 import { Asset, Chain, Wallet, Account } from '../../db/db';
 import Card from '../../ui/Card';
 import AssetBalance from './AssetBalance';

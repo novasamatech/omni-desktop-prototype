@@ -10,7 +10,7 @@ import List from '../../ui/List';
 import ListItem from '../../ui/ListItem';
 import { loadChainsList } from '../../api/chains';
 import Dropdown from '../../ui/Dropdown';
-import { connectionState } from '../../store/api';
+import { connectionState } from '../../store/connections';
 import { getChainSpec, getKnownChainId } from '../../../common/networks';
 
 const NETWORK_OPTIONS = [

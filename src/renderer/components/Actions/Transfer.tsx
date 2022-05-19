@@ -5,7 +5,7 @@ import { decodeAddress, encodeAddress } from '@polkadot/keyring';
 import { formatBalance } from '@polkadot/util';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 
-import { Connection, connectionState } from '../../store/api';
+import { Connection, connectionState } from '../../store/connections';
 import { selectedWalletsState } from '../../store/selectedWallets';
 import Button from '../../ui/Button';
 import InputText from '../../ui/Input';
@@ -23,7 +23,7 @@ import {
 import { isMultisig, validateAddress } from '../../utils/validation';
 import { getAddressFromWallet } from '../../utils/account';
 import { ErrorTypes } from '../../../common/constants';
-import { formatAmount } from '../../utils/amount';
+import { formatAmount, getAssetId } from '../../utils/assets';
 
 type TransferForm = {
   address: string;
@@ -182,17 +182,7 @@ const Transfer: React.FC = () => {
           ? TransactionType.MULTISIG_TRANSFER
           : TransactionType.TRANSFER;
 
-        let assetId;
-        switch (currentAsset.type) {
-          case AssetType.STATEMINE:
-            assetId = (currentAsset.typeExtras as StatemineExtras).assetId;
-            break;
-          case AssetType.ORML:
-            assetId = (currentAsset.typeExtras as OrmlExtras).currencyIdScale;
-            break;
-          default:
-            assetId = currentAsset.assetId;
-        }
+        const assetId = getAssetId(currentAsset);
 
         return {
           createdAt: new Date(),
