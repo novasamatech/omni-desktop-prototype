@@ -61,7 +61,7 @@ export type Wallet = {
 
 export type MultisigWallet = Wallet & {
   originContacts: Contact[];
-  threshold: number;
+  threshold: string;
 };
 
 export type StatemineExtras = {

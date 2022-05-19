@@ -38,13 +38,13 @@ const enum OmniMstEvents {
 }
 
 type RoomCreation = {
-  mstAccountAddress: HexString;
+  mstAccountAddress: string;
   inviterPublicKey: string;
   threshold: number;
   signatories: {
-    matrixAddress: `@${string}`;
-    networkAddress: HexString;
-    isInviter: boolean;
+    matrixAddress: string;
+    accountId: string;
+    isInviter?: boolean;
   }[];
 };
 
@@ -276,9 +276,7 @@ class Matrix implements SecureMessenger {
     const omniExtras = {
       mst_account: {
         threshold: params.threshold,
-        signatories: params.signatories.map(
-          (signatory) => signatory.networkAddress,
-        ),
+        signatories: params.signatories.map((signatory) => signatory.accountId),
         address: params.mstAccountAddress,
       },
       invite: {
