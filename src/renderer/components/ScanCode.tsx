@@ -10,7 +10,7 @@ import {
   OptionsWithMeta,
   UnsignedTransaction,
 } from '@substrate/txwrapper-polkadot';
-import { connectionState } from '../store/api';
+import { connectionState } from '../store/connections';
 import {
   currentTransactionState,
   currentUnsignedState,

@@ -3,7 +3,7 @@ import { formatBalance } from '@polkadot/util';
 import '@polkadot/api-augment';
 import { decodeAddress, encodeAddress } from '@polkadot/keyring';
 
-import { Connection } from '../../store/api';
+import { Connection } from '../../store/connections';
 import {
   Asset,
   StatemineExtras,
