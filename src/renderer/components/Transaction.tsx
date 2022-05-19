@@ -29,7 +29,15 @@ const Transaction: React.FC<Props> = ({ transaction }: Props) => {
 
   const history = useHistory();
   const tokenSymbol =
+  const tokenSymbol =
     network?.assets.find((a) => {
+      const assetId = {
+        [AssetType.ORML]: (a.typeExtras as OrmlExtras).currencyIdScale,
+        [AssetType.STATEMINE]: (a.typeExtras as StatemineExtras).assetId,
+      };
+      
+      return (assetId[a.type] || a.assetId) === transaction.data.assetId;
+    })?.symbol || '';
       let assetId;
       switch (a.type) {
         case AssetType.ORML:
