@@ -20,7 +20,7 @@ const Table = ({ withBorder, headers, data, className }: Props) => {
               return (
                 <th
                   key={head}
-                  className={`${borderClasses} p-4 dark:border-dark-5 whitespace-nowrap font-normal text-gray-900`}
+                  className={`${borderClasses} p-4 whitespace-nowrap font-normal text-gray-900`}
                 >
                   {head}
                 </th>
@@ -36,10 +36,7 @@ const Table = ({ withBorder, headers, data, className }: Props) => {
             <tr className="text-gray-700" key={index}>
               {row.map((text) => {
                 return (
-                  <td
-                    key={text}
-                    className={`${borderClasses} p-4 dark:border-dark-5`}
-                  >
+                  <td key={text} className={`${borderClasses} p-4`}>
                     {text}
                   </td>
                 );

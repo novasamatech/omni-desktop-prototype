@@ -30,9 +30,7 @@ const Checkbox: React.FC<Props> = ({
           `}
         />
         {label && (
-          <span className="ml-2 text-gray-700 dark:text-white font-normal">
-            {label}
-          </span>
+          <span className="ml-2 text-gray-700 font-normal">{label}</span>
         )}
       </label>
     </div>
