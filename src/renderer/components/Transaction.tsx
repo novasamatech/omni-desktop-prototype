@@ -7,7 +7,14 @@ import Button from '../ui/Button';
 import { currentTransactionState } from '../store/currentTransaction';
 import Address from '../ui/Address';
 import { Routes } from '../../common/constants';
-import { db, Transaction as TransactionData, TransactionType } from '../db/db';
+import {
+  AssetType,
+  db,
+  OrmlExtras,
+  StatemineExtras,
+  Transaction as TransactionData,
+  TransactionType,
+} from '../db/db';
 import { formatAddress, getAddressFromWallet } from '../utils/account';
 
 type Props = {
@@ -22,8 +29,16 @@ const Transaction: React.FC<Props> = ({ transaction }: Props) => {
 
   const history = useHistory();
   const tokenSymbol =
-    network?.assets.find((a) => a.assetId === transaction.data.assetId)
-      ?.symbol || '';
+    network?.assets.find((a) => {
+      const assetId = {
+        [AssetType.ORML]: (a.typeExtras as OrmlExtras).currencyIdScale,
+        [AssetType.STATEMINE]: (a.typeExtras as StatemineExtras).assetId,
+      };
+
+      return (
+        (a.type ? assetId[a.type] : a.assetId) === transaction.data.assetId
+      );
+    })?.symbol || '';
 
   const showQR = () => {
     setCurrentTransaction(transaction);

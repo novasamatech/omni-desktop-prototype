@@ -24,6 +24,9 @@ const MainLayout: React.FC<Props> = ({ route }) => {
       .notEqual(TransactionStatus.CONFIRMED)
       .toArray(),
   );
+
+  const isTransactionsExist = transactions && transactions.length > 0;
+
   // const activeNetworks = useLiveQuery(() => {
   //   return db.chains
   //     .where('activeType')
@@ -76,12 +79,12 @@ const MainLayout: React.FC<Props> = ({ route }) => {
       <FirstColumn />
       <SecondColumn />
       <div
-        className={cn('flex-1 overflow-auto', transactions?.length && 'pb-20')}
+        className={cn('flex-1 overflow-auto', isTransactionsExist && 'pb-20')}
       >
         {renderRoutes(route?.routes)}
       </div>
 
-      {transactions?.length && (
+      {isTransactionsExist && (
         <div className="flex justify-center items-center fixed bottom-0 w-screen h-20 bg-gray-100">
           <div className="mr-12 w-36">
             View your {transactions.length} pending{' '}
