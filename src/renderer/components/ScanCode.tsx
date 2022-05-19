@@ -52,47 +52,48 @@ const ScanCode: React.FC = () => {
   const networks = useRecoilValue(connectionState);
   const history = useHistory();
 
-  const [sent, setSent] = useState(false);
+  const [isTxSent, setIsTxSent] = useState(false);
 
   const transaction = useRecoilValue(currentTransactionState);
   const unsigned = useRecoilValue(currentUnsignedState);
 
   // TODO: Refactor sign and send transaction flow
   const onGetSignature = async (payload: any) => {
-    if (!sent) {
-      setSent(true);
-      const signature = payload.signature || '';
-      if (transaction && unsigned && Object.values(networks).length) {
-        const network = Object.values(networks).find(
-          (n) => n.network.chainId === transaction.chainId,
-        );
+    if (isTxSent) return;
 
-        if (network && network.api) {
-          const metadataRpc = await network.api.rpc.state.getMetadata();
-          const { specVersion, specName } =
-            await network.api.rpc.state.getRuntimeVersion();
+    setIsTxSent(true);
 
-          const registry = getRegistry({
-            chainName: network?.network.name || '',
-            specName: specName.toString() as GetRegistryOpts['specName'],
-            specVersion: specVersion.toNumber(),
-            metadataRpc: metadataRpc.toHex(),
+    const signature = payload.signature || '';
+    if (transaction && unsigned && Object.values(networks).length) {
+      const network = Object.values(networks).find(
+        (n) => n.network.chainId === transaction.chainId,
+      );
+
+      if (network && network.api) {
+        const metadataRpc = await network.api.rpc.state.getMetadata();
+        const { specVersion, specName } =
+          await network.api.rpc.state.getRuntimeVersion();
+
+        const registry = getRegistry({
+          chainName: network?.network.name || '',
+          specName: specName.toString() as GetRegistryOpts['specName'],
+          specVersion: specVersion.toNumber(),
+          metadataRpc: metadataRpc.toHex(),
+        });
+
+        const tx = createSignedTx(unsigned, signature, {
+          metadataRpc: metadataRpc.toHex(),
+          registry,
+        });
+
+        const actualTxHash = await network.api.rpc.author.submitExtrinsic(tx);
+        if (actualTxHash && transaction.id) {
+          db.transactions.update(transaction.id, {
+            ...transaction,
+            status: TransactionStatus.CONFIRMED,
           });
 
-          const tx = createSignedTx(unsigned, signature, {
-            metadataRpc: metadataRpc.toHex(),
-            registry,
-          });
-
-          const actualTxHash = await network.api.rpc.author.submitExtrinsic(tx);
-          if (actualTxHash && transaction.id) {
-            db.transactions.update(transaction.id, {
-              ...transaction,
-              status: TransactionStatus.CONFIRMED,
-            });
-
-            history.push(Routes.BASKET);
-          }
+          history.push(Routes.BASKET);
         }
       }
     }
