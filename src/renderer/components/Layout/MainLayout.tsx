@@ -7,12 +7,15 @@ import FirstColumn from '../FirstColumn';
 import SecondColumn from '../SecondColumn';
 import LinkButton from '../../ui/LinkButton';
 import { Routes } from '../../../common/constants';
+import { useMatrix } from '../../modules/matrixProvider';
 
 type Props = {
   route?: RouteConfig;
 };
 
 const MainLayout: React.FC<Props> = ({ route }) => {
+  const matrix = useMatrix();
+
   // TODO: Connect to the chain on app start
 
   // const [connections, setConnections] = useRecoilState(connectionState);
@@ -84,17 +87,18 @@ const MainLayout: React.FC<Props> = ({ route }) => {
         {renderRoutes(route?.routes)}
       </div>
 
-      {isTransactionsExist && (
-        <div className="flex justify-center items-center fixed bottom-0 w-screen h-20 bg-gray-100">
-          <div className="mr-12 w-36">
-            View your {transactions.length} pending{' '}
-            {transactions.length > 1 ? 'operations' : 'operation'}
-          </div>
-          <LinkButton to={Routes.BASKET} size="lg">
-            View {transactions.length > 1 ? 'operations' : 'operation'}
-          </LinkButton>
-        </div>
-      )}
+      {/* {isTransactionsExist && ( */}
+      {/*   <div className="flex justify-center items-center fixed bottom-0 w-screen h-20 bg-gray-100"> */}
+      {/*     <LinkButton to={Routes.BASKET} size="lg"> */}
+      {/*       {`${transactions.length} pending ${transactions.length > 1 ? 'operations' : 'operation'}`} */}
+      {/*     </LinkButton> */}
+      {/*   </div> */}
+      {/* )} */}
+      <div className="flex justify-center items-center fixed bottom-0 w-screen h-20 bg-gray-100">
+        <LinkButton to={Routes.BASKET} size="lg">
+          5 pending operations
+        </LinkButton>
+      </div>
     </div>
   );
 };

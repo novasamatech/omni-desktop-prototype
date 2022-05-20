@@ -95,6 +95,7 @@ interface SecureMessenger {
   sendMessage: (message: string) => void;
   setupSubscribers: (handlers: Subscriptions) => void;
   clearSubscribers: () => void;
+  checkUserExists: (userId: string) => Promise<boolean>;
 
   // MST operations
   mstInitiate: (params: MstInitParams) => void;
@@ -134,6 +135,7 @@ class Matrix implements SecureMessenger {
     try {
       await Olm.init({ locateFile: () => olmWasmPath });
       this.isEncryptionActive = true;
+      this.matrixClient = createClient({ baseUrl: BASE_URL });
       console.info('=== 🟢 Olm started 🟢 ===');
     } catch (error) {
       throw this.createError('=== 🔴 Olm failed 🔴 ===', error);
@@ -434,6 +436,28 @@ class Matrix implements SecureMessenger {
   }
 
   /**
+   * Check does User already exist
+   * @param userId matrix identifier
+   * @return {Promise}
+   */
+  async checkUserExists(userId: string): Promise<boolean | never> {
+    if (!this.matrixClient) {
+      throw this.createError('Client is not active');
+    }
+
+    const userName = userId.match(/^@([a-z\d=_\-./]+):/);
+    if (!userName) {
+      throw new Error('User ID can only contain characters a-z, 0-9, or =_-./');
+    }
+
+    try {
+      return await this.matrixClient.isUsernameAvailable(userName?.[1]);
+    } catch (error) {
+      throw this.createError((error as Error).message, error);
+    }
+  }
+
+  /**
    * Send MST_INIT state event to the room
    * Initialize multi-sig transaction
    * @param params MST parameters
@@ -525,8 +549,7 @@ class Matrix implements SecureMessenger {
     login: string,
     password: string,
   ): Promise<void | never> {
-    const loginClient = createClient({ baseUrl: BASE_URL });
-    const userLoginResult = await loginClient.loginWithPassword(
+    const userLoginResult = await this.matrixClient.loginWithPassword(
       login,
       password,
     );
