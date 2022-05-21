@@ -14,16 +14,18 @@ import Login from '../../renderer/components/Login';
 import MainLayout from '../../renderer/components/Layout/MainLayout';
 import ManageMultisigWallet from '../../renderer/components/Actions/ManageMultisigWallet';
 import AddWallet from '../../renderer/components/Actions/AddWallet';
+import Notifications from '../../renderer/components/Notifications';
 import { Routes } from '../constants';
 
-const ConfigRoutes: Record<'pages' | 'insideLayout', RouteConfig[]> = {
+const ConfigRoutes: Record<'pages' | 'mainLayout', RouteConfig[]> = {
   pages: [
     { path: Routes.LOGIN, component: Login },
     { path: Routes.BASKET, component: Basket },
+    { path: Routes.NOTIFICATIONS, component: Notifications },
     { path: Routes.SHOW_CODE, component: ShowCode },
     { path: Routes.SCAN_CODE, component: ScanCode },
   ],
-  insideLayout: [
+  mainLayout: [
     { path: Routes.TRANSFER, component: Transfer },
     { path: Routes.WALLETS, component: WalletList },
 
@@ -47,7 +49,7 @@ function createRouter(): RouteConfig[] {
     {
       path: '/*',
       component: ({ route }: RouteConfig) => renderRoutes(route?.routes),
-      routes: [{ component: MainLayout, routes: ConfigRoutes.insideLayout }],
+      routes: [{ component: MainLayout, routes: ConfigRoutes.mainLayout }],
     },
   ];
 }

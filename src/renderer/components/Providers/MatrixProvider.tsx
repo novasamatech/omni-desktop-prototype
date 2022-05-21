@@ -6,10 +6,33 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import Matrix from './matrix';
-import { db } from '../db/db';
+import { db } from '../../db/db';
+import Matrix from '../../modules/matrix';
+import { ISecureMessenger } from '../../modules/types';
 
-const MatrixContext = createContext<Matrix>({} as Matrix);
+type MatrixContextProps = {
+  matrix: ISecureMessenger;
+  notifications: any[];
+};
+
+const MatrixContext = createContext<MatrixContextProps>(
+  {} as MatrixContextProps,
+);
+
+type Notification = {
+  time: string;
+  title: string;
+  description: string;
+  status: 'read' | 'wait';
+};
+
+const mock: Notification = {
+  time: '10.08.2022',
+  title: 'Multisig Operation Initiated',
+  description:
+    'The wallet does not have enough balance to cover the transaction costs.',
+  status: 'read',
+};
 
 type Props = {
   loader: ReactNode;
@@ -21,9 +44,11 @@ const MatrixProvider: React.FC<Props> = ({
   onAutoLoginFail,
   children,
 }) => {
-  const { current: matrix } = useRef<Matrix>(new Matrix(db));
+  const { current: matrix } = useRef<ISecureMessenger>(new Matrix(db));
 
   const [isMatrixLoading, setIsMatrixLoading] = useState(true);
+
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const onSyncProgress = () => {
     console.log('onSyncProgress');
@@ -39,22 +64,27 @@ const MatrixProvider: React.FC<Props> = ({
 
   const onInvite = (value: any) => {
     console.log('onInvite - ', value);
+    setNotifications([mock]);
   };
 
   const onMstInitiate = (value: any) => {
     console.log('onMstInitiate - ', value);
+    setNotifications([mock]);
   };
 
   const onMstApprove = (value: any) => {
     console.log('onMstApprove - ', value);
+    setNotifications([mock]);
   };
 
   const onMstFinalApprove = (value: any) => {
     console.log('onMstFinalApprove - ', value);
+    setNotifications([mock]);
   };
 
   const onMstCancel = (value: any) => {
     console.log('onMstCancel - ', value);
+    setNotifications([mock]);
   };
 
   useEffect(() => {
@@ -72,7 +102,7 @@ const MatrixProvider: React.FC<Props> = ({
     initMatrix();
 
     return () => {
-      matrix.shutdown();
+      matrix.stopClient();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -98,10 +128,12 @@ const MatrixProvider: React.FC<Props> = ({
   }
 
   return (
-    <MatrixContext.Provider value={matrix}>{children}</MatrixContext.Provider>
+    <MatrixContext.Provider value={{ matrix, notifications }}>
+      {children}
+    </MatrixContext.Provider>
   );
 };
 
-export const useMatrix = () => useContext<Matrix>(MatrixContext);
+export const useMatrix = () => useContext<MatrixContextProps>(MatrixContext);
 
 export default MatrixProvider;

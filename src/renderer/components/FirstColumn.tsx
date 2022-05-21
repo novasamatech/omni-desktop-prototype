@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useHistory } from 'react-router';
 import SelectWallets from './SelectWallets';
-import { useMatrix } from '../modules/matrixProvider';
+import { useMatrix } from './Providers/MatrixProvider';
 import Button from '../ui/Button';
 import { Routes } from '../../common/constants';
 
 const FirstColumn: React.FC = () => {
-  const matrix = useMatrix();
+  const { matrix } = useMatrix();
   const history = useHistory();
 
   const [isShutdownInProgress, setIsShutdownInProgress] = useState(false);
@@ -15,7 +15,7 @@ const FirstColumn: React.FC = () => {
     setIsShutdownInProgress(true);
 
     try {
-      await matrix.shutdown();
+      await matrix.logout();
       history.push(Routes.LOGIN);
     } catch (error) {
       console.log(error);

@@ -18,109 +18,46 @@ import {
   Visibility,
 } from 'matrix-js-sdk';
 import { SyncState } from 'matrix-js-sdk/lib/sync';
-import { HexString } from '../../common/types';
 import { AuthState, OmniDexie } from '../db/db';
+import {
+  Callbacks,
+  Membership,
+  MstBaseParams,
+  MSTCallbacks,
+  MstCancelParams,
+  MstInitParams,
+  OmniMstEvents,
+  RoomCreation,
+  ISecureMessenger,
+  Signatory,
+  ValueOf,
+} from './types';
+import { BASE_URL, ROOM_CRYPTO_CONFIG } from './constants';
 
-const ROOM_CRYPTO_CONFIG = { algorithm: 'm.megolm.v1.aes-sha2' };
-const BASE_URL = 'https://matrix.org';
-
-export const enum Membership {
-  INVITE = 'invite',
-  JOIN = 'join',
-  LEAVE = 'leave',
-}
-
-const enum OmniMstEvents {
-  INIT = 'io.novafoundation.omni.mst_initiated',
-  APPROVE = 'io.novafoundation.omni.mst_approved',
-  FINAL_APPROVE = 'io.novafoundation.omni.mst_executed',
-  CANCEL = 'io.novafoundation.omni.mst_cancelled',
-}
-
-type RoomCreation = {
-  mstAccountAddress: HexString;
-  inviterPublicKey: string;
-  threshold: number;
-  signatories: {
-    matrixAddress: `@${string}`;
-    networkAddress: HexString;
-    isInviter: boolean;
-  }[];
-};
-
-type Signatories = RoomCreation['signatories'];
-
-type MstBaseParams = {
-  chainId: HexString; // genesis hash of the network MST sent in
-  callHash: HexString;
-};
-
-type MstInitParams = MstBaseParams & {
-  callData: HexString;
-  description: string;
-};
-
-type MstCancelParams = MstBaseParams & {
-  description?: string;
-};
-
-// TODO: replace 'any' to proper type during Notification implementation
-type Subscriptions = {
-  onSyncEnd: () => void;
-  onSyncProgress: () => void;
-  onInvite: (roomId: string) => void;
-  onMessage: (message: string) => void;
-  onMstInitiate: (data: any) => void;
-  onMstApprove: (data: any) => void;
-  onMstFinalApprove: (data: any) => void;
-  onMstCancel: (data: any) => void;
-};
-
-interface SecureMessenger {
-  // Common
-  init: () => Promise<void | never>;
-  loginWithCreds: (login: string, password: string) => Promise<void | never>;
-  loginFromCache: () => Promise<void | never>;
-  isLoggedIn: boolean;
-  shutdown: () => Promise<void | never>;
-  createRoom: (
-    params: RoomCreation,
-    signWithParity: (value: string) => Promise<string>,
-  ) => Promise<void | never>;
-  joinRoom: (roomId: string) => Promise<void | never>;
-  invite: (roomId: string, signatoryId: string) => Promise<void | never>;
-  listOfOmniRooms: (type: Membership.INVITE | Membership.JOIN) => Room[];
-  setRoom: (roomId: string) => void;
-  timelineMessages: () => Record<string, unknown>[] | never;
-  sendMessage: (message: string) => void;
-  setupSubscribers: (handlers: Subscriptions) => void;
-  clearSubscribers: () => void;
-  checkUserExists: (userId: string) => Promise<boolean>;
-
-  // MST operations
-  mstInitiate: (params: MstInitParams) => void;
-  mstApprove: (params: MstBaseParams) => void;
-  mstFinalApprove: (params: MstBaseParams) => void;
-  mstCancel: (params: MstCancelParams) => void;
-}
-
-class Matrix implements SecureMessenger {
+class Matrix implements ISecureMessenger {
   private static instance: Matrix;
 
   private matrixClient!: MatrixClient;
-  private isEncryptionActive: boolean = false;
-  private activeRoomId: string = '';
   private storage!: OmniDexie;
-  private subscribeHandlers?: Subscriptions;
+
+  private activeRoomId: string = '';
+  private subscribeHandlers?: Callbacks;
   private isSynced: boolean = false;
+  private isEncryptionActive: boolean = false;
 
   constructor(storage: OmniDexie) {
     if (Matrix.instance) {
       return Matrix.instance;
     }
     Matrix.instance = this;
+
+    this.matrixClient = createClient({ baseUrl: BASE_URL });
     this.storage = storage;
   }
+
+  // =====================================================
+  // ================= Public methods ====================
+  // =====================================================
 
   /**
    * Initialize Matrix protocol with encryption
@@ -135,7 +72,6 @@ class Matrix implements SecureMessenger {
     try {
       await Olm.init({ locateFile: () => olmWasmPath });
       this.isEncryptionActive = true;
-      this.matrixClient = createClient({ baseUrl: BASE_URL });
       console.info('=== 🟢 Olm started 🟢 ===');
     } catch (error) {
       throw this.createError('=== 🔴 Olm failed 🔴 ===', error);
@@ -153,7 +89,7 @@ class Matrix implements SecureMessenger {
     if (!this.isEncryptionActive) {
       throw this.createError('Encryption has not been initialized');
     }
-    if (this.matrixClient?.isLoggedIn()) {
+    if (this.matrixClient.isLoggedIn()) {
       throw this.createError('Client is already logged in');
     }
 
@@ -177,7 +113,7 @@ class Matrix implements SecureMessenger {
     if (!this.isEncryptionActive) {
       throw this.createError('Encryption has not been initialized');
     }
-    if (this.matrixClient?.isLoggedIn()) {
+    if (this.matrixClient.isLoggedIn()) {
       throw this.createError('Client is already logged in');
     }
 
@@ -197,7 +133,20 @@ class Matrix implements SecureMessenger {
    * @return {Boolean}
    */
   get isLoggedIn(): boolean {
-    return Boolean(this.matrixClient?.isLoggedIn());
+    return Boolean(this.matrixClient.isLoggedIn());
+  }
+
+  /**
+   * Stop the client and remove handlers
+   * @return {Promise}
+   * @throws {Error}
+   */
+  stopClient(): void | never {
+    this.checkClientLoggedIn();
+
+    this.matrixClient.stopClient();
+    this.clearSubscribers();
+    this.matrixClient = createClient(BASE_URL);
   }
 
   /**
@@ -207,23 +156,18 @@ class Matrix implements SecureMessenger {
    * @return {Promise}
    * @throws {Error}
    */
-  async shutdown(): Promise<void | never> {
-    if (!this.matrixClient) {
-      throw this.createError('Client is not active');
-    }
-
+  async logout(): Promise<void | never> {
     this.checkClientLoggedIn();
 
     try {
       await this.matrixClient.logout();
       this.matrixClient.stopClient();
       this.clearSubscribers();
-      await this.matrixClient.clearStores();
+      // await this.matrixClient.clearStores();
       await this.storage.matrixCredentials
         .where({ userId: this.matrixUserId })
         .delete();
-      // TODO: handle proper typing
-      this.matrixClient = undefined as unknown as MatrixClient;
+      this.matrixClient = createClient(BASE_URL);
     } catch (error) {
       throw this.createError('Logout failed', error);
     }
@@ -262,72 +206,6 @@ class Matrix implements SecureMessenger {
     } catch (error) {
       throw this.createError((error as Error).message, error);
     }
-  }
-
-  private async initialStateEvents(
-    roomId: string,
-    params: RoomCreation,
-    signature: string,
-  ): Promise<void> {
-    await this.matrixClient.sendStateEvent(
-      roomId,
-      'm.room.encryption',
-      ROOM_CRYPTO_CONFIG,
-    );
-
-    const omniExtras = {
-      mst_account: {
-        threshold: params.threshold,
-        signatories: params.signatories.map(
-          (signatory) => signatory.networkAddress,
-        ),
-        address: params.mstAccountAddress,
-      },
-      invite: {
-        signature,
-        public_key: params.inviterPublicKey,
-      },
-    };
-
-    const topicContent = {
-      topic: `Room for communications for ${params.mstAccountAddress} MST account`,
-      omni_extras: omniExtras,
-    };
-
-    await this.matrixClient.sendStateEvent(
-      roomId,
-      'm.room.topic',
-      topicContent,
-    );
-  }
-
-  private async inviteSignatories(
-    roomId: string,
-    signatories: Signatories,
-  ): Promise<void> {
-    const inviteRequests = signatories
-      .filter((signatory) => !signatory.isInviter)
-      .reduce((acc, signatory) => {
-        acc.push(this.matrixClient.invite(roomId, signatory.matrixAddress));
-
-        return acc;
-      }, [] as Promise<unknown>[]);
-
-    await Promise.all(inviteRequests);
-  }
-
-  private async verifyDevices(members: string[]): Promise<void | never> {
-    const memberKeys = await this.matrixClient.downloadKeys(members);
-
-    const verifyRequests = members.reduce((acc, userId) => {
-      Object.keys(memberKeys[userId]).forEach((deviceId) => {
-        acc.push(this.matrixClient.setDeviceVerified(userId, deviceId));
-      });
-      return acc;
-    }, [] as Promise<void>[]);
-
-    await Promise.all(verifyRequests);
-    console.info('=== 🟢 Devices verified');
   }
 
   /**
@@ -392,6 +270,7 @@ class Matrix implements SecureMessenger {
   /**
    * Get timeline events for active room
    * @return {Array}
+   * @throws {Error}
    */
   timelineMessages(): Record<string, unknown>[] | never {
     const room = this.getActiveRoom(this.activeRoomId);
@@ -423,7 +302,7 @@ class Matrix implements SecureMessenger {
    * Setup subscription
    * @param handlers aggregated callback handlers
    */
-  setupSubscribers(handlers: Subscriptions): void {
+  setupSubscribers(handlers: Callbacks): void {
     this.subscribeHandlers = handlers;
   }
 
@@ -432,13 +311,14 @@ class Matrix implements SecureMessenger {
    */
   clearSubscribers(): void {
     this.matrixClient.removeAllListeners();
-    this.subscribeHandlers = undefined;
+    this.subscribeHandlers = undefined as unknown as Callbacks;
   }
 
   /**
    * Check does User already exist
    * @param userId matrix identifier
    * @return {Promise}
+   * @throws {Error}
    */
   async checkUserExists(userId: string): Promise<boolean | never> {
     if (!this.matrixClient) {
@@ -545,6 +425,76 @@ class Matrix implements SecureMessenger {
     }
   }
 
+  // =====================================================
+  // ================= Private methods ===================
+  // =====================================================
+
+  private async initialStateEvents(
+    roomId: string,
+    params: RoomCreation,
+    signature: string,
+  ): Promise<void> {
+    await this.matrixClient.sendStateEvent(
+      roomId,
+      'm.room.encryption',
+      ROOM_CRYPTO_CONFIG,
+    );
+
+    const omniExtras = {
+      mst_account: {
+        threshold: params.threshold,
+        signatories: params.signatories.map(
+          (signatory) => signatory.networkAddress,
+        ),
+        address: params.mstAccountAddress,
+      },
+      invite: {
+        signature,
+        public_key: params.inviterPublicKey,
+      },
+    };
+
+    const topicContent = {
+      topic: `Room for communications for ${params.mstAccountAddress} MST account`,
+      omni_extras: omniExtras,
+    };
+
+    await this.matrixClient.sendStateEvent(
+      roomId,
+      'm.room.topic',
+      topicContent,
+    );
+  }
+
+  private async inviteSignatories(
+    roomId: string,
+    signatories: Signatory[],
+  ): Promise<void> {
+    const inviteRequests = signatories
+      .filter((signatory) => !signatory.isInviter)
+      .reduce((acc, signatory) => {
+        acc.push(this.matrixClient.invite(roomId, signatory.matrixAddress));
+
+        return acc;
+      }, [] as Promise<unknown>[]);
+
+    await Promise.all(inviteRequests);
+  }
+
+  private async verifyDevices(members: string[]): Promise<void | never> {
+    const memberKeys = await this.matrixClient.downloadKeys(members);
+
+    const verifyRequests = members.reduce((acc, userId) => {
+      Object.keys(memberKeys[userId]).forEach((deviceId) => {
+        acc.push(this.matrixClient.setDeviceVerified(userId, deviceId));
+      });
+      return acc;
+    }, [] as Promise<void>[]);
+
+    await Promise.all(verifyRequests);
+    console.info('=== 🟢 Devices verified');
+  }
+
   private async initClientWithCreds(
     login: string,
     password: string,
@@ -646,6 +596,15 @@ class Matrix implements SecureMessenger {
   }
 
   private handleOmniEvents(): void {
+    const callbacks: Record<OmniMstEvents, ValueOf<MSTCallbacks> | undefined> =
+      {
+        [OmniMstEvents.INIT]: this.subscribeHandlers?.onMstInitiate,
+        [OmniMstEvents.APPROVE]: this.subscribeHandlers?.onMstApprove,
+        [OmniMstEvents.FINAL_APPROVE]:
+          this.subscribeHandlers?.onMstFinalApprove,
+        [OmniMstEvents.CANCEL]: this.subscribeHandlers?.onMstCancel,
+      };
+
     this.matrixClient.on(RoomEvent.Timeline, (event) => {
       if (!this.isSynced) return;
 
@@ -655,29 +614,25 @@ class Matrix implements SecureMessenger {
       const room = this.matrixClient.getRoom(roomId);
       if (!room || !this.isOmniRoom(room.name)) return;
 
-      switch (event.getType()) {
-        case OmniMstEvents.INIT:
-          this.subscribeHandlers?.onMstInitiate(event.getContent());
-          break;
-        case OmniMstEvents.APPROVE:
-          this.subscribeHandlers?.onMstInitiate(event.getContent());
-          break;
-        case OmniMstEvents.FINAL_APPROVE:
-          this.subscribeHandlers?.onMstInitiate(event.getContent());
-          break;
-        case OmniMstEvents.CANCEL:
-          this.subscribeHandlers?.onMstInitiate(event.getContent());
-          break;
-        default:
-          break;
-      }
+      callbacks[event.getType() as OmniMstEvents]?.({
+        roomId: event.getRoomId(),
+        sender: event.getSender(),
+        content: event.getContent(),
+        date: event.getDate(),
+      });
     });
   }
 
   // =====================================================
-  // ======================= UTILS =======================
+  // ====================== Helpers ======================
   // =====================================================
 
+  /**
+   * Create error object with a provided message
+   * @param message error's message value
+   * @param error optional error object
+   * @return {Error}
+   */
   private createError(message: string, error?: unknown): Error {
     const typedError =
       error instanceof Error
@@ -687,8 +642,13 @@ class Matrix implements SecureMessenger {
     return new Error(`🔶 Matrix: ${message} 🔶`, { cause: typedError });
   }
 
+  /**
+   * Verify that user is logged in
+   * @param message error's message value
+   * @throws {Error}
+   */
   private checkClientLoggedIn(message?: string): void | never {
-    if (!this.matrixClient?.isLoggedIn()) {
+    if (!this.matrixClient.isLoggedIn()) {
       const throwMsg = message
         ? `🔶 ${message} 🔶`
         : '🔶 Matrix client is not logged in 🔶';
@@ -696,6 +656,11 @@ class Matrix implements SecureMessenger {
     }
   }
 
+  /**
+   * Verify that user is inside room
+   * @param message error's message value
+   * @throws {Error}
+   */
   private checkInsideRoom(message?: string): void | never {
     if (!this.activeRoomId) {
       const throwMsg = message
@@ -705,13 +670,17 @@ class Matrix implements SecureMessenger {
     }
   }
 
+  /**
+   * Get active room
+   * @param roomId room's identifier
+   * @return {Room}
+   * @throws {Error}
+   */
   private getActiveRoom(roomId: string): Room | never {
     const room = this.matrixClient.getRoom(roomId);
-    if (!room) {
-      throw new Error('Room not found');
-    }
+    if (room) return room;
 
-    return room;
+    throw new Error('Room not found');
   }
 
   /**

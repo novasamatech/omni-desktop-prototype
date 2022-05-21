@@ -7,14 +7,15 @@ import FirstColumn from '../FirstColumn';
 import SecondColumn from '../SecondColumn';
 import LinkButton from '../../ui/LinkButton';
 import { Routes } from '../../../common/constants';
-import { useMatrix } from '../../modules/matrixProvider';
+import { useMatrix } from '../Providers/MatrixProvider';
 
 type Props = {
   route?: RouteConfig;
 };
 
 const MainLayout: React.FC<Props> = ({ route }) => {
-  const matrix = useMatrix();
+  const { matrix } = useMatrix();
+  console.log(matrix.isLoggedIn);
 
   // TODO: Connect to the chain on app start
 
@@ -87,17 +88,21 @@ const MainLayout: React.FC<Props> = ({ route }) => {
         {renderRoutes(route?.routes)}
       </div>
 
-      {/* {isTransactionsExist && ( */}
-      {/*   <div className="flex justify-center items-center fixed bottom-0 w-screen h-20 bg-gray-100"> */}
-      {/*     <LinkButton to={Routes.BASKET} size="lg"> */}
-      {/*       {`${transactions.length} pending ${transactions.length > 1 ? 'operations' : 'operation'}`} */}
-      {/*     </LinkButton> */}
-      {/*   </div> */}
-      {/* )} */}
-      <div className="flex justify-center items-center fixed bottom-0 w-screen h-20 bg-gray-100">
-        <LinkButton to={Routes.BASKET} size="lg">
-          5 pending operations
+      <div className="flex fixed bottom-0 w-screen bg-gray-100 p-3">
+        {isTransactionsExist && (
+          // FIXME: operationS
+          <LinkButton className="mr-auto" to={Routes.BASKET} size="md">
+            5 pending operations
+          </LinkButton>
+        )}
+        <LinkButton className="ml-auto" to={Routes.NOTIFICATIONS} size="md">
+          Notifications
         </LinkButton>
+        {/* {matrix.isLoggedIn && ( */}
+        {/*   <LinkButton className="ml-auto" to={Routes.NOTIFICATIONS} size="md"> */}
+        {/*     Notifications */}
+        {/*   </LinkButton> */}
+        {/* )} */}
       </div>
     </div>
   );

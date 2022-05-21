@@ -2,35 +2,35 @@ import React, { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 import { Room } from 'matrix-js-sdk';
 import InputText from '../../ui/Input';
 import Button from '../../ui/Button';
-import { useMatrix } from '../../modules/matrixProvider';
-import { Membership } from '../../modules/matrix';
+import { useMatrix } from '../Providers/MatrixProvider';
+import { Membership } from '../../modules/types';
 
 const Chat: React.FC = () => {
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
   const [roomList, setRoomList] = useState<Room[]>([]);
 
-  const matrix = useMatrix();
+  const { matrix } = useMatrix();
 
-  useEffect(() => {
-    if (matrix.isLoggedIn) {
-      matrix.setupSubscribers({
-        onSyncProgress: () => console.log('=== 🟢 progess'),
-        onSyncEnd: () => console.log('=== 🟢 end'),
-        onMessage: () => console.log('=== 🟢 message'),
-        onInvite: () => console.log('=== 🟢 invite'),
-        onMstInitiate: (value) =>
-          console.log(`=== 🟢 OmniMstEvents.INIT ${value.toString()}`),
-        onMstApprove: (value) =>
-          console.log(`=== 🟢 OmniMstEvents.APPROVE ${value.toString()}`),
-        onMstFinalApprove: (value) =>
-          console.log(`=== 🟢 OmniMstnts.FINAL_APPROVE ${value.toString()}`),
-        onMstCancel: (value) =>
-          console.log(`=== 🟢 OmniMstEvents.CANCEL ${value.toString()}`),
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matrix?.isLoggedIn]);
+  // useEffect(() => {
+  //   if (matrix.isLoggedIn) {
+  //     matrix.setupSubscribers({
+  //       onSyncProgress: () => console.log('=== 🟢 progess'),
+  //       onSyncEnd: () => console.log('=== 🟢 end'),
+  //       onMessage: () => console.log('=== 🟢 message'),
+  //       onInvite: () => console.log('=== 🟢 invite'),
+  //       onMstInitiate: (value) =>
+  //         console.log(`=== 🟢 OmniMstEvents.INIT ${value.toString()}`),
+  //       onMstApprove: (value) =>
+  //         console.log(`=== 🟢 OmniMstEvents.APPROVE ${value.toString()}`),
+  //       onMstFinalApprove: (value) =>
+  //         console.log(`=== 🟢 OmniMstnts.FINAL_APPROVE ${value.toString()}`),
+  //       onMstCancel: (value) =>
+  //         console.log(`=== 🟢 OmniMstEvents.CANCEL ${value.toString()}`),
+  //     });
+  //   }
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [matrix?.isLoggedIn]);
 
   useEffect(() => {
     if (matrix.isLoggedIn) {
@@ -71,7 +71,7 @@ const Chat: React.FC = () => {
           // },
         ],
       },
-      (value) => Promise.resolve(`SIGNATURE ${value}`),
+      (value: string) => Promise.resolve(`SIGNATURE ${value}`),
     );
   };
   const onChangeLogin = (event: ChangeEvent<HTMLInputElement>) => {
@@ -100,10 +100,9 @@ const Chat: React.FC = () => {
   };
 
   const onMstApprove = () => {
-    matrix.mstCancel({
+    matrix.mstApprove({
       callHash: '0x233',
       chainId: '0xdsfsf',
-      description: 'maaan',
     });
   };
 
