@@ -1,6 +1,5 @@
 import React from 'react';
 import { useRecoilValue } from 'recoil';
-import '@polkadot/api-augment';
 import { useLiveQuery } from 'dexie-react-hooks';
 
 import { connectionState } from '../../store/connections';

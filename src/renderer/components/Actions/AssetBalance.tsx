@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { formatBalance } from '@polkadot/util';
-import '@polkadot/api-augment';
 import { decodeAddress, encodeAddress } from '@polkadot/keyring';
+import { FrameSystemAccountInfo } from '@polkadot/types/lookup';
 
 import { Connection } from '../../store/connections';
 import {
@@ -86,15 +86,18 @@ const AssetBalance: React.FC<Props> = ({
 
   const subscribeBalanceChange = useCallback(
     async (address: string) => {
-      api.query.system.account(address, async (data) => {
-        const {
-          data: { free: currentFree },
-        } = data;
-        updateBalance(currentFree);
+      api.query.system.account(
+        address,
+        async (data: FrameSystemAccountInfo) => {
+          const {
+            data: { free: currentFree },
+          } = data;
+          updateBalance(currentFree);
 
-        const storageKey = await api.query.system.account.key(address);
-        validateAssetBalance(data, storageKey);
-      });
+          const storageKey = await api.query.system.account.key(address);
+          validateAssetBalance(data, storageKey);
+        },
+      );
     },
     [api, updateBalance, validateAssetBalance],
   );
