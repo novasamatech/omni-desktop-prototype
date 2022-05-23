@@ -18,8 +18,8 @@ The Omni Desktop application proof of concept application was developed in order
 ## Key features
 
 1. Add and manage wallets for Substrate networks.
-2. Show wallet balances for Substrate networks.
-3. Token transfers.
+2. Show wallet balances for multiple Substrate networks.
+3. Token transfers in multiple Substrate networks.
 4. MST account management.
 5. MST creation and signing.
 6. MST account and transactions interaction with Matrix standard.
