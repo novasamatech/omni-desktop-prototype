@@ -26,28 +26,22 @@ const Basket: React.FC = () => {
   useEffect(() => {
     if (transactions === undefined) return;
 
-    Object.values(connections)
-      .map((c) =>
-        wallets
-          ?.filter(isMultisig)
-          .map(async (w) => {
-            const pendingTransactions = await getPendingMultisigTransacions(
-              c.api,
-              getAddressFromWallet(w, c.network),
-            );
-            const trxs = mapTransactionsWithBlockchain(
-              transactions,
-              pendingTransactions,
-              w,
-              c.network,
-            );
+    Object.values(connections).forEach((c) =>
+      wallets?.filter(isMultisig).forEach(async (w) => {
+        const pendingTransactions = await getPendingMultisigTransacions(
+          c.api,
+          getAddressFromWallet(w, c.network),
+        );
+        const trxs = mapTransactionsWithBlockchain(
+          transactions,
+          pendingTransactions,
+          w,
+          c.network,
+        );
 
-            trxs.filter(Boolean).forEach((t) => t && db.transactions.add(t));
-            return trxs;
-          })
-          .flat(),
-      )
-      .flat();
+        trxs.filter(Boolean).forEach((t) => t && db.transactions.add(t));
+      }),
+    );
   }, [wallets, connections, transactions]);
 
   return (
