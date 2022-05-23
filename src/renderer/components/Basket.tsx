@@ -5,11 +5,7 @@ import Transaction from './Transaction';
 import LinkButton from '../ui/LinkButton';
 import { db, TransactionStatus } from '../db/db';
 import { connectionState } from '../store/connections';
-import {
-  getPendingMultisigTransacions,
-  mapTransactionsWithBlockchain,
-} from '../utils/transactions';
-import { getAddressFromWallet } from '../utils/account';
+import { updateTransactions } from '../utils/transactions';
 import { isMultisig } from '../utils/validation';
 
 const Basket: React.FC = () => {
@@ -24,22 +20,11 @@ const Basket: React.FC = () => {
   const connections = useRecoilValue(connectionState);
 
   useEffect(() => {
-    if (transactions === undefined) return;
+    if (!transactions || !wallets) return;
 
     Object.values(connections).forEach((c) =>
-      wallets?.filter(isMultisig).forEach(async (w) => {
-        const pendingTransactions = await getPendingMultisigTransacions(
-          c.api,
-          getAddressFromWallet(w, c.network),
-        );
-        const trxs = mapTransactionsWithBlockchain(
-          transactions,
-          pendingTransactions,
-          w,
-          c.network,
-        );
-
-        trxs.filter(Boolean).forEach((t) => t && db.transactions.add(t));
+      wallets.filter(isMultisig).forEach(async (w) => {
+        await updateTransactions(transactions, w, c);
       }),
     );
   }, [wallets, connections, transactions]);

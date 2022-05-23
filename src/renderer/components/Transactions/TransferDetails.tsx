@@ -17,12 +17,17 @@ import {
 import { formatAddress, getAddressFromWallet } from '../../utils/account';
 import { getAssetById } from '../../utils/assets';
 import LinkButton from '../../ui/LinkButton';
+import copy from '../../../../assets/copy.svg';
 
 const TransferDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const history = useHistory();
   const [transaction, setTransaction] = useState<Transaction>();
   const [network, setNetwork] = useState<Chain>();
+
+  const isTransfer = transaction?.type === TransactionType.TRANSFER;
+  const isMultisigTransfer =
+    transaction?.type === TransactionType.MULTISIG_TRANSFER;
 
   useEffect(() => {
     if (id) {
@@ -71,6 +76,10 @@ const TransferDetails: React.FC = () => {
   const formatRecipientAddress = (address: string) =>
     network ? formatAddress(address, network.addressPrefix) : address;
 
+  const copyCallHash = () => {
+    navigator.clipboard.writeText(transaction?.data.callHash || '');
+  };
+
   return (
     <>
       <div className="flex justify-center items-center mb-8">
@@ -105,26 +114,38 @@ const TransferDetails: React.FC = () => {
         </div>
         <div className="text-sm text-gray-500">Operations details:</div>
 
-        {transaction &&
-        [TransactionType.TRANSFER, TransactionType.MULTISIG_TRANSFER].includes(
-          transaction.type,
-        ) ? (
+        {isTransfer && (
           <div className="flex">
             Transfer {transaction.data.amount} {tokenSymbol} to{' '}
             <Address
+              className="ml-1"
               address={formatRecipientAddress(transaction.data.address)}
             />
           </div>
-        ) : (
-          <div>
-            <div>Type: {transaction?.type}</div>
-            {transaction &&
-              Object.entries(transaction.data).map((type, value) => (
-                <div>
-                  {type}: {value}
-                </div>
-              ))}
-          </div>
+        )}
+        {isMultisigTransfer && (
+          <>
+            <div className="flex">
+              {transaction.data.amount && (
+                <>
+                  Transfer {transaction.data.amount} {tokenSymbol} to
+                  <Address
+                    className="ml-1"
+                    address={formatRecipientAddress(transaction.data.address)}
+                  />
+                </>
+              )}
+            </div>
+            <div className="text-xs text-gray-500 mt-3">
+              <div className="flex justify-between items-center">
+                <div className="font-bold">Call hash:</div>
+                <button onClick={copyCallHash}>
+                  <img src={copy} alt="copy" />
+                </button>
+              </div>
+              <div className="break-words">{transaction.data.callHash}</div>
+            </div>
+          </>
         )}
       </div>
       <div className="mx-auto mb-10 w-1/2">

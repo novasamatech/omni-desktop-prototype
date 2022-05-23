@@ -2,75 +2,77 @@
 import { ApiPromise } from '@polkadot/api';
 import { U8aFixed } from '@polkadot/types';
 import { PalletMultisigMultisig } from '@polkadot/types/lookup';
-// import { H256 } from '@polkadot/types/interfaces';
-// import { Option, StorageKey, U8aFixed } from '@polkadot/types';
-// import { AccountId32 } from '@polkadot/types/interfaces';
-// import { PalletMultisigMultisig } from '@polkadot/types/lookup';
-// import { Option } from '@polkadot/types';
-// import { PalletMultisigMultisig } from '@polkadot/types/lookup';
+import { Connection } from '../store/connections';
+
 import {
   Chain,
+  db,
   Transaction,
   TransactionStatus,
   TransactionType,
   Wallet,
 } from '../db/db';
+import { getAddressFromWallet } from './account';
 
 type MultisigTransaction = {
   callHash: U8aFixed;
   opt: PalletMultisigMultisig;
 };
 
-export const getPendingMultisigTransacions = async (
+export const getPendingTransactionsFromChain = async (
   api: ApiPromise,
   address: string,
-): Promise<(MultisigTransaction | undefined)[]> => {
+): Promise<MultisigTransaction[]> => {
   const multisigs = await api.query.multisig.multisigs.entries(address);
-  const transactions = multisigs
+  return multisigs
     .filter(([, opt]) => opt.isSome)
-    .map(([storage, opt]) => {
+    .reduce((result, [storage, opt]) => {
+      if (opt.isNone) return result;
+
       const optValue = opt.unwrap();
-      if (!optValue) return;
-
       const [, callHash] = storage.args;
-      // eslint-disable-next-line consistent-return
-      return {
-        callHash,
-        opt: optValue,
-      };
-    });
 
-  return transactions;
+      return [
+        ...result,
+        {
+          callHash,
+          opt: optValue,
+        },
+      ];
+    }, [] as MultisigTransaction[]);
 };
 
-export const compareTransactions = (
+export const isSameTransactions = (
   transaction: Transaction,
   multisigTransaction: MultisigTransaction,
 ) => {
-  if (transaction.type !== TransactionType.MULTISIG_TRANSFER) return false;
-  if (multisigTransaction.opt.depositor.toString() !== transaction.address) {
-    return false;
-  }
-  if (
-    multisigTransaction.opt.when.height.toString() !==
-    transaction.blockHeight?.toString()
-  ) {
-    return false;
-  }
-  if (
-    multisigTransaction.opt.deposit.toString() !==
-    transaction.data.deposit?.toString()
-  ) {
-    return false;
-  }
+  const isMultisigTransfer =
+    transaction.type === TransactionType.MULTISIG_TRANSFER;
+  const isSameDepositor =
+    multisigTransaction.opt.depositor.toString() === transaction.address;
+  const isSameBlockHeight =
+    multisigTransaction.opt.when.height.toString() ===
+    transaction.blockHeight?.toString();
+  const isSameDeposit =
+    multisigTransaction.opt.deposit.toString() ===
+    transaction.data.deposit?.toString();
+  const isSameCallHash =
+    multisigTransaction.callHash.toString() ===
+    transaction.data.callHash?.toString();
 
-  return true;
+  return (
+    isMultisigTransfer &&
+    isSameDeposit &&
+    isSameBlockHeight &&
+    isSameDepositor &&
+    isSameCallHash
+  );
 };
 
-export const updateTransaction = (
+export const updateTransactionPayload = (
   transaction: Transaction,
   pendingTransaction: MultisigTransaction,
-) => {
+): Transaction => {
   return {
     ...transaction,
     blockHeight: pendingTransaction.opt.when.height.toNumber(),
@@ -83,7 +85,7 @@ export const updateTransaction = (
   };
 };
 
-export const createTransactionFromPending = (
+export const createTransactionPayload = (
   pendingTransaction: MultisigTransaction,
   network: Chain,
   wallet: Wallet,
@@ -104,23 +106,33 @@ export const createTransactionFromPending = (
     status: TransactionStatus.PENDING,
     data: {
       callHash: callHash.toHex(),
-      amount: '',
       deposit: deposit.toString(),
       approvals: approvals.map((a) => a.toString()),
     },
   };
 };
 
-export const mapTransactionsWithBlockchain = (
+export const updateTransactions = async (
   savedTransactions: Transaction[] = [],
-  pendingTransactions: (MultisigTransaction | undefined)[] = [],
   wallet: Wallet,
-  network: Chain,
-) =>
-  pendingTransactions.map((p) => {
-    if (!p) return;
-    const isSaved = savedTransactions.some((s) => compareTransactions(s, p));
-    if (isSaved) return;
-    // eslint-disable-next-line consistent-return
-    return createTransactionFromPending(p, network, wallet);
+  connection: Connection,
+) => {
+  const pendingTransactions = await getPendingTransactionsFromChain(
+    connection.api,
+    getAddressFromWallet(wallet, connection.network),
+  );
+
+  pendingTransactions.forEach((p) => {
+    const savedTransaction = savedTransactions.find((s) =>
+      isSameTransactions(s, p),
+    );
+
+    if (savedTransaction) {
+      db.transactions.put(updateTransactionPayload(savedTransaction, p));
+    } else {
+      db.transactions.add(
+        createTransactionPayload(p, connection.network, wallet),
+      );
+    }
   });
+};

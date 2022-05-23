@@ -5,10 +5,14 @@ import { Routes, withId } from '../../common/constants';
 import {
   MultisigWallet,
   Transaction as TransactionData,
+  TransactionStatus,
   TransactionType,
   // TransactionStatus,
 } from '../db/db';
 import { toShortText } from '../utils/strings';
+import right from '../../../assets/right.svg';
+import success from '../../../assets/success.svg';
+import pending from '../../../assets/pending.svg';
 
 type Props = {
   transaction: TransactionData;
@@ -30,22 +34,7 @@ const Transaction: React.FC<Props> = ({ transaction }: Props) => {
             }
           >
             <span className="text-sm flex items-center">
-              Details
-              <svg
-                className="ml-1"
-                width="9"
-                height="14"
-                viewBox="0 0 9 14"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  fillRule="evenodd"
-                  clipRule="evenodd"
-                  d="M5.58574 7.00008L0.292847 1.70718L1.70706 0.292969L8.41417 7.00008L1.70706 13.7072L0.292847 12.293L5.58574 7.00008Z"
-                  fill="black"
-                />
-              </svg>
+              Details <img className="ml-1" src={right} alt="" />
             </span>
           </Link>
         </div>
@@ -68,7 +57,11 @@ const Transaction: React.FC<Props> = ({ transaction }: Props) => {
               {(transaction.wallet as MultisigWallet).threshold} Signatures
             </span>
           )}
-          {transaction.status}
+          {transaction.status === TransactionStatus.CONFIRMED ? (
+            <img src={success} alt="success" />
+          ) : (
+            <img src={pending} alt="success" />
+          )}
         </div>
       </div>
     </div>
