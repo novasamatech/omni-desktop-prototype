@@ -16,6 +16,7 @@ import DialogContent from '../../ui/DialogContent';
 import useToggle from '../../hooks/toggle';
 import { Routes } from '../../../common/constants';
 import { useMatrix } from '../../modules/matrixProvider';
+import { isMultisig } from '../../utils/validation';
 
 const SS58Prefix = 42;
 const DEFAULT_THRESHOLD = '2';
@@ -109,9 +110,10 @@ const ManageMultisigWallet: React.FC = () => {
       return acc;
     }, {} as Record<string, boolean>);
 
-    const myAddress = wallets
-      .map((w) => w.mainAccounts.find((a) => addressesMap[a.accountId]))
-      .filter(Boolean)[0];
+    const myAddress = wallets.find(
+      (w) =>
+        !isMultisig(w) && w.mainAccounts.some((a) => addressesMap[a.accountId]),
+    )?.mainAccounts[0];
 
     if (!myAddress) return;
 
@@ -129,6 +131,7 @@ const ManageMultisigWallet: React.FC = () => {
         mstAccountAddress,
       },
       (stringToBeSigned) => {
+        // TODO: add real QR signature
         console.log(stringToBeSigned);
         return Promise.resolve('TEST');
       },
