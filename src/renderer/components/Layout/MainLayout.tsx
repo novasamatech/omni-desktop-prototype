@@ -2,7 +2,8 @@ import React from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { renderRoutes, RouteConfig } from 'react-router-config';
 import cn from 'classnames';
-import { db, TransactionStatus } from '../../db/db';
+import { db } from '../../db/db';
+import { TransactionStatus } from '../../db/types';
 import FirstColumn from '../FirstColumn';
 import SecondColumn from '../SecondColumn';
 import LinkButton from '../../ui/LinkButton';
@@ -14,8 +15,7 @@ type Props = {
 };
 
 const MainLayout: React.FC<Props> = ({ route }) => {
-  const { matrix } = useMatrix();
-  console.log(matrix.isLoggedIn);
+  const { matrix, notifications } = useMatrix();
 
   // TODO: Connect to the chain on app start
 
@@ -95,14 +95,11 @@ const MainLayout: React.FC<Props> = ({ route }) => {
             5 pending operations
           </LinkButton>
         )}
-        <LinkButton className="ml-auto" to={Routes.NOTIFICATIONS} size="md">
-          Notifications
-        </LinkButton>
-        {/* {matrix.isLoggedIn && ( */}
-        {/*   <LinkButton className="ml-auto" to={Routes.NOTIFICATIONS} size="md"> */}
-        {/*     Notifications */}
-        {/*   </LinkButton> */}
-        {/* )} */}
+        {matrix.isLoggedIn && notifications.length > 0 && (
+          <LinkButton className="ml-auto" to={Routes.NOTIFICATIONS} size="md">
+            Notifications
+          </LinkButton>
+        )}
       </div>
     </div>
   );

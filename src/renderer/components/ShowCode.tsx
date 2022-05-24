@@ -23,7 +23,7 @@ import { Routes, DEFAULT } from '../../common/constants';
 import { getAddressFromWallet } from '../utils/account';
 import { formatAmount, getAssetById } from '../utils/assets';
 import Shimmer from '../ui/Shimmer';
-import { AssetType } from '../db/db';
+import { AssetType } from '../db/types';
 // import { isMultisig } from '../utils/dataValidation';
 
 const ShowCode: React.FC = () => {

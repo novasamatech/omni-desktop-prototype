@@ -4,7 +4,8 @@ import '@polkadot/api-augment';
 import { useLiveQuery } from 'dexie-react-hooks';
 
 import { connectionState } from '../../store/connections';
-import { db, Wallet } from '../../db/db';
+import { db } from '../../db/db';
+import { Wallet } from '../../db/types';
 import Card from '../../ui/Card';
 import NetworkBalances from './NetworkBalances';
 

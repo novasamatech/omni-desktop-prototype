@@ -1,13 +1,26 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { format } from 'date-fns';
+import { useHistory } from 'react-router';
 import LinkButton from '../ui/LinkButton';
 import arrow from '../../../assets/arrow.svg';
 import statusWait from '../../../assets/status-wait.svg';
 import statusRead from '../../../assets/status-read.svg';
 import { useMatrix } from './Providers/MatrixProvider';
+import { db } from '../db/db';
+import { BooleanValue } from '../db/types';
 
 const Notifications: React.FC = () => {
   const { notifications } = useMatrix();
+  const history = useHistory();
+
+  const onDetailsNavigation = (id: string, isRead: boolean) => () => {
+    if (!isRead) {
+      db.mxNotifications.update(id, { isRead: BooleanValue.POSITIVE });
+    }
+
+    // TODO: got to chat, invites, etc.
+    history.push('/');
+  };
 
   return (
     <div className="h-screen flex flex-col">
@@ -20,31 +33,29 @@ const Notifications: React.FC = () => {
 
       <main className="overflow-y-auto">
         <ul className="flex flex-col w-1/3 mx-auto gap-5">
-          {notifications.map((notification) => (
-            <li className="bg-gray-100 p-4 rounded-lg">
+          {notifications.map((n) => (
+            <li className="bg-gray-100 p-4 rounded-lg" key={n.id}>
               <div className="flex justify-between">
-                {/* <span className="text-gray-500 text-sm">{notification.time}</span> */}
-                <span className="text-gray-500 text-sm">10.02.2022</span>
-                <Link className="flex items-center gap-2" to="/">
+                <span className="text-gray-500 text-sm">
+                  {format(n.date, 'HH:mm:ss')}
+                </span>
+                <button
+                  className="flex items-center gap-2"
+                  type="button"
+                  onClick={onDetailsNavigation(n.id, n.isRead)}
+                >
                   <span className="text-sm">Details</span>
                   <img src={arrow} alt="" />
-                </Link>
+                </button>
               </div>
               <div className="mt-3">
-                <div className="text-2xl font-medium">
-                  {/* {notification.title} */}
-                  Notification MST initialized
-                </div>
-                <div className="text-gray-500 mt-1">
-                  {/* {notification.description} */}
-                  The wallet does not have enough balance to cover the
-                  transaction costs.
-                </div>
+                <div className="text-2xl font-medium">{n.title}</div>
+                <div className="text-gray-500 mt-1">{n.description}</div>
               </div>
               <img
                 className="ml-auto"
-                src={notification.status === 'read' ? statusRead : statusWait}
-                alt="notification not read"
+                src={n.isRead ? statusRead : statusWait}
+                alt={n.isRead ? 'is read' : 'is not read'}
               />
             </li>
           ))}

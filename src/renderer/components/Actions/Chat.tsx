@@ -19,14 +19,8 @@ const Chat: React.FC = () => {
   //       onSyncEnd: () => console.log('=== 🟢 end'),
   //       onMessage: () => console.log('=== 🟢 message'),
   //       onInvite: () => console.log('=== 🟢 invite'),
-  //       onMstInitiate: (value) =>
-  //         console.log(`=== 🟢 OmniMstEvents.INIT ${value.toString()}`),
-  //       onMstApprove: (value) =>
-  //         console.log(`=== 🟢 OmniMstEvents.APPROVE ${value.toString()}`),
-  //       onMstFinalApprove: (value) =>
-  //         console.log(`=== 🟢 OmniMstnts.FINAL_APPROVE ${value.toString()}`),
-  //       onMstCancel: (value) =>
-  //         console.log(`=== 🟢 OmniMstEvents.CANCEL ${value.toString()}`),
+  //       onMstEvent: (value) =>
+  //         console.log(`=== 🟢 OMNI_MST_EVENTS.INIT ${value.toString()}`),
   //     });
   //   }
   //   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -50,7 +44,7 @@ const Chat: React.FC = () => {
   const onCreateRoom = () => {
     matrix.createRoom(
       {
-        mstAccountAddress: '0xCCCC',
+        mstAccountAddress: '0xXCAD123',
         inviterPublicKey: '0x24dsfb',
         threshold: 2,
         signatories: [
@@ -61,7 +55,7 @@ const Chat: React.FC = () => {
           },
           {
             isInviter: false,
-            matrixAddress: '@pamelo:matrix.org',
+            matrixAddress: '@pamelo123:matrix.org',
             networkAddress: '0x2340dfa',
           },
           // {
@@ -84,9 +78,9 @@ const Chat: React.FC = () => {
     matrix.invite('123', 'asd');
   };
 
-  const onSetRoom = (roomId: string) => () => {
+  const onSetRoom = (roomId: string) => async () => {
     matrix.setRoom(roomId);
-    const messages = matrix.timelineMessages();
+    const messages = await matrix.timelineEvents();
     console.log(messages);
   };
 

@@ -2,7 +2,8 @@ import React from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import Transaction from './Transaction';
 import LinkButton from '../ui/LinkButton';
-import { db, TransactionStatus } from '../db/db';
+import { db } from '../db/db';
+import { TransactionStatus } from '../db/types';
 
 const Basket: React.FC = () => {
   const transactions = useLiveQuery(() =>

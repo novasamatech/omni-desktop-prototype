@@ -11,15 +11,15 @@ import Button from '../../ui/Button';
 import InputText from '../../ui/Input';
 import Select, { OptionType } from '../../ui/Select';
 import ErrorMessage from '../../ui/ErrorMessage';
+import { db } from '../../db/db';
 import {
   Asset,
   AssetType,
-  db,
   TransactionStatus,
   TransactionType,
   OrmlExtras,
   StatemineExtras,
-} from '../../db/db';
+} from '../../db/types';
 import { isMultisig, validateAddress } from '../../utils/validation';
 import { getAddressFromWallet } from '../../utils/account';
 import { ErrorTypes } from '../../../common/constants';

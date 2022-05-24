@@ -8,7 +8,7 @@ import { selectedAccountsState } from '../store/selectedAccounts';
 const Accounts: React.FC = () => {
   const [accounts, setAccounts] = useState<AccountType[]>([]);
   const [selectedAccounts, setSelectedAccounts] = useRecoilState(
-    selectedAccountsState
+    selectedAccountsState,
   );
 
   const selectAccount = (account: AccountType) => {
@@ -16,7 +16,7 @@ const Accounts: React.FC = () => {
     setSelectedAccounts(
       isExist
         ? selectedAccounts.filter((a) => a.address !== account.address)
-        : [...selectedAccounts, account]
+        : [...selectedAccounts, account],
     );
   };
 

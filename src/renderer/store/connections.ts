@@ -2,7 +2,7 @@
 import { ApiPromise } from '@polkadot/api';
 import { ProviderInterface } from '@polkadot/rpc-provider/types';
 import { atom } from 'recoil';
-import { Chain } from '../db/db';
+import { Chain } from '../db/types';
 
 export type Connection = {
   network: Chain;

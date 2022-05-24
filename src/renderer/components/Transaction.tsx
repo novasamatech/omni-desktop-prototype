@@ -7,7 +7,8 @@ import Button from '../ui/Button';
 import { currentTransactionState } from '../store/currentTransaction';
 import Address from '../ui/Address';
 import { Routes } from '../../common/constants';
-import { db, Transaction as TransactionData, TransactionType } from '../db/db';
+import { db } from '../db/db';
+import { Transaction as TransactionData, TransactionType } from '../db/types';
 import { formatAddress, getAddressFromWallet } from '../utils/account';
 import { getAssetById } from '../utils/assets';
 

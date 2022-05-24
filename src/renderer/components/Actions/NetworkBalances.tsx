@@ -3,7 +3,7 @@ import { useRecoilValue } from 'recoil';
 import '@polkadot/api-augment';
 
 import { Connection, connectionState } from '../../store/connections';
-import { Asset, Chain, Wallet, Account } from '../../db/db';
+import { Asset, Chain, Wallet, Account } from '../../db/types';
 import Card from '../../ui/Card';
 import AssetBalance from './AssetBalance';
 

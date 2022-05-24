@@ -6,38 +6,63 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { db } from '../../db/db';
+import { useLiveQuery } from 'dexie-react-hooks';
 import Matrix from '../../modules/matrix';
-import { ISecureMessenger } from '../../modules/types';
+import {
+  ISecureMessenger,
+  MSTPayload,
+  OmniMstEvents,
+} from '../../modules/types';
+import { db } from '../../db/db';
+import { BooleanValue, Notification as DbNotification } from '../../db/types';
+
+type Notification = {
+  id: string;
+  title: string;
+  description: string;
+  date: Date;
+  isRead: boolean;
+};
 
 type MatrixContextProps = {
   matrix: ISecureMessenger;
-  notifications: any[];
+  notifications: Notification[];
 };
 
 const MatrixContext = createContext<MatrixContextProps>(
   {} as MatrixContextProps,
 );
 
-type Notification = {
-  time: string;
-  title: string;
-  description: string;
-  status: 'read' | 'wait';
-};
-
-const mock: Notification = {
-  time: '10.08.2022',
-  title: 'Multisig Operation Initiated',
-  description:
-    'The wallet does not have enough balance to cover the transaction costs.',
-  status: 'read',
-};
-
 type Props = {
   loader: ReactNode;
   onAutoLoginFail: (message: string) => void;
 };
+
+const TITLES = {
+  [OmniMstEvents.INIT]: 'MST initiated',
+  [OmniMstEvents.APPROVE]: 'MST approved',
+  [OmniMstEvents.FINAL_APPROVE]: 'MST executed',
+  [OmniMstEvents.CANCEL]: 'MST cancelled',
+};
+
+const DESCRIPTIONS = {
+  [OmniMstEvents.INIT]: 'The transaction was initiated',
+  [OmniMstEvents.APPROVE]: 'The transaction was approved',
+  [OmniMstEvents.FINAL_APPROVE]: 'The transaction was executed',
+  [OmniMstEvents.CANCEL]: 'The transaction was cancelled',
+};
+
+function prepareNotifications(
+  dbNotifications: DbNotification[],
+): Notification[] {
+  return dbNotifications.map((n) => ({
+    id: n.id || n.date.getTime().toString(),
+    title: TITLES[n.type],
+    description: `${DESCRIPTIONS[n.type]} by ${n.sender}`,
+    date: n.date,
+    isRead: Boolean(n.isRead),
+  }));
+}
 
 const MatrixProvider: React.FC<Props> = ({
   loader,
@@ -47,44 +72,67 @@ const MatrixProvider: React.FC<Props> = ({
   const { current: matrix } = useRef<ISecureMessenger>(new Matrix(db));
 
   const [isMatrixLoading, setIsMatrixLoading] = useState(true);
+  // const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const notifications = useLiveQuery(async () => {
+    if (!matrix.userId) return [];
+
+    const data = await db.mxNotifications
+      .where('client')
+      .equals(matrix.userId)
+      .reverse()
+      .sortBy('date');
+
+    return prepareNotifications(data);
+  }, [matrix.userId]);
 
   const onSyncProgress = () => {
-    console.log('onSyncProgress');
+    console.log('💛 ===> onSyncProgress');
   };
 
-  const onSyncEnd = () => {
-    console.log('onSyncEnd');
+  const onSyncEnd = async () => {
+    const timeline = await matrix.timelineEvents();
+    console.log('💛 ===> onSyncEnd - ', timeline);
+
+    if (timeline.length === 0) return;
+
+    const dbNotifications = await db.mxNotifications
+      .where('client')
+      .equals(matrix.userId)
+      .toArray();
+
+    const dbIdsMap = dbNotifications.reduce(
+      // TODO: Fix DB mandatory IDs
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      (acc, n) => ({ ...acc, [n!.id]: true }),
+      {} as Record<string, boolean>,
+    );
+
+    const dbTimeline = timeline
+      .filter((t) => !dbIdsMap?.[t.eventId])
+      .map(({ eventId, ...rest }) => ({
+        ...rest,
+        id: eventId,
+        isRead: BooleanValue.NEGATIVE,
+      }));
+    db.mxNotifications.bulkAdd(dbTimeline);
   };
 
   const onMessage = (value: any) => {
-    console.log('onMessage - ', value);
+    console.log('💛 ===> onMessage - ', value);
   };
 
   const onInvite = (value: any) => {
-    console.log('onInvite - ', value);
-    setNotifications([mock]);
+    console.log('💛 ===> onInvite - ', value);
   };
 
-  const onMstInitiate = (value: any) => {
-    console.log('onMstInitiate - ', value);
-    setNotifications([mock]);
-  };
-
-  const onMstApprove = (value: any) => {
-    console.log('onMstApprove - ', value);
-    setNotifications([mock]);
-  };
-
-  const onMstFinalApprove = (value: any) => {
-    console.log('onMstFinalApprove - ', value);
-    setNotifications([mock]);
-  };
-
-  const onMstCancel = (value: any) => {
-    console.log('onMstCancel - ', value);
-    setNotifications([mock]);
+  const onMstEvent = ({ eventId, ...rest }: MSTPayload) => {
+    db.mxNotifications.add({
+      ...rest,
+      id: eventId,
+      isRead: BooleanValue.NEGATIVE,
+    });
   };
 
   useEffect(() => {
@@ -115,20 +163,19 @@ const MatrixProvider: React.FC<Props> = ({
       onSyncEnd,
       onMessage,
       onInvite,
-      onMstInitiate,
-      onMstApprove,
-      onMstFinalApprove,
-      onMstCancel,
+      onMstEvent,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matrix?.isLoggedIn]);
+  }, [matrix.isLoggedIn]);
 
   if (isMatrixLoading) {
     return <>{loader}</>;
   }
 
   return (
-    <MatrixContext.Provider value={{ matrix, notifications }}>
+    <MatrixContext.Provider
+      value={{ matrix, notifications: notifications || [] }}
+    >
       {children}
     </MatrixContext.Provider>
   );

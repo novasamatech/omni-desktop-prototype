@@ -8,7 +8,8 @@ import { Dialog } from '@headlessui/react';
 
 import Button from '../../ui/Button';
 import InputText from '../../ui/Input';
-import { db, Contact, CryptoType, MultisigWallet } from '../../db/db';
+import { Contact, CryptoType, MultisigWallet } from '../../db/types';
+import { db } from '../../db/db';
 import Card from '../../ui/Card';
 import Checkbox from '../../ui/Checkbox';
 import Address from '../../ui/Address';

@@ -8,7 +8,8 @@ import { Dialog } from '@headlessui/react';
 import { useSetRecoilState } from 'recoil';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 
-import { Account, ChainAccount, Chain, db } from '../../db/db';
+import { db } from '../../db/db';
+import { Account, ChainAccount, Chain } from '../../db/types';
 import InputText from '../../ui/Input';
 import Button from '../../ui/Button';
 import List from '../../ui/List';

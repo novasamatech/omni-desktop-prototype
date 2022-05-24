@@ -5,7 +5,8 @@ import { ApiPromise, WsProvider } from '@polkadot/api';
 import { ProviderInterface } from '@polkadot/rpc-provider/types';
 import { ScProvider } from '@polkadot/rpc-provider/substrate-connect';
 
-import { ActiveType, Chain, db } from '../../db/db';
+import { ActiveType, Chain } from '../../db/types';
+import { db } from '../../db/db';
 import List from '../../ui/List';
 import ListItem from '../../ui/ListItem';
 import { loadChainsList } from '../../api/chains';

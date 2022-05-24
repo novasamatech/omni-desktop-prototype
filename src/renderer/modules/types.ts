@@ -10,7 +10,7 @@ export interface ISecureMessenger {
   init: () => Promise<void | never>;
   loginWithCreds: (login: string, password: string) => Promise<void | never>;
   loginFromCache: () => Promise<void | never>;
-  stopClient: () => void | never;
+  stopClient: () => void;
   logout: () => Promise<void | never>;
 
   // Actions
@@ -22,39 +22,32 @@ export interface ISecureMessenger {
   invite: (roomId: string, signatoryId: string) => Promise<void | never>;
   listOfOmniRooms: (type: Membership.INVITE | Membership.JOIN) => Room[];
   setRoom: (roomId: string) => void;
-  timelineMessages: () => Record<string, unknown>[] | never;
+  timelineEvents: () => Promise<MSTPayload[] | never>;
   sendMessage: (message: string) => void;
   setupSubscribers: (handlers: Callbacks) => void;
   clearSubscribers: () => void;
   checkUserExists: (userId: string) => Promise<boolean>;
 
   // MST operations
-  mstInitiate: (params: MstInitParams) => void;
-  mstApprove: (params: MstBaseParams) => void;
-  mstFinalApprove: (params: MstBaseParams) => void;
-  mstCancel: (params: MstCancelParams) => void;
+  mstInitiate: (params: MstParams) => void;
+  mstApprove: (params: MstParams) => void;
+  mstFinalApprove: (params: MstParams) => void;
+  mstCancel: (params: MstParams) => void;
 
   // Properties
+  userId: string;
   isLoggedIn: boolean;
+  isSynced: boolean;
 }
 
 // =====================================================
 // ======================= General =====================
 // =====================================================
 
-export type ValueOf<T> = T[keyof T];
-
 export const enum Membership {
   INVITE = 'invite',
   JOIN = 'join',
   LEAVE = 'leave',
-}
-
-export const enum OmniMstEvents {
-  INIT = 'io.novafoundation.omni.mst_initiated',
-  APPROVE = 'io.novafoundation.omni.mst_approved',
-  FINAL_APPROVE = 'io.novafoundation.omni.mst_executed',
-  CANCEL = 'io.novafoundation.omni.mst_cancelled',
 }
 
 export type Signatory = {
@@ -74,25 +67,29 @@ export type RoomCreation = {
 // ============== MST Events / Callbacks ===============
 // =====================================================
 
-export type MstBaseParams = {
-  chainId: HexString; // genesis hash of the network MST sent in
+// TODO: find better TS solution for OMNI_MST_EVENTS
+export const enum OmniMstEvents {
+  INIT = 'io.novafoundation.omni.mst_initiated',
+  APPROVE = 'io.novafoundation.omni.mst_approved',
+  FINAL_APPROVE = 'io.novafoundation.omni.mst_executed',
+  CANCEL = 'io.novafoundation.omni.mst_cancelled',
+}
+
+export type MstParams = {
+  chainId: HexString;
   callHash: HexString;
-};
-
-export type MstInitParams = MstBaseParams & {
-  callData: HexString;
-  description: string;
-};
-
-export type MstCancelParams = MstBaseParams & {
+  callData?: HexString;
   description?: string;
 };
 
-type MSTPayload<T extends MstBaseParams = MstBaseParams> = {
+export type MSTPayload = {
+  eventId: string;
   roomId?: string;
   sender: string;
-  content: T;
-  date: Date | null;
+  client: string;
+  content: MstParams;
+  type: OmniMstEvents;
+  date: Date;
 };
 
 type GeneralCallbacks = {
@@ -103,10 +100,7 @@ type GeneralCallbacks = {
 };
 
 export type MSTCallbacks = {
-  onMstInitiate: (data: MSTPayload<MstInitParams>) => void;
-  onMstApprove: (data: MSTPayload) => void;
-  onMstFinalApprove: (data: MSTPayload) => void;
-  onMstCancel: (data: MSTPayload<MstCancelParams>) => void;
+  onMstEvent: (data: MSTPayload) => void;
 };
 
 export type Callbacks = GeneralCallbacks & MSTCallbacks;
