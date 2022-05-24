@@ -17,6 +17,8 @@ type Props = {
 const MainLayout: React.FC<Props> = ({ route }) => {
   const { matrix, notifications } = useMatrix();
 
+  const hasUnreadNotifs = notifications.some((n) => !n.isRead);
+
   // TODO: Connect to the chain on app start
 
   // const [connections, setConnections] = useRecoilState(connectionState);
@@ -95,8 +97,12 @@ const MainLayout: React.FC<Props> = ({ route }) => {
             5 pending operations
           </LinkButton>
         )}
-        {matrix.isLoggedIn && notifications.length > 0 && (
-          <LinkButton className="ml-auto" to={Routes.NOTIFICATIONS} size="md">
+        {matrix.isLoggedIn && (
+          <LinkButton
+            className={cn('ml-auto', hasUnreadNotifs && 'bg-red-400')}
+            to={Routes.NOTIFICATIONS}
+            size="md"
+          >
             Notifications
           </LinkButton>
         )}

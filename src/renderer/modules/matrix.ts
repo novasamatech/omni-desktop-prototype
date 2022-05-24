@@ -6,6 +6,7 @@ import olmWasmPath from '@matrix-org/olm/olm.wasm';
 import {
   ClientEvent,
   createClient,
+  Direction,
   EventType,
   IndexedDBCryptoStore,
   MatrixClient,
@@ -23,10 +24,12 @@ import { OmniDexie } from '../db/db';
 import { BooleanValue } from '../db/types';
 import {
   Callbacks,
+  InvitePayload,
   ISecureMessenger,
   Membership,
   MstParams,
   MSTPayload,
+  OmniExtras,
   OmniMstEvents,
   RoomCreation,
   Signatory,
@@ -308,7 +311,7 @@ class Matrix implements ISecureMessenger {
       return acc;
     }, [] as MatrixEvent[]);
 
-    return omniTimeline.map((event) => this.createNotificationPayload(event));
+    return omniTimeline.map((event) => this.createMstPayload(event));
   }
 
   /**
@@ -469,7 +472,7 @@ class Matrix implements ISecureMessenger {
       ROOM_CRYPTO_CONFIG,
     );
 
-    const omniExtras = {
+    const omniExtras: OmniExtras = {
       mst_account: {
         threshold: params.threshold,
         signatories: params.signatories.map(
@@ -582,7 +585,7 @@ class Matrix implements ISecureMessenger {
         this.subscribeHandlers?.onSyncProgress();
       }
       if (state === SyncState.Prepared) {
-        console.info('=== 🏁 Sync prepared');
+        console.info('=== 🔶 Sync prepared');
         this.isClientSynced = true;
         this.subscribeHandlers?.onSyncEnd();
       }
@@ -590,19 +593,24 @@ class Matrix implements ISecureMessenger {
   }
 
   private handleInviteEvent(): void {
-    this.matrixClient.on(
-      RoomMemberEvent.Membership,
-      async (_, { roomId, userId, membership, name }) => {
-        if (!this.isClientSynced) return;
+    this.matrixClient.on(RoomMemberEvent.Membership, async (event, member) => {
+      const roomId = event.getRoomId();
+      const isValidUser =
+        member.userId === this.userId &&
+        member.membership === Membership.INVITE;
 
-        const isValidUser =
-          userId === this.matrixClient.getUserId() &&
-          membership === Membership.INVITE;
-        if (isValidUser && this.isOmniRoom(name)) {
-          this.subscribeHandlers?.onInvite(roomId);
-        }
-      },
-    );
+      if (!isValidUser || !roomId) return;
+
+      const roomSummary = await this.matrixClient.getRoomSummary(roomId);
+      if (!this.isOmniRoom(roomSummary.name)) return;
+
+      const room = this.matrixClient.getRoom(roomId);
+      if (!room) return;
+
+      this.subscribeHandlers?.onInvite(
+        this.createInvitePayload(event, this.getOmniTopic(room), room.name),
+      );
+    });
   }
 
   private handleMatrixEvents(): void {
@@ -634,7 +642,7 @@ class Matrix implements ISecureMessenger {
       const room = this.matrixClient.getRoom(roomId);
       if (!room || !this.isOmniRoom(room.name)) return;
 
-      this.subscribeHandlers?.onMstEvent(this.createNotificationPayload(event));
+      this.subscribeHandlers?.onMstEvent(this.createMstPayload(event));
     });
   }
 
@@ -685,20 +693,46 @@ class Matrix implements ISecureMessenger {
     }
   }
 
+  // TODO: try to use TS generics if possible
   /**
-   * Create notification payload from Matrix Event (custom or not)
+   * Create MST notification payload from Matrix Event
    * @param event matrix event object
    * @return {Object}
    */
-  private createNotificationPayload(event: MatrixEvent): MSTPayload {
+  private createMstPayload(event: MatrixEvent): MSTPayload {
     return {
       eventId: event.getId(),
       roomId: event.getRoomId(),
       sender: event.getSender(),
       client: this.matrixClient.getUserId(),
-      content: event.getContent(),
-      type: event.getType() as OmniMstEvents,
       date: event.getDate() || new Date(),
+      type: event.getType() as OmniMstEvents,
+      content: event.getContent(),
+      roomName: '',
+    };
+  }
+
+  /**
+   * Create Invite notification payload from Matrix Event
+   * @param event matrix event object
+   * @param content room invitation content
+   * @param roomName name of the room
+   * @return {Object}
+   */
+  private createInvitePayload(
+    event: MatrixEvent,
+    content: OmniExtras,
+    roomName: string,
+  ): InvitePayload {
+    return {
+      eventId: event.getId(),
+      roomId: event.getRoomId(),
+      sender: event.getSender(),
+      client: this.matrixClient.getUserId(),
+      date: event.getDate() || new Date(),
+      type: event.getType() as EventType.RoomMember,
+      content,
+      roomName,
     };
   }
 
@@ -711,6 +745,24 @@ class Matrix implements ISecureMessenger {
     if (!roomName) return false;
 
     return /^OMNI MST \| [a-zA-Z\d]+$/.test(roomName);
+  }
+
+  /**
+   * Retrieve omni_extras from room's topic event
+   * @param room the room itself
+   * @return {Object}
+   */
+  private getOmniTopic(room: Room): any {
+    // when user is invited, he only sees stripped state, which has '' as state key for all events
+    const strippedStateKey = '';
+
+    const topicEvent = room
+      .getLiveTimeline()
+      .getState(Direction.Forward)
+      .events.get(EventType.RoomTopic)
+      ?.get(strippedStateKey)?.event;
+
+    return topicEvent?.content?.omni_extras;
   }
 }
 

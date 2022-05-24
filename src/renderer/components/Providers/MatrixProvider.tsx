@@ -7,8 +7,10 @@ import React, {
   useState,
 } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { EventType } from 'matrix-js-sdk';
 import Matrix from '../../modules/matrix';
 import {
+  InvitePayload,
   ISecureMessenger,
   MSTPayload,
   OmniMstEvents,
@@ -43,13 +45,20 @@ const TITLES = {
   [OmniMstEvents.APPROVE]: 'MST approved',
   [OmniMstEvents.FINAL_APPROVE]: 'MST executed',
   [OmniMstEvents.CANCEL]: 'MST cancelled',
+  [EventType.RoomMember]: 'Room invitation',
 };
 
 const DESCRIPTIONS = {
-  [OmniMstEvents.INIT]: 'The transaction was initiated',
-  [OmniMstEvents.APPROVE]: 'The transaction was approved',
-  [OmniMstEvents.FINAL_APPROVE]: 'The transaction was executed',
-  [OmniMstEvents.CANCEL]: 'The transaction was cancelled',
+  [OmniMstEvents.INIT]: (sender: string) =>
+    `The transaction was initiated by ${sender}`,
+  [OmniMstEvents.APPROVE]: (sender: string) =>
+    `The transaction was approved by ${sender}`,
+  [OmniMstEvents.FINAL_APPROVE]: (sender: string) =>
+    `The transaction was executed by ${sender}`,
+  [OmniMstEvents.CANCEL]: (sender: string) =>
+    `The transaction was cancelled by ${sender}`,
+  [EventType.RoomMember]: (sender: string, roomName = '') =>
+    `You were invited in room ${roomName} by ${sender}`,
 };
 
 function prepareNotifications(
@@ -58,7 +67,7 @@ function prepareNotifications(
   return dbNotifications.map((n) => ({
     id: n.id || n.date.getTime().toString(),
     title: TITLES[n.type],
-    description: `${DESCRIPTIONS[n.type]} by ${n.sender}`,
+    description: DESCRIPTIONS[n.type](n.sender, n.roomName),
     date: n.date,
     isRead: Boolean(n.isRead),
   }));
@@ -84,7 +93,27 @@ const MatrixProvider: React.FC<Props> = ({
       .sortBy('date');
 
     return prepareNotifications(data);
-  }, [matrix.userId]);
+  }, [matrix, matrix.userId]);
+
+  useEffect(() => {
+    const initMatrix = async () => {
+      try {
+        await matrix.init();
+        await matrix.loginFromCache();
+      } catch (error) {
+        onAutoLoginFail((error as Error).message);
+      } finally {
+        setIsMatrixLoading(false);
+      }
+    };
+
+    initMatrix();
+
+    return () => {
+      matrix.stopClient();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onSyncProgress = () => {
     console.log('💛 ===> onSyncProgress');
@@ -123,8 +152,16 @@ const MatrixProvider: React.FC<Props> = ({
     console.log('💛 ===> onMessage - ', value);
   };
 
-  const onInvite = (value: any) => {
-    console.log('💛 ===> onInvite - ', value);
+  const onInvite = async ({ eventId, ...rest }: InvitePayload) => {
+    const dbInvitation = await db.mxNotifications.get(eventId);
+
+    if (dbInvitation) return;
+
+    db.mxNotifications.add({
+      ...rest,
+      id: eventId,
+      isRead: BooleanValue.NEGATIVE,
+    });
   };
 
   const onMstEvent = ({ eventId, ...rest }: MSTPayload) => {
@@ -134,26 +171,6 @@ const MatrixProvider: React.FC<Props> = ({
       isRead: BooleanValue.NEGATIVE,
     });
   };
-
-  useEffect(() => {
-    const initMatrix = async () => {
-      try {
-        await matrix.init();
-        await matrix.loginFromCache();
-      } catch (error) {
-        onAutoLoginFail((error as Error).message);
-      } finally {
-        setIsMatrixLoading(false);
-      }
-    };
-
-    initMatrix();
-
-    return () => {
-      matrix.stopClient();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   useEffect(() => {
     if (!matrix.isLoggedIn) return;

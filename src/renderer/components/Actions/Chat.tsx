@@ -44,7 +44,7 @@ const Chat: React.FC = () => {
   const onCreateRoom = () => {
     matrix.createRoom(
       {
-        mstAccountAddress: '0xXCAD123',
+        mstAccountAddress: '5Gsad213SADBGFDG231',
         inviterPublicKey: '0x24dsfb',
         threshold: 2,
         signatories: [

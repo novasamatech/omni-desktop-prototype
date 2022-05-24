@@ -1,5 +1,5 @@
 import { HexString } from '../../common/types';
-import { MSTPayload } from '../modules/types';
+import { CombinedEventPayload } from '../modules/types';
 
 export const enum CryptoType {
   SR25519,
@@ -182,7 +182,7 @@ export type Transaction = WithID<{
 }>;
 
 export type Notification = WithID<
-  Omit<MSTPayload, 'eventId'> & {
+  Omit<CombinedEventPayload, 'eventId'> & {
     isRead: BooleanValue;
   },
   string

@@ -1,4 +1,4 @@
-import { Room } from 'matrix-js-sdk';
+import { EventType, Room } from 'matrix-js-sdk';
 import { HexString } from '../../common/types';
 
 // =====================================================
@@ -57,10 +57,22 @@ export type Signatory = {
 };
 
 export type RoomCreation = {
-  mstAccountAddress: HexString;
+  mstAccountAddress: string;
   inviterPublicKey: string;
   threshold: number;
   signatories: Signatory[];
+};
+
+export type OmniExtras = {
+  mst_account: {
+    threshold: number;
+    signatories: string[];
+    address: string;
+  };
+  invite: {
+    signature: string;
+    public_key: string;
+  };
 };
 
 // =====================================================
@@ -82,20 +94,31 @@ export type MstParams = {
   description?: string;
 };
 
-export type MSTPayload = {
+type EventPayload = {
   eventId: string;
   roomId?: string;
   sender: string;
   client: string;
-  content: MstParams;
-  type: OmniMstEvents;
+  roomName?: string;
   date: Date;
 };
+
+export type InvitePayload = EventPayload & {
+  content: OmniExtras;
+  type: EventType.RoomMember;
+};
+
+export type MSTPayload = EventPayload & {
+  content: MstParams;
+  type: OmniMstEvents;
+};
+
+export type CombinedEventPayload = InvitePayload | MSTPayload;
 
 type GeneralCallbacks = {
   onSyncEnd: () => void;
   onSyncProgress: () => void;
-  onInvite: (roomId: string) => void;
+  onInvite: (data: InvitePayload) => void;
   onMessage: (message: string) => void;
 };
 
