@@ -15,7 +15,7 @@ import {
   // TransactionStatus,
 } from '../../db/db';
 import { formatAddress, getAddressFromWallet } from '../../utils/account';
-import { getAssetById } from '../../utils/assets';
+import { formatBalanceFromAmount, getAssetById } from '../../utils/assets';
 import LinkButton from '../../ui/LinkButton';
 import copy from '../../../../assets/copy.svg';
 
@@ -57,9 +57,12 @@ const TransferDetails: React.FC = () => {
 
   const setCurrentTransaction = useSetRecoilState(currentTransactionState);
 
-  const tokenSymbol =
-    getAssetById(network?.assets || [], transaction?.data.assetId)?.symbol ||
-    '';
+  const currentAsset = getAssetById(
+    network?.assets || [],
+    transaction?.data.assetId,
+  );
+
+  const tokenSymbol = currentAsset?.symbol || '';
 
   const showQR = () => {
     setCurrentTransaction(transaction);
@@ -116,7 +119,12 @@ const TransferDetails: React.FC = () => {
 
         {isTransfer && (
           <div className="flex">
-            Transfer {transaction.data.amount} {tokenSymbol} to{' '}
+            Transfer{' '}
+            {formatBalanceFromAmount(
+              transaction.data.amount,
+              currentAsset?.precision,
+            )}{' '}
+            {tokenSymbol} to{' '}
             <Address
               className="ml-1"
               address={formatRecipientAddress(transaction.data.address)}
@@ -128,7 +136,12 @@ const TransferDetails: React.FC = () => {
             <div className="flex">
               {transaction.data.amount && (
                 <>
-                  Transfer {transaction.data.amount} {tokenSymbol} to
+                  Transfer{' '}
+                  {formatBalanceFromAmount(
+                    transaction.data.amount,
+                    currentAsset?.precision,
+                  )}{' '}
+                  {tokenSymbol} to
                   <Address
                     className="ml-1"
                     address={formatRecipientAddress(transaction.data.address)}

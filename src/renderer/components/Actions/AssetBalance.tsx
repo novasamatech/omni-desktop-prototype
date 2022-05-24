@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { formatBalance } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/keyring';
 import { FrameSystemAccountInfo } from '@polkadot/types/lookup';
 
@@ -13,6 +12,7 @@ import {
 } from '../../db/db';
 import { validate } from '../../utils/validation';
 import Shimmer from '../../ui/Shimmer';
+import { formatBalance } from '../../utils/assets';
 
 const enum ValidationStatus {
   INVALID = 'invalid',
@@ -46,10 +46,7 @@ const AssetBalance: React.FC<Props> = ({
   const updateBalance = useCallback(
     (newBalance: any) => {
       setBalance({
-        free: formatBalance(newBalance, {
-          withUnit: false,
-          decimals: asset?.precision,
-        }),
+        free: formatBalance(newBalance.toString(), asset?.precision),
         validationStatus: ValidationStatus.VALIDATION,
       });
     },

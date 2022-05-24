@@ -53,14 +53,14 @@ const Transaction: React.FC<Props> = ({ transaction }: Props) => {
         <div className="flex justify-end items-center">
           {transaction.type === TransactionType.MULTISIG_TRANSFER && (
             <span className="text-xs text-gray-500 mr-2">
-              {transaction.data.approvals.length}/
+              {transaction.data.approvals?.length || 0}/
               {(transaction.wallet as MultisigWallet).threshold} Signatures
             </span>
           )}
           {transaction.status === TransactionStatus.CONFIRMED ? (
             <img src={success} alt="success" />
           ) : (
-            <img src={pending} alt="success" />
+            <img src={pending} alt="pending" />
           )}
         </div>
       </div>
