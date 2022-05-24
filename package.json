@@ -247,6 +247,7 @@
     "electron-store": "^8.0.1",
     "electron-updater": "^4.3.9",
     "history": "4.x.x",
+    "lodash": "^4.17.21",
     "matrix-js-sdk": "^17.1.0",
     "postcss": "^8.3.8",
     "postcss-loader": "^6.2.0",

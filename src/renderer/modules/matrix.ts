@@ -18,6 +18,7 @@ import {
   Visibility,
 } from 'matrix-js-sdk';
 import { SyncState } from 'matrix-js-sdk/lib/sync';
+import { uniq } from 'lodash';
 import { HexString } from '../../common/types';
 import { AuthState, OmniDexie } from '../db/db';
 
@@ -38,13 +39,13 @@ const enum OmniMstEvents {
 }
 
 type RoomCreation = {
-  mstAccountAddress: HexString;
+  mstAccountAddress: string;
   inviterPublicKey: string;
   threshold: number;
   signatories: {
-    matrixAddress: `@${string}`;
-    networkAddress: HexString;
-    isInviter: boolean;
+    matrixAddress: string;
+    accountId: string;
+    isInviter?: boolean;
   }[];
 };
 
@@ -276,9 +277,7 @@ class Matrix implements SecureMessenger {
     const omniExtras = {
       mst_account: {
         threshold: params.threshold,
-        signatories: params.signatories.map(
-          (signatory) => signatory.networkAddress,
-        ),
+        signatories: params.signatories.map((signatory) => signatory.accountId),
         address: params.mstAccountAddress,
       },
       invite: {
@@ -303,13 +302,19 @@ class Matrix implements SecureMessenger {
     roomId: string,
     signatories: Signatories,
   ): Promise<void> {
-    const inviteRequests = signatories
-      .filter((signatory) => !signatory.isInviter)
-      .reduce((acc, signatory) => {
-        acc.push(this.matrixClient.invite(roomId, signatory.matrixAddress));
+    const inviterAddress = signatories.find((s) => s.isInviter)?.matrixAddress;
 
-        return acc;
-      }, [] as Promise<unknown>[]);
+    const noDuplicates = uniq(
+      signatories
+        .filter((s) => !s.isInviter && s.matrixAddress !== inviterAddress)
+        .map((s) => s.matrixAddress),
+    );
+
+    const inviteRequests = noDuplicates.reduce((acc, matrixAddress) => {
+      acc.push(this.matrixClient.invite(roomId, matrixAddress));
+
+      return acc;
+    }, [] as Promise<unknown>[]);
 
     await Promise.all(inviteRequests);
   }
