@@ -39,3 +39,14 @@ export const enum ErrorTypes {
 }
 
 export const DEFAULT = 'default';
+
+export const enum Suffix {
+  MILLIONS = 'M',
+  BILLIONS = 'B',
+  TRILLIONS = 'T',
+}
+
+export const enum Decimal {
+  SMALL_NUMBER = 5,
+  BIG_NUMBER = 2,
+}

@@ -130,11 +130,7 @@ const ShowCode: React.FC = () => {
       };
 
       const unsigned = transfers[asset?.type || DEFAULT]();
-      // if (transaction.type === TransactionType.MULTISIG_TRANSFER) {
 
-      // } else (
-
-      // )
       const signingPayloadHex = construct.signingPayload(unsigned, {
         registry,
       });
