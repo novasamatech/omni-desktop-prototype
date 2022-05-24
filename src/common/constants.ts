@@ -7,6 +7,7 @@ export const Routes = {
   BASKET: '/basket',
   SHOW_CODE: '/show-code',
   SCAN_CODE: '/scan-code',
+  TRANSFER_DETAILS: '/transfer-details/:id',
 
   // Composite routes
   TRANSFER: '/transfer',
@@ -36,3 +37,5 @@ export const enum ErrorTypes {
   VALIDATE = 'validate',
   PATTERN = 'pattern',
 }
+
+export const DEFAULT = 'default';

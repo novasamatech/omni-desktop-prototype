@@ -175,6 +175,7 @@ export type Transaction = {
   chainId: HexString;
   address: string;
   blockHash?: HexString;
+  blockHeight?: number;
   transactionHash?: HexString;
   type: TransactionType;
   status: TransactionStatus;

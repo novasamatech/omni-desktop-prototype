@@ -1209,6 +1209,21 @@
     "@polkadot/api" "^8.1.1"
     memoizee "0.4.15"
 
+"@substrate/txwrapper-core@^3.0.3":
+  version "3.0.3"
+  resolved "https://registry.yarnpkg.com/@substrate/txwrapper-core/-/txwrapper-core-3.0.3.tgz#26334b96e844c5aa3e96e267bda9989a7f6f2cea"
+  integrity sha512-Bxr8L6mzwtxDZVK2PZ4zttQhWaNupu0ETQxVbq0lt6iHStEqeUoW6SeyF+7Bkk+GIfHMrfukaGkhWLsIeym6Vg==
+  dependencies:
+    "@polkadot/api" "8.4.2"
+    memoizee "0.4.15"
+
+"@substrate/txwrapper-orml@^3.0.3":
+  version "3.0.3"
+  resolved "https://registry.yarnpkg.com/@substrate/txwrapper-orml/-/txwrapper-orml-3.0.3.tgz#8cfcf4de0a2cf623588f1d528059ee065b040366"
+  integrity sha512-nigJHxVHsIxNTq4xH24chB9XMGLCqu426PTrl99ho1tfoqCc6Cr66ULj/oU9bmEDlx4g5Xqu4oR5z4d3nCjeGg==
+  dependencies:
+    "@substrate/txwrapper-core" "^3.0.3"
+
 "@substrate/txwrapper-polkadot@^2.0.2":
   version "2.0.3"
   resolved "https://registry.yarnpkg.com/@substrate/txwrapper-polkadot/-/txwrapper-polkadot-2.0.3.tgz#4de1d74f3f8858da54ea14c1101d59c9286684c0"
@@ -5631,19 +5646,7 @@ glob-to-regexp@^0.4.1:
   resolved "https://registry.yarnpkg.com/glob-to-regexp/-/glob-to-regexp-0.4.1.tgz#c75297087c851b9a578bd217dd59a92f59fe546e"
   integrity sha512-lkX1HJXwyMcprw/5YUZc2s7DrpAiHB21/V+E1rHUrVNokkvB6bqMzT0VfV6/86ZNabt1k14YOIaT7nDvOX3Iiw==
 
-glob@^7.1.1, glob@^7.1.2, glob@^7.1.4:
-  version "7.2.3"
-  resolved "https://registry.yarnpkg.com/glob/-/glob-7.2.3.tgz#b8df0fb802bbfa8e89bd1d938b4e16578ed44f2b"
-  integrity sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==
-  dependencies:
-    fs.realpath "^1.0.0"
-    inflight "^1.0.4"
-    inherits "2"
-    minimatch "^3.1.1"
-    once "^1.3.0"
-    path-is-absolute "^1.0.0"
-
-glob@^7.1.3, glob@^7.1.6:
+glob@^7.1.1, glob@^7.1.2, glob@^7.1.3, glob@^7.1.4, glob@^7.1.6:
   version "7.2.3"
   resolved "https://registry.yarnpkg.com/glob/-/glob-7.2.3.tgz#b8df0fb802bbfa8e89bd1d938b4e16578ed44f2b"
   integrity sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==

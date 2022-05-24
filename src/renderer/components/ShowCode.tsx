@@ -12,16 +12,18 @@ import {
   methods,
   GetRegistryOpts,
 } from '@substrate/txwrapper-polkadot';
-import { Connection, connectionState } from '../store/api';
+import { methods as ORMLMethods } from '@substrate/txwrapper-orml';
+import { Connection, connectionState } from '../store/connections';
 import {
   currentTransactionState,
   currentUnsignedState,
 } from '../store/currentTransaction';
 import LinkButton from '../ui/LinkButton';
-import { Routes } from '../../common/constants';
+import { Routes, DEFAULT } from '../../common/constants';
 import { getAddressFromWallet } from '../utils/account';
-import { formatAmount } from '../utils/amount';
+import { formatAmount, getAssetById } from '../utils/assets';
 import Shimmer from '../ui/Shimmer';
+import { AssetType } from '../db/db';
 // import { isMultisig } from '../utils/dataValidation';
 
 const ShowCode: React.FC = () => {
@@ -62,36 +64,77 @@ const ShowCode: React.FC = () => {
         metadataRpc: metadataRpc.toHex(),
       });
 
-      // const isMST = isMultisig(transaction.wallet);
-
       const { nonce } = await connection.api.query.system.account(address);
-      const unsigned = methods.balances.transfer(
-        {
-          value: formatAmount(
-            transaction.data.amount.toString(),
-            transaction.data.precision,
-          ),
-          dest: transaction.data.address,
-        },
-        {
-          address,
-          blockHash: blockHash.toString(),
-          blockNumber: registry
-            .createType('BlockNumber', block.header.number)
-            .toNumber(),
-          eraPeriod: 64,
-          genesisHash: genesisHash.toString(),
-          metadataRpc: metadataRpc.toHex(),
-          nonce: nonce.toNumber(),
-          specVersion: specVersion.toNumber(),
-          tip: 0,
-          transactionVersion: transactionVersion.toNumber(),
-        },
-        {
-          metadataRpc: metadataRpc.toHex(),
-          registry,
-        },
+      const info = {
+        address,
+        blockHash: blockHash.toString(),
+        blockNumber: block.header.number.toNumber(),
+        eraPeriod: 64,
+        genesisHash: genesisHash.toString(),
+        metadataRpc: metadataRpc.toHex(),
+        nonce: nonce.toNumber(),
+        specVersion: specVersion.toNumber(),
+        tip: 0,
+        transactionVersion: transactionVersion.toNumber(),
+      };
+
+      const options = {
+        metadataRpc: metadataRpc.toHex(),
+        registry,
+      };
+
+      const asset = getAssetById(
+        connection.network.assets,
+        transaction.data.assetId,
       );
+
+      const transfers = {
+        [AssetType.ORML]: () =>
+          ORMLMethods.currencies.transfer(
+            {
+              currencyId: transaction.data.assetId,
+              amount: formatAmount(
+                transaction.data.amount.toString(),
+                transaction.data.precision,
+              ),
+              dest: transaction.data.address,
+            },
+            info,
+            options,
+          ),
+        [AssetType.STATEMINE]: () =>
+          methods.assets.transfer(
+            {
+              id: transaction.data.assetId,
+              amount: formatAmount(
+                transaction.data.amount.toString(),
+                transaction.data.precision,
+              ),
+              target: transaction.data.address,
+            },
+            info,
+            options,
+          ),
+        [DEFAULT]: () =>
+          methods.balances.transfer(
+            {
+              value: formatAmount(
+                transaction.data.amount.toString(),
+                transaction.data.precision,
+              ),
+              dest: transaction.data.address,
+            },
+            info,
+            options,
+          ),
+      };
+
+      const unsigned = transfers[asset?.type || DEFAULT]();
+      // if (transaction.type === TransactionType.MULTISIG_TRANSFER) {
+
+      // } else (
+
+      // )
       const signingPayloadHex = construct.signingPayload(unsigned, {
         registry,
       });
