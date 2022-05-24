@@ -6,7 +6,7 @@ import { HexString } from '../../common/types';
 
 export async function getHeader(
   api: ApiPromise,
-  chainId: number
+  chainId: number,
 ): Promise<any> {
   const header = await api.query.paras.heads(chainId);
   return header;
@@ -24,7 +24,7 @@ export async function getParachainId(api: ApiPromise) {
 export async function getBlockHash(api: ApiPromise, header: Header) {
   const parachainBlockNumber = header.number;
   const parachainBlockHash = await api.rpc.chain.getBlockHash(
-    parachainBlockNumber.unwrap()
+    parachainBlockNumber.unwrap(),
   );
 
   return parachainBlockHash;
@@ -33,7 +33,7 @@ export async function getBlockHash(api: ApiPromise, header: Header) {
 export async function getProofs(
   api: ApiPromise,
   storageKey: string,
-  hash: string
+  hash: string,
 ) {
   const readProofs = await api.rpc.state.getReadProof([storageKey], hash);
   return readProofs.proof;
@@ -47,7 +47,7 @@ export function calculateRoot(leaf: Uint8Array, proofs: Array<Uint8Array>) {
 
 export function calculateRightRoot(
   leaf: Uint8Array,
-  proofs: Array<Uint8Array>
+  proofs: Array<Uint8Array>,
 ) {
   return proofs.reduce((acc, proof) => {
     return blake2AsU8a(new Uint8Array([...proof, ...acc]));

@@ -14,6 +14,7 @@ import Login from '../../renderer/components/Login';
 import MainLayout from '../../renderer/components/Layout/MainLayout';
 import ManageMultisigWallet from '../../renderer/components/Actions/ManageMultisigWallet';
 import AddWallet from '../../renderer/components/Actions/AddWallet';
+import TransferDetails from '../../renderer/components/Transactions/TransferDetails';
 import { Routes } from '../constants';
 
 const ConfigRoutes: Record<'pages' | 'insideLayout', RouteConfig[]> = {
@@ -22,6 +23,7 @@ const ConfigRoutes: Record<'pages' | 'insideLayout', RouteConfig[]> = {
     { path: Routes.BASKET, component: Basket },
     { path: Routes.SHOW_CODE, component: ShowCode },
     { path: Routes.SCAN_CODE, component: ScanCode },
+    { path: Routes.TRANSFER_DETAILS, component: TransferDetails },
   ],
   insideLayout: [
     { path: Routes.TRANSFER, component: Transfer },

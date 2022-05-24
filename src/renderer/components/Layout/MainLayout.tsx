@@ -84,17 +84,17 @@ const MainLayout: React.FC<Props> = ({ route }) => {
         {renderRoutes(route?.routes)}
       </div>
 
-      {isTransactionsExist && (
-        <div className="flex justify-center items-center fixed bottom-0 w-screen h-20 bg-gray-100">
-          <div className="mr-12 w-36">
-            View your {transactions.length} pending{' '}
+      <div className="flex items-center fixed bottom-0 w-screen h-20 p-3 bg-gray-100">
+        <LinkButton to={Routes.BASKET} size="lg">
+          Operations
+        </LinkButton>
+        {isTransactionsExist && (
+          <div className="ml-3">
+            {transactions.length} pending{' '}
             {transactions.length > 1 ? 'operations' : 'operation'}
           </div>
-          <LinkButton to={Routes.BASKET} size="lg">
-            View {transactions.length > 1 ? 'operations' : 'operation'}
-          </LinkButton>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
