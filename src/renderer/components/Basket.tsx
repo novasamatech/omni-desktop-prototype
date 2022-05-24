@@ -22,11 +22,11 @@ const Basket: React.FC = () => {
   useEffect(() => {
     if (!transactions || !wallets) return;
 
-    Object.values(connections).forEach((c) =>
-      wallets.filter(isMultisig).forEach(async (w) => {
+    wallets.filter(isMultisig).forEach((w) => {
+      Object.values(connections).forEach(async (c) => {
         await updateTransactions(transactions, w, c);
-      }),
-    );
+      });
+    });
   }, [wallets, connections, transactions]);
 
   return (
