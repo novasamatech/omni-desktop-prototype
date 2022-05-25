@@ -40,6 +40,7 @@ const Transfer: React.FC = () => {
   const [networkOptions, setNetworkOptions] = useState<OptionType[]>([]);
   const [assetOptions, setAssetOptions] = useState<OptionType[]>([]);
   const [callHash, setCallHash] = useState<string>('');
+  const [callData, setCallData] = useState<string>('');
 
   const networks = useRecoilValue(connectionState);
   const wallets = useRecoilValue(selectedWalletsState);
@@ -96,6 +97,7 @@ const Transfer: React.FC = () => {
       }
 
       setCallHash(transferExtrinsic.method.hash.toHex());
+      setCallData(transferExtrinsic.method.toHex());
 
       transferExtrinsic
         .paymentInfo(fromAddress)
@@ -192,6 +194,7 @@ const Transfer: React.FC = () => {
           wallet: w,
           data: {
             callHash,
+            callData,
             assetId,
             precision: currentAsset.precision,
             address,
