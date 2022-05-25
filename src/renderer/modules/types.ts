@@ -79,8 +79,7 @@ export type OmniExtras = {
 // ============== MST Events / Callbacks ===============
 // =====================================================
 
-// TODO: find better TS solution for OMNI_MST_EVENTS
-export const enum OmniMstEvents {
+export enum OmniMstEvents {
   INIT = 'io.novafoundation.omni.mst_initiated',
   APPROVE = 'io.novafoundation.omni.mst_approved',
   FINAL_APPROVE = 'io.novafoundation.omni.mst_executed',

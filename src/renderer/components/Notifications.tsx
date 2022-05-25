@@ -82,7 +82,7 @@ const Notifications: React.FC = () => {
             <li className="bg-gray-100 p-4 rounded-lg" key={n.id}>
               <div className="flex justify-between">
                 <span className="text-gray-500 text-sm">
-                  {format(n.date, 'HH:mm:ss')}
+                  {format(n.date, 'HH:mm:ss dd MMM, yyyy')}
                 </span>
                 <button
                   className="flex items-center gap-2"

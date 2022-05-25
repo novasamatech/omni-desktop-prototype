@@ -145,7 +145,7 @@ const MatrixProvider: React.FC<Props> = ({
       .map(({ eventId, ...rest }) => ({
         ...rest,
         id: eventId,
-        isRead: BooleanValue.NEGATIVE,
+        isRead: BooleanValue.FALSE,
       }));
     db.mxNotifications.bulkAdd(dbTimeline);
   };
@@ -162,7 +162,7 @@ const MatrixProvider: React.FC<Props> = ({
     db.mxNotifications.add({
       ...rest,
       id: eventId,
-      isRead: BooleanValue.NEGATIVE,
+      isRead: BooleanValue.FALSE,
     });
   };
 
@@ -170,7 +170,7 @@ const MatrixProvider: React.FC<Props> = ({
     db.mxNotifications.add({
       ...rest,
       id: eventId,
-      isRead: BooleanValue.NEGATIVE,
+      isRead: BooleanValue.FALSE,
     });
   };
 
