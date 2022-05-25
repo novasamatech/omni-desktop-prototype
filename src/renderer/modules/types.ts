@@ -51,9 +51,9 @@ export const enum Membership {
 }
 
 export type Signatory = {
-  matrixAddress: `@${string}`;
-  networkAddress: HexString;
-  isInviter: boolean;
+  matrixAddress: string;
+  accountId: string;
+  isInviter?: boolean;
 };
 
 export type RoomCreation = {

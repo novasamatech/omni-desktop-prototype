@@ -27,13 +27,15 @@ import {
   Callbacks,
   InvitePayload,
   ISecureMessenger,
+  Membership,
   MstParams,
   MSTPayload,
   OmniExtras,
   OmniMstEvents,
   RoomCreation,
+  Signatory,
 } from './types';
-import { OMNI_MST_EVENTS } from './constants';
+import { BASE_URL, OMNI_MST_EVENTS, ROOM_CRYPTO_CONFIG } from './constants';
 
 class Matrix implements ISecureMessenger {
   private static instance: Matrix;
@@ -497,7 +499,7 @@ class Matrix implements ISecureMessenger {
 
   private async inviteSignatories(
     roomId: string,
-    signatories: Signatories,
+    signatories: Signatory[],
   ): Promise<void> {
     const inviterAddress = signatories.find((s) => s.isInviter)?.matrixAddress;
 
@@ -758,7 +760,7 @@ class Matrix implements ISecureMessenger {
    * @param room the room itself
    * @return {Object}
    */
-  private getOmniTopic(room: Room): any {
+  private getOmniTopic(room: Room): OmniExtras {
     // on invited, user only sees stripped state, which has '' as state key for all events
     const strippedStateKey = '';
 

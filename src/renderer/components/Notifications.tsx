@@ -2,9 +2,9 @@ import React from 'react';
 import { format } from 'date-fns';
 import { useHistory } from 'react-router';
 import LinkButton from '../ui/LinkButton';
-import arrow from '../../../assets/arrow.svg';
-import statusWait from '../../../assets/status-wait.svg';
-import statusRead from '../../../assets/status-read.svg';
+import right from '../../../assets/right.svg';
+import pending from '../../../assets/pending.svg';
+import success from '../../../assets/success.svg';
 import { useMatrix } from './Providers/MatrixProvider';
 import { db } from '../db/db';
 import { BooleanValue } from '../db/types';
@@ -45,7 +45,7 @@ const Notifications: React.FC = () => {
                   onClick={onDetailsNavigation(n.id, n.isRead)}
                 >
                   <span className="text-sm">Details</span>
-                  <img src={arrow} alt="" />
+                  <img src={right} alt="" />
                 </button>
               </div>
               <div className="mt-3">
@@ -54,7 +54,7 @@ const Notifications: React.FC = () => {
               </div>
               <img
                 className="ml-auto"
-                src={n.isRead ? statusRead : statusWait}
+                src={n.isRead ? success : pending}
                 alt={n.isRead ? 'is read' : 'is not read'}
               />
             </li>

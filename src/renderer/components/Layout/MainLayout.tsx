@@ -91,12 +91,17 @@ const MainLayout: React.FC<Props> = ({ route }) => {
       </div>
 
       <div className="flex fixed bottom-0 w-screen bg-gray-100 p-3">
-        {isTransactionsExist && (
-          // FIXME: operationS
-          <LinkButton className="mr-auto" to={Routes.BASKET} size="md">
-            5 pending operations
+        <div>
+          <LinkButton to={Routes.BASKET} size="md">
+            Operations
           </LinkButton>
-        )}
+          {isTransactionsExist && (
+            <div className="ml-3">
+              {transactions.length} pending{' '}
+              {transactions.length > 1 ? 'operations' : 'operation'}
+            </div>
+          )}
+        </div>
         {matrix.isLoggedIn && (
           <LinkButton
             className={cn('ml-auto', hasUnreadNotifs && 'bg-red-400')}
@@ -107,17 +112,6 @@ const MainLayout: React.FC<Props> = ({ route }) => {
           </LinkButton>
         )}
       </div>
-      {/* <div className="flex items-center fixed bottom-0 w-screen h-20 p-3 bg-gray-100"> */}
-      {/*   <LinkButton to={Routes.BASKET} size="lg"> */}
-      {/*     Operations */}
-      {/*   </LinkButton> */}
-      {/*   {isTransactionsExist && ( */}
-      {/*     <div className="ml-3"> */}
-      {/*       {transactions.length} pending{' '} */}
-      {/*       {transactions.length > 1 ? 'operations' : 'operation'} */}
-      {/*     </div> */}
-      {/*   )} */}
-      {/* </div> */}
     </div>
   );
 };

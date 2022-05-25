@@ -70,7 +70,7 @@ export type Wallet = WithID<{
 
 export type MultisigWallet = Wallet & {
   originContacts: Contact[];
-  threshold: number;
+  threshold: string;
 };
 
 export type StatemineExtras = {
@@ -174,6 +174,7 @@ export type Transaction = WithID<{
   chainId: HexString;
   address: string;
   blockHash?: HexString;
+  blockHeight?: number;
   transactionHash?: HexString;
   type: TransactionType;
   status: TransactionStatus;
