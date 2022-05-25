@@ -2,6 +2,9 @@
 import React, { useEffect, useState } from 'react';
 import { useSetRecoilState } from 'recoil';
 import { useHistory, useParams } from 'react-router';
+import { format } from 'date-fns';
+import cn from 'classnames';
+
 import Button from '../../ui/Button';
 import { currentTransactionState } from '../../store/currentTransaction';
 import Address from '../../ui/Address';
@@ -11,12 +14,14 @@ import {
   db,
   MultisigWallet,
   Transaction,
-  // Transaction as TransactionData,
   TransactionType,
-  // TransactionStatus,
 } from '../../db/db';
 import { formatAddress, getAddressFromWallet } from '../../utils/account';
-import { formatBalanceFromAmount, getAssetById } from '../../utils/assets';
+import {
+  formatBalance,
+  formatBalanceFromAmount,
+  getAssetById,
+} from '../../utils/assets';
 import LinkButton from '../../ui/LinkButton';
 import copy from '../../../../assets/copy.svg';
 import Status from '../../ui/Status';
@@ -114,9 +119,10 @@ const TransferDetails: React.FC = () => {
         <div className="mb-10 w-[350px] bg-gray-100 px-4 py-3 rounded-2xl">
           <div className="flex justify-between items-center  mb-6">
             <h1 className="text-2xl font-normal">Preview</h1>
-            <Button size="md" onClick={removeTransaction}>
-              Remove
-            </Button>
+            <span className="text-gray-500 text-sm">
+              {transaction &&
+                format(transaction.createdAt, 'HH:mm:ss dd MMM, yyyy')}
+            </span>
           </div>
 
           <div className="mb-6">
@@ -165,6 +171,18 @@ const TransferDetails: React.FC = () => {
                   </>
                 )}
               </div>
+              <div className="flex">
+                {transaction.data.deposit && currentAsset?.precision && (
+                  <>
+                    Deposit:{' '}
+                    {formatBalance(
+                      transaction.data.deposit,
+                      currentAsset.precision,
+                    )}{' '}
+                    {tokenSymbol}
+                  </>
+                )}
+              </div>
               {!!transaction.data.callHash && (
                 <div className="text-xs text-gray-500 mt-3">
                   <div className="flex justify-between items-center">
@@ -196,7 +214,11 @@ const TransferDetails: React.FC = () => {
         </div>
         {isMultisigTransfer && (
           <div className="mb-10 w-[350px] bg-gray-100 px-4 py-3 rounded-2xl">
-            <h1 className="text-2xl font-normal mb-6">Signatures</h1>
+            <h1 className="text-2xl font-normal mb-4">Signatures</h1>
+            <div className="text-3xl font-medium mb-7">
+              {transaction.data.approvals?.length || 0} of{' '}
+              {(transaction.wallet as MultisigWallet).threshold}
+            </div>
             <div>
               {signatures &&
                 signatures.map(({ status, name, address }) => (
@@ -212,7 +234,12 @@ const TransferDetails: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex">
+                    <div
+                      className={cn(
+                        'flex items-center font-medium text-xs',
+                        !status && 'text-gray-500',
+                      )}
+                    >
                       {status ? 'signed' : 'waiting'}
                       <Status
                         className="ml-1"
@@ -233,9 +260,14 @@ const TransferDetails: React.FC = () => {
           </div>
         )}
       </div>
-      <div className="mx-auto mb-10 w-[350px]">
+      <div className="mx-auto mb-2 w-[350px]">
         <Button className="w-full" size="lg" onClick={showQR}>
           Send for signing
+        </Button>
+      </div>
+      <div className="mx-auto w-[350px]">
+        <Button className="w-full" size="lg" onClick={removeTransaction}>
+          Remove
         </Button>
       </div>
     </>
