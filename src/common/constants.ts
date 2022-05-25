@@ -50,3 +50,8 @@ export const enum Decimal {
   SMALL_NUMBER = 5,
   BIG_NUMBER = 2,
 }
+
+export const enum StatusType {
+  WAITING = 'waiting',
+  SUCCESS = 'success',
+}

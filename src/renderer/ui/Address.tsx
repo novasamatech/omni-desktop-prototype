@@ -14,12 +14,17 @@ const Address = ({ address, className = '', full = false }: Props) => {
   const size = 16;
 
   return (
-    <div className={`flex items-center ${className}`}>
-      <Identicon className="mr-1" value={address} size={size} theme={theme} />
-      <div className="text-gray-500 text-sm break-all">
+    <span className={`${className}`}>
+      <Identicon
+        className="align-middle"
+        value={address}
+        size={size}
+        theme={theme}
+      />{' '}
+      <span className="text-gray-500 text-sm break-all">
         {full ? address : toShortText(address)}
-      </div>
-    </div>
+      </span>
+    </span>
   );
 };
 export default Address;
