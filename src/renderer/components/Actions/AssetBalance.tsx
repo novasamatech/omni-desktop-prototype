@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { formatBalance } from '@polkadot/util';
-import '@polkadot/api-augment';
 import { decodeAddress, encodeAddress } from '@polkadot/keyring';
+import { FrameSystemAccountInfo } from '@polkadot/types/lookup';
 
 import { Connection } from '../../store/connections';
 import {
@@ -13,6 +12,7 @@ import {
 } from '../../db/types';
 import { validate } from '../../utils/validation';
 import Shimmer from '../../ui/Shimmer';
+import { formatBalance } from '../../utils/assets';
 
 const enum ValidationStatus {
   INVALID = 'invalid',
@@ -46,10 +46,7 @@ const AssetBalance: React.FC<Props> = ({
   const updateBalance = useCallback(
     (newBalance: any) => {
       setBalance({
-        free: formatBalance(newBalance, {
-          withUnit: false,
-          decimals: asset?.precision,
-        }),
+        free: formatBalance(newBalance.toString(), asset?.precision),
         validationStatus: ValidationStatus.VALIDATION,
       });
     },
@@ -86,15 +83,18 @@ const AssetBalance: React.FC<Props> = ({
 
   const subscribeBalanceChange = useCallback(
     async (address: string) => {
-      api.query.system.account(address, async (data) => {
-        const {
-          data: { free: currentFree },
-        } = data;
-        updateBalance(currentFree);
+      api.query.system.account(
+        address,
+        async (data: FrameSystemAccountInfo) => {
+          const {
+            data: { free: currentFree },
+          } = data;
+          updateBalance(currentFree);
 
-        const storageKey = await api.query.system.account.key(address);
-        validateAssetBalance(data, storageKey);
-      });
+          const storageKey = await api.query.system.account.key(address);
+          validateAssetBalance(data, storageKey);
+        },
+      );
     },
     [api, updateBalance, validateAssetBalance],
   );

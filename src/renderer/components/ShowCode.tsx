@@ -64,15 +64,11 @@ const ShowCode: React.FC = () => {
         metadataRpc: metadataRpc.toHex(),
       });
 
-      // const isMST = isMultisig(transaction.wallet);
-
       const { nonce } = await connection.api.query.system.account(address);
       const info = {
         address,
         blockHash: blockHash.toString(),
-        blockNumber: registry
-          .createType('BlockNumber', block.header.number)
-          .toNumber(),
+        blockNumber: block.header.number.toNumber(),
         eraPeriod: 64,
         genesisHash: genesisHash.toString(),
         metadataRpc: metadataRpc.toHex(),
@@ -134,6 +130,7 @@ const ShowCode: React.FC = () => {
       };
 
       const unsigned = transfers[asset?.type || DEFAULT]();
+
       const signingPayloadHex = construct.signingPayload(unsigned, {
         registry,
       });

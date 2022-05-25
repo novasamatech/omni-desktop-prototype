@@ -8,6 +8,7 @@ export const Routes = {
   NOTIFICATIONS: '/notifications',
   SHOW_CODE: '/show-code',
   SCAN_CODE: '/scan-code',
+  TRANSFER_DETAILS: '/transfer-details/:id',
 
   // Composite routes
   TRANSFER: '/transfer',
@@ -39,3 +40,14 @@ export const enum ErrorTypes {
 }
 
 export const DEFAULT = 'default';
+
+export const enum Suffix {
+  MILLIONS = 'M',
+  BILLIONS = 'B',
+  TRILLIONS = 'T',
+}
+
+export const enum Decimal {
+  SMALL_NUMBER = 5,
+  BIG_NUMBER = 2,
+}

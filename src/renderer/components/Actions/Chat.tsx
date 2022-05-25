@@ -51,12 +51,12 @@ const Chat: React.FC = () => {
           {
             isInviter: true,
             matrixAddress: '@tuul_wq:matrix.org',
-            networkAddress: '0x8acac2',
+            accountId: '0x8acac2',
           },
           {
             isInviter: false,
             matrixAddress: '@pamelo123:matrix.org',
-            networkAddress: '0x2340dfa',
+            accountId: '0x2340dfa',
           },
           // {
           //   isInviter: false,

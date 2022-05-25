@@ -20,21 +20,20 @@ import {
   Visibility,
 } from 'matrix-js-sdk';
 import { SyncState } from 'matrix-js-sdk/lib/sync';
+import { uniq } from 'lodash';
 import { OmniDexie } from '../db/db';
 import { BooleanValue } from '../db/types';
 import {
   Callbacks,
   InvitePayload,
   ISecureMessenger,
-  Membership,
   MstParams,
   MSTPayload,
   OmniExtras,
   OmniMstEvents,
   RoomCreation,
-  Signatory,
 } from './types';
-import { BASE_URL, OMNI_MST_EVENTS, ROOM_CRYPTO_CONFIG } from './constants';
+import { OMNI_MST_EVENTS } from './constants';
 
 class Matrix implements ISecureMessenger {
   private static instance: Matrix;
@@ -472,12 +471,10 @@ class Matrix implements ISecureMessenger {
       ROOM_CRYPTO_CONFIG,
     );
 
-    const omniExtras: OmniExtras = {
+    const omniExtras = {
       mst_account: {
         threshold: params.threshold,
-        signatories: params.signatories.map(
-          (signatory) => signatory.networkAddress,
-        ),
+        signatories: params.signatories.map((signatory) => signatory.accountId),
         address: params.mstAccountAddress,
       },
       invite: {
@@ -500,15 +497,21 @@ class Matrix implements ISecureMessenger {
 
   private async inviteSignatories(
     roomId: string,
-    signatories: Signatory[],
+    signatories: Signatories,
   ): Promise<void> {
-    const inviteRequests = signatories
-      .filter((signatory) => !signatory.isInviter)
-      .reduce((acc, signatory) => {
-        acc.push(this.matrixClient.invite(roomId, signatory.matrixAddress));
+    const inviterAddress = signatories.find((s) => s.isInviter)?.matrixAddress;
 
-        return acc;
-      }, [] as Promise<unknown>[]);
+    const noDuplicates = uniq(
+      signatories
+        .filter((s) => !s.isInviter && s.matrixAddress !== inviterAddress)
+        .map((s) => s.matrixAddress),
+    );
+
+    const inviteRequests = noDuplicates.reduce((acc, matrixAddress) => {
+      acc.push(this.matrixClient.invite(roomId, matrixAddress));
+
+      return acc;
+    }, [] as Promise<unknown>[]);
 
     await Promise.all(inviteRequests);
   }

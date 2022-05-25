@@ -2,7 +2,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useRecoilValue } from 'recoil';
 import { decodeAddress, encodeAddress } from '@polkadot/keyring';
-import { formatBalance } from '@polkadot/util';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 
 import { Connection, connectionState } from '../../store/connections';
@@ -23,7 +22,7 @@ import {
 import { isMultisig, validateAddress } from '../../utils/validation';
 import { getAddressFromWallet } from '../../utils/account';
 import { ErrorTypes } from '../../../common/constants';
-import { formatAmount, getAssetId } from '../../utils/assets';
+import { formatAmount, formatBalance, getAssetId } from '../../utils/assets';
 
 type TransferForm = {
   address: string;
@@ -40,6 +39,7 @@ const Transfer: React.FC = () => {
   );
   const [networkOptions, setNetworkOptions] = useState<OptionType[]>([]);
   const [assetOptions, setAssetOptions] = useState<OptionType[]>([]);
+  const [callHash, setCallHash] = useState<string>('');
 
   const networks = useRecoilValue(connectionState);
   const wallets = useRecoilValue(selectedWalletsState);
@@ -95,14 +95,13 @@ const Transfer: React.FC = () => {
         );
       }
 
+      setCallHash(transferExtrinsic.method.hash.toHex());
+
       transferExtrinsic
         .paymentInfo(fromAddress)
         .then(({ partialFee }) => {
           setTransactionFee(
-            formatBalance(partialFee.toString(), {
-              withUnit: false,
-              decimals: defaultAsset?.precision,
-            }),
+            formatBalance(partialFee.toString(), defaultAsset?.precision),
           );
         })
         .catch((e) => {
@@ -192,6 +191,7 @@ const Transfer: React.FC = () => {
           address: addressFrom,
           wallet: w,
           data: {
+            callHash,
             assetId,
             precision: currentAsset.precision,
             address,
@@ -290,10 +290,7 @@ const Transfer: React.FC = () => {
             <div>
               {formatBalance(
                 currentNetwork.api.consts.multisig.depositBase.toString(),
-                {
-                  withUnit: false,
-                  decimals: currentAsset?.precision,
-                },
+                currentAsset?.precision,
               )}{' '}
               {defaultAsset?.symbol}
             </div>
@@ -303,10 +300,7 @@ const Transfer: React.FC = () => {
             <div>
               {formatBalance(
                 currentNetwork.api.consts.multisig.depositFactor.toString(),
-                {
-                  withUnit: false,
-                  decimals: currentAsset?.precision,
-                },
+                currentAsset?.precision,
               )}{' '}
               {defaultAsset?.symbol}
             </div>

@@ -2,8 +2,11 @@
 import { decodeAddress, encodeAddress } from '@polkadot/keyring';
 import { Wallet, Chain } from '../db/types';
 
-export const formatAddress = (address: string, prefix: number): string =>
-  encodeAddress(decodeAddress(address), prefix) || address;
+export const formatAddress = (address: string, prefix = 42): string => {
+  if (!address) return '';
+
+  return encodeAddress(decodeAddress(address), prefix) || address;
+};
 
 export const getAddressFromWallet = (
   wallet: Wallet,

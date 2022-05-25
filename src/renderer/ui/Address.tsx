@@ -1,7 +1,7 @@
 /* eslint-disable react/require-default-props */
 /* eslint-disable jsx-a11y/label-has-associated-control */
 import Identicon from '@polkadot/react-identicon';
-import { shortAddress } from '../utils/strings';
+import { toShortText } from '../utils/strings';
 
 interface Props {
   address: string;
@@ -17,7 +17,7 @@ const Address = ({ address, className = '', full = false }: Props) => {
     <div className={`flex items-center ${className}`}>
       <Identicon className="mr-1" value={address} size={size} theme={theme} />
       <div className="text-gray-500 text-sm break-all">
-        {full ? address : shortAddress(address)}
+        {full ? address : toShortText(address)}
       </div>
     </div>
   );

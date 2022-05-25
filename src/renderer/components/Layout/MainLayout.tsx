@@ -107,6 +107,17 @@ const MainLayout: React.FC<Props> = ({ route }) => {
           </LinkButton>
         )}
       </div>
+      {/* <div className="flex items-center fixed bottom-0 w-screen h-20 p-3 bg-gray-100"> */}
+      {/*   <LinkButton to={Routes.BASKET} size="lg"> */}
+      {/*     Operations */}
+      {/*   </LinkButton> */}
+      {/*   {isTransactionsExist && ( */}
+      {/*     <div className="ml-3"> */}
+      {/*       {transactions.length} pending{' '} */}
+      {/*       {transactions.length > 1 ? 'operations' : 'operation'} */}
+      {/*     </div> */}
+      {/*   )} */}
+      {/* </div> */}
     </div>
   );
 };
