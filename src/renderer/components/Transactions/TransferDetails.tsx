@@ -6,15 +6,13 @@ import Button from '../../ui/Button';
 import { currentTransactionState } from '../../store/currentTransaction';
 import Address from '../../ui/Address';
 import { Routes, StatusType } from '../../../common/constants';
+import { db } from '../../db/db';
 import {
   Chain,
-  db,
   MultisigWallet,
   Transaction,
-  // Transaction as TransactionData,
   TransactionType,
-  // TransactionStatus,
-} from '../../db/db';
+} from '../../db/types';
 import { formatAddress, getAddressFromWallet } from '../../utils/account';
 import { formatBalanceFromAmount, getAssetById } from '../../utils/assets';
 import LinkButton from '../../ui/LinkButton';
@@ -32,29 +30,29 @@ const TransferDetails: React.FC = () => {
     transaction?.type === TransactionType.MULTISIG_TRANSFER;
 
   useEffect(() => {
-    if (id) {
-      db.transactions
-        .get(Number(id))
-        .then((tx) => {
-          if (tx) {
-            setTransaction(tx);
-          }
-        })
-        .catch((e) => console.log(e));
-    }
+    if (!id) return;
+
+    db.transactions
+      .get(Number(id))
+      .then((tx) => {
+        if (tx) {
+          setTransaction(tx);
+        }
+      })
+      .catch((e) => console.log(e));
   }, [id]);
 
   useEffect(() => {
-    if (transaction?.chainId) {
-      db.chains
-        .get({ chainId: transaction.chainId })
-        .then((chain) => {
-          if (chain) {
-            setNetwork(chain);
-          }
-        })
-        .catch((e) => console.log(e));
-    }
+    if (!transaction?.chainId) return;
+
+    db.chains
+      .get({ chainId: transaction.chainId })
+      .then((chain) => {
+        if (chain) {
+          setNetwork(chain);
+        }
+      })
+      .catch((e) => console.log(e));
   }, [transaction?.chainId]);
 
   const setCurrentTransaction = useSetRecoilState(currentTransactionState);

@@ -10,7 +10,8 @@ import { Dialog } from '@headlessui/react';
 
 import InputText from '../../ui/Input';
 import Button from '../../ui/Button';
-import { Contact, CryptoType, db } from '../../db/db';
+import { Contact, CryptoType } from '../../db/types';
+import { db } from '../../db/db';
 import useToggle from '../../hooks/toggle';
 import DialogContent from '../../ui/DialogContent';
 import { validateAddress } from '../../utils/validation';

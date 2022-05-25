@@ -8,14 +8,15 @@ import { Dialog } from '@headlessui/react';
 
 import Button from '../../ui/Button';
 import InputText from '../../ui/Input';
-import { Contact, CryptoType, db, MultisigWallet } from '../../db/db';
+import { Contact, CryptoType, MultisigWallet } from '../../db/types';
+import { db } from '../../db/db';
 import Card from '../../ui/Card';
 import Checkbox from '../../ui/Checkbox';
 import Address from '../../ui/Address';
 import DialogContent from '../../ui/DialogContent';
 import useToggle from '../../hooks/toggle';
 import { Routes } from '../../../common/constants';
-import { useMatrix } from '../../modules/matrixProvider';
+import { useMatrix } from '../Providers/MatrixProvider';
 import { isMultisig } from '../../utils/validation';
 
 const SS58Prefix = 42;
@@ -28,7 +29,7 @@ type MultisigWalletForm = {
 
 const ManageMultisigWallet: React.FC = () => {
   const history = useHistory();
-  const matrix = useMatrix();
+  const { matrix } = useMatrix();
 
   const { id } = useParams<{ id: string }>();
   const [wallet, setWallet] = useState<MultisigWallet>();

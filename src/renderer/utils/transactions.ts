@@ -3,16 +3,15 @@ import { ApiPromise } from '@polkadot/api';
 import { U8aFixed } from '@polkadot/types';
 import { PalletMultisigMultisig } from '@polkadot/types/lookup';
 import { Connection } from '../store/connections';
-
 import {
   Chain,
-  db,
   Transaction,
   TransactionStatus,
   TransactionType,
   Wallet,
-} from '../db/db';
+} from '../db/types';
 import { getAddressFromWallet } from './account';
+import { db } from '../db/db';
 
 type MultisigTransaction = {
   callHash: U8aFixed;

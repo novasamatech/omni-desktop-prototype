@@ -2,7 +2,7 @@
 import { BN, BN_TEN } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import { DEFAULT, Suffix, Decimal } from '../../common/constants';
-import { Asset, AssetType, OrmlExtras, StatemineExtras } from '../db/db';
+import { Asset, AssetType, OrmlExtras, StatemineExtras } from '../db/types';
 
 export const formatAmount = (amount: string, precision: number): string => {
   // eslint-disable-next-line @typescript-eslint/prefer-regexp-exec
@@ -19,7 +19,7 @@ export const formatAmount = (amount: string, precision: number): string => {
       .toString();
   }
 
-  return new BN(amount.replace(/[^\d]/g, ''))
+  return new BN(amount.replace(/\D/g, ''))
     .mul(BN_TEN.pow(bnPrecision))
     .toString();
 };
@@ -35,9 +35,7 @@ export const getAssetId = (asset: Asset) => {
 };
 
 export const getAssetById = (assets: Asset[], id: string): Asset | undefined =>
-  assets.find((a) => {
-    return getAssetId(a) === id;
-  });
+  assets.find((a) => getAssetId(a) === id);
 
 export const formatBalance = (balance: string, precision = 0): string => {
   const BNWithConfig = BigNumber.clone();

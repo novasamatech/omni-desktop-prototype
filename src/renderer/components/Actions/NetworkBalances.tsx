@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useRecoilValue } from 'recoil';
 
 import { Connection, connectionState } from '../../store/connections';
-import { Asset, Chain, Wallet, Account } from '../../db/db';
+import { Asset, Chain, Wallet, Account } from '../../db/types';
 import Card from '../../ui/Card';
 import AssetBalance from './AssetBalance';
 

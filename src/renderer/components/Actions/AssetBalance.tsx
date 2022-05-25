@@ -9,7 +9,7 @@ import {
   OrmlExtras,
   Account,
   AssetType,
-} from '../../db/db';
+} from '../../db/types';
 import { validate } from '../../utils/validation';
 import Shimmer from '../../ui/Shimmer';
 import { formatBalance } from '../../utils/assets';
