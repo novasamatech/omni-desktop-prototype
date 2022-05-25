@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Routes, withId } from '../../common/constants';
+import { Routes, StatusType, withId } from '../../common/constants';
 import {
   MultisigWallet,
   Transaction as TransactionData,
@@ -11,8 +11,7 @@ import {
 } from '../db/db';
 import { toShortText } from '../utils/strings';
 import right from '../../../assets/right.svg';
-import success from '../../../assets/success.svg';
-import pending from '../../../assets/pending.svg';
+import Status from '../ui/Status';
 
 type Props = {
   transaction: TransactionData;
@@ -57,11 +56,13 @@ const Transaction: React.FC<Props> = ({ transaction }: Props) => {
               {(transaction.wallet as MultisigWallet).threshold} Signatures
             </span>
           )}
-          {transaction.status === TransactionStatus.CONFIRMED ? (
-            <img src={success} alt="success" />
-          ) : (
-            <img src={pending} alt="pending" />
-          )}
+          <Status
+            status={
+              transaction.status === TransactionStatus.CONFIRMED
+                ? StatusType.SUCCESS
+                : StatusType.WAITING
+            }
+          />
         </div>
       </div>
     </div>

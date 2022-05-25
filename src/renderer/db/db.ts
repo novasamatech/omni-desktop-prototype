@@ -171,7 +171,7 @@ export type Credential = {
 
 export type Transaction = {
   id?: number;
-  wallet: Wallet;
+  wallet: Wallet | MultisigWallet;
   chainId: HexString;
   address: string;
   blockHash?: HexString;
