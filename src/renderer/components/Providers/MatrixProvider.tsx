@@ -18,12 +18,13 @@ import {
 import { db } from '../../db/db';
 import { BooleanValue, Notification as DbNotification } from '../../db/types';
 
-type Notification = {
+export type Notification = {
   id: string;
   title: string;
   description: string;
   date: Date;
   isRead: boolean;
+  rawData: DbNotification;
 };
 
 type MatrixContextProps = {
@@ -71,6 +72,7 @@ function prepareNotifications(
     description: DESCRIPTIONS[n.type](n.sender, n.roomName),
     date: n.date,
     isRead: Boolean(n.isRead),
+    rawData: n,
   }));
 }
 

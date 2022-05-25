@@ -66,6 +66,7 @@ export type Wallet = WithID<{
   name: string;
   mainAccounts: Account[];
   chainAccounts: ChainAccount[];
+  // isMultisig: BooleanValue;
 }>;
 
 export type MultisigWallet = Wallet & {
@@ -170,7 +171,7 @@ export type Credential = WithID<{
 }>;
 
 export type Transaction = WithID<{
-  wallet: Wallet;
+  wallet: Wallet | MultisigWallet;
   chainId: HexString;
   address: string;
   blockHash?: HexString;

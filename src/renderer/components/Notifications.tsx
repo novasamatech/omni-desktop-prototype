@@ -1,25 +1,70 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { useHistory } from 'react-router';
+import { EventType } from 'matrix-js-sdk';
 import LinkButton from '../ui/LinkButton';
 import right from '../../../assets/right.svg';
-import pending from '../../../assets/pending.svg';
-import success from '../../../assets/success.svg';
-import { useMatrix } from './Providers/MatrixProvider';
+import { Notification, useMatrix } from './Providers/MatrixProvider';
 import { db } from '../db/db';
 import { BooleanValue } from '../db/types';
+import Status from '../ui/Status';
+import { Routes, StatusType, withId } from '../../common/constants';
+import { OMNI_MST_EVENTS } from '../modules/constants';
+import { OmniExtras } from '../modules/types';
 
 const Notifications: React.FC = () => {
-  const { notifications } = useMatrix();
   const history = useHistory();
+  const { notifications } = useMatrix();
 
-  const onDetailsNavigation = (id: string, isRead: boolean) => () => {
-    if (!isRead) {
-      db.mxNotifications.update(id, { isRead: BooleanValue.POSITIVE });
+  const handleInviteNotification = (notification: Notification) => async () => {
+    if (notification.isRead) {
+      const mstAddress = (notification.rawData.content as OmniExtras)
+        .mst_account.address;
+      const multisigWallets = await db.wallets
+        .where('threshold')
+        .above('0')
+        .toArray();
+      const mstAccountId = multisigWallets.find((m) =>
+        m.mainAccounts.some((a) => a.accountId === mstAddress),
+      )?.id;
+
+      if (mstAccountId) {
+        history.push(withId(Routes.WALLET, mstAccountId));
+      } else {
+        console.log('MST account not found');
+      }
+    } else {
+      console.log(123);
+      // show modal
+      // join room
+    }
+  };
+
+  const handleMstNotification = (notification: Notification) => () => {
+    if (!notification.isRead) {
+      db.mxNotifications.update(notification.id, {
+        isRead: BooleanValue.POSITIVE,
+      });
     }
 
-    // TODO: got to chat, invites, etc.
+    // TODO: got to MST details, etc.
     history.push('/');
+  };
+
+  const onDetailsClick = (notification: Notification) => () => {
+    const isInviteNotification =
+      notification.rawData.type === EventType.RoomMember;
+
+    const isMstNotification = Object.values(OMNI_MST_EVENTS).includes(
+      notification.rawData.type,
+    );
+
+    if (isInviteNotification) {
+      handleInviteNotification(notification);
+    }
+    if (isMstNotification) {
+      handleMstNotification(notification);
+    }
   };
 
   return (
@@ -42,7 +87,7 @@ const Notifications: React.FC = () => {
                 <button
                   className="flex items-center gap-2"
                   type="button"
-                  onClick={onDetailsNavigation(n.id, n.isRead)}
+                  onClick={onDetailsClick(n)}
                 >
                   <span className="text-sm">Details</span>
                   <img src={right} alt="" />
@@ -52,9 +97,9 @@ const Notifications: React.FC = () => {
                 <div className="text-2xl font-medium">{n.title}</div>
                 <div className="text-gray-500 mt-1">{n.description}</div>
               </div>
-              <img
+              <Status
                 className="ml-auto"
-                src={n.isRead ? success : pending}
+                status={n.isRead ? StatusType.SUCCESS : StatusType.WAITING}
                 alt={n.isRead ? 'is read' : 'is not read'}
               />
             </li>

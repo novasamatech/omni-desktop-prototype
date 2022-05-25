@@ -5,7 +5,7 @@ import { useHistory, useParams } from 'react-router';
 import Button from '../../ui/Button';
 import { currentTransactionState } from '../../store/currentTransaction';
 import Address from '../../ui/Address';
-import { Routes } from '../../../common/constants';
+import { Routes, StatusType } from '../../../common/constants';
 import { db } from '../../db/db';
 import {
   Chain,
@@ -217,6 +217,7 @@ const TransferDetails: React.FC = () => {
                         status={
                           status ? StatusType.SUCCESS : StatusType.WAITING
                         }
+                        alt={status ? 'success' : 'pending'}
                       />
                     </div>
                   </div>
