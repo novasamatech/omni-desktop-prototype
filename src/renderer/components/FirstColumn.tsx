@@ -6,7 +6,7 @@ import Button from '../ui/Button';
 import { Routes } from '../../common/constants';
 
 const FirstColumn: React.FC = () => {
-  const { matrix } = useMatrix();
+  const { matrix, setIsLoggedIn } = useMatrix();
   const history = useHistory();
 
   const [isShutdownInProgress, setIsShutdownInProgress] = useState(false);
@@ -16,6 +16,7 @@ const FirstColumn: React.FC = () => {
 
     try {
       await matrix.logout();
+      setIsLoggedIn(false);
       history.push(Routes.LOGIN);
     } catch (error) {
       console.log(error);

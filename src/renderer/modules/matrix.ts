@@ -594,6 +594,8 @@ class Matrix implements ISecureMessenger {
 
   private handleInviteEvent(): void {
     this.matrixClient.on(RoomMemberEvent.Membership, async (event, member) => {
+      if (event.getSender() === this.userId) return;
+
       const roomId = event.getRoomId();
       const isValidUser =
         member.userId === this.userId &&
@@ -615,8 +617,6 @@ class Matrix implements ISecureMessenger {
 
   private handleMatrixEvents(): void {
     this.matrixClient.on(MatrixEventEvent.Decrypted, async (event) => {
-      if (!this.isSynced) return;
-
       if (event.getType() !== EventType.RoomMessage) return;
 
       const roomId = event.getRoomId();
@@ -634,7 +634,10 @@ class Matrix implements ISecureMessenger {
 
   private handleOmniEvents(): void {
     this.matrixClient.on(RoomEvent.Timeline, (event) => {
-      if (!this.isSynced) return;
+      const omniEvents = Object.values(OMNI_MST_EVENTS);
+      const isMstEvent = omniEvents.includes(event.getType());
+
+      if (event.getSender() === this.userId || !isMstEvent) return;
 
       const roomId = event.getRoomId();
       if (!roomId) return;
@@ -753,7 +756,7 @@ class Matrix implements ISecureMessenger {
    * @return {Object}
    */
   private getOmniTopic(room: Room): any {
-    // when user is invited, he only sees stripped state, which has '' as state key for all events
+    // on invited, user only sees stripped state, which has '' as state key for all events
     const strippedStateKey = '';
 
     const topicEvent = room

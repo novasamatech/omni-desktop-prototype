@@ -29,6 +29,7 @@ type Notification = {
 type MatrixContextProps = {
   matrix: ISecureMessenger;
   notifications: Notification[];
+  setIsLoggedIn: (flag: boolean) => void;
 };
 
 const MatrixContext = createContext<MatrixContextProps>(
@@ -81,25 +82,25 @@ const MatrixProvider: React.FC<Props> = ({
   const { current: matrix } = useRef<ISecureMessenger>(new Matrix(db));
 
   const [isMatrixLoading, setIsMatrixLoading] = useState(true);
-  // const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const notifications = useLiveQuery(async () => {
-    if (!matrix.userId) return [];
+    if (!isLoggedIn) return [];
 
     const data = await db.mxNotifications
-      .where('client')
-      .equals(matrix.userId)
+      .where({ client: matrix.userId })
       .reverse()
       .sortBy('date');
 
     return prepareNotifications(data);
-  }, [matrix, matrix.userId]);
+  }, [isLoggedIn]);
 
   useEffect(() => {
     const initMatrix = async () => {
       try {
         await matrix.init();
         await matrix.loginFromCache();
+        setIsLoggedIn(true);
       } catch (error) {
         onAutoLoginFail((error as Error).message);
       } finally {
@@ -126,8 +127,7 @@ const MatrixProvider: React.FC<Props> = ({
     if (timeline.length === 0) return;
 
     const dbNotifications = await db.mxNotifications
-      .where('client')
-      .equals(matrix.userId)
+      .where({ client: matrix.userId })
       .toArray();
 
     const dbIdsMap = dbNotifications.reduce(
@@ -173,7 +173,7 @@ const MatrixProvider: React.FC<Props> = ({
   };
 
   useEffect(() => {
-    if (!matrix.isLoggedIn) return;
+    if (!isLoggedIn) return;
 
     matrix.setupSubscribers({
       onSyncProgress,
@@ -183,7 +183,7 @@ const MatrixProvider: React.FC<Props> = ({
       onMstEvent,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matrix.isLoggedIn]);
+  }, [isLoggedIn]);
 
   if (isMatrixLoading) {
     return <>{loader}</>;
@@ -191,7 +191,7 @@ const MatrixProvider: React.FC<Props> = ({
 
   return (
     <MatrixContext.Provider
-      value={{ matrix, notifications: notifications || [] }}
+      value={{ matrix, setIsLoggedIn, notifications: notifications || [] }}
     >
       {children}
     </MatrixContext.Provider>

@@ -15,7 +15,7 @@ type LoginForm = {
 
 const Login: React.FC = () => {
   const history = useHistory();
-  const { matrix } = useMatrix();
+  const { matrix, setIsLoggedIn } = useMatrix();
 
   const [isLoginInProgress, setIsLoginInProgress] = useState(false);
   const [isLoginFailed, setIsLoginFailed] = useState(false);
@@ -40,6 +40,7 @@ const Login: React.FC = () => {
 
     try {
       await matrix.loginWithCreds(matrixId, password);
+      setIsLoggedIn(true);
       history.push(Routes.WALLETS);
     } catch (error) {
       setIsLoginFailed(true);
