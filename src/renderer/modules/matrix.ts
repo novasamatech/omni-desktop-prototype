@@ -6,9 +6,11 @@ import olmWasmPath from '@matrix-org/olm/olm.wasm';
 import {
   ClientEvent,
   createClient,
+  Direction,
   EventType,
   IndexedDBCryptoStore,
   MatrixClient,
+  MatrixEvent,
   MatrixEventEvent,
   MemoryCryptoStore,
   Preset,
@@ -19,108 +21,46 @@ import {
 } from 'matrix-js-sdk';
 import { SyncState } from 'matrix-js-sdk/lib/sync';
 import { uniq } from 'lodash';
-import { HexString } from '../../common/types';
-import { AuthState, OmniDexie } from '../db/db';
+import { OmniDexie } from '../db/db';
+import { BooleanValue } from '../db/types';
+import {
+  Callbacks,
+  InvitePayload,
+  ISecureMessenger,
+  Membership,
+  MstParams,
+  MSTPayload,
+  OmniExtras,
+  OmniMstEvents,
+  RoomCreation,
+  Signatory,
+} from './types';
+import { BASE_URL, OMNI_MST_EVENTS, ROOM_CRYPTO_CONFIG } from './constants';
 
-const ROOM_CRYPTO_CONFIG = { algorithm: 'm.megolm.v1.aes-sha2' };
-const BASE_URL = 'https://matrix.org';
-
-export const enum Membership {
-  INVITE = 'invite',
-  JOIN = 'join',
-  LEAVE = 'leave',
-}
-
-const enum OmniMstEvents {
-  INIT = 'io.novafoundation.omni.mst_initiated',
-  APPROVE = 'io.novafoundation.omni.mst_approved',
-  FINAL_APPROVE = 'io.novafoundation.omni.mst_executed',
-  CANCEL = 'io.novafoundation.omni.mst_cancelled',
-}
-
-type RoomCreation = {
-  mstAccountAddress: string;
-  inviterPublicKey: string;
-  threshold: number;
-  signatories: {
-    matrixAddress: string;
-    accountId: string;
-    isInviter?: boolean;
-  }[];
-};
-
-type Signatories = RoomCreation['signatories'];
-
-type MstBaseParams = {
-  chainId: HexString; // genesis hash of the network MST sent in
-  callHash: HexString;
-};
-
-type MstInitParams = MstBaseParams & {
-  callData: HexString;
-  description: string;
-};
-
-type MstCancelParams = MstBaseParams & {
-  description?: string;
-};
-
-// TODO: replace 'any' to proper type during Notification implementation
-type Subscriptions = {
-  onSyncEnd: () => void;
-  onSyncProgress: () => void;
-  onInvite: (roomId: string) => void;
-  onMessage: (message: string) => void;
-  onMstInitiate: (data: any) => void;
-  onMstApprove: (data: any) => void;
-  onMstFinalApprove: (data: any) => void;
-  onMstCancel: (data: any) => void;
-};
-
-interface SecureMessenger {
-  // Common
-  init: () => Promise<void | never>;
-  loginWithCreds: (login: string, password: string) => Promise<void | never>;
-  loginFromCache: () => Promise<void | never>;
-  isLoggedIn: boolean;
-  shutdown: () => Promise<void | never>;
-  createRoom: (
-    params: RoomCreation,
-    signWithParity: (value: string) => Promise<string>,
-  ) => Promise<void | never>;
-  joinRoom: (roomId: string) => Promise<void | never>;
-  invite: (roomId: string, signatoryId: string) => Promise<void | never>;
-  listOfOmniRooms: (type: Membership.INVITE | Membership.JOIN) => Room[];
-  setRoom: (roomId: string) => void;
-  timelineMessages: () => Record<string, unknown>[] | never;
-  sendMessage: (message: string) => void;
-  setupSubscribers: (handlers: Subscriptions) => void;
-  clearSubscribers: () => void;
-
-  // MST operations
-  mstInitiate: (params: MstInitParams) => void;
-  mstApprove: (params: MstBaseParams) => void;
-  mstFinalApprove: (params: MstBaseParams) => void;
-  mstCancel: (params: MstCancelParams) => void;
-}
-
-class Matrix implements SecureMessenger {
+class Matrix implements ISecureMessenger {
   private static instance: Matrix;
 
   private matrixClient!: MatrixClient;
-  private isEncryptionActive: boolean = false;
-  private activeRoomId: string = '';
   private storage!: OmniDexie;
-  private subscribeHandlers?: Subscriptions;
-  private isSynced: boolean = false;
+
+  private activeRoomId: string = '';
+  private subscribeHandlers?: Callbacks;
+  private isClientSynced: boolean = false;
+  private isEncryptionActive: boolean = false;
 
   constructor(storage: OmniDexie) {
     if (Matrix.instance) {
       return Matrix.instance;
     }
     Matrix.instance = this;
+
+    this.matrixClient = createClient({ baseUrl: BASE_URL });
     this.storage = storage;
   }
+
+  // =====================================================
+  // ================= Public methods ====================
+  // =====================================================
 
   /**
    * Initialize Matrix protocol with encryption
@@ -152,7 +92,7 @@ class Matrix implements SecureMessenger {
     if (!this.isEncryptionActive) {
       throw this.createError('Encryption has not been initialized');
     }
-    if (this.matrixClient?.isLoggedIn()) {
+    if (this.matrixClient.isLoggedIn()) {
       throw this.createError('Client is already logged in');
     }
 
@@ -176,7 +116,7 @@ class Matrix implements SecureMessenger {
     if (!this.isEncryptionActive) {
       throw this.createError('Encryption has not been initialized');
     }
-    if (this.matrixClient?.isLoggedIn()) {
+    if (this.matrixClient.isLoggedIn()) {
       throw this.createError('Client is already logged in');
     }
 
@@ -192,11 +132,37 @@ class Matrix implements SecureMessenger {
   }
 
   /**
+   * Get matrix userId
+   * @return {String}
+   */
+  get userId(): string {
+    return this.matrixClient.getUserId() || '';
+  }
+
+  /**
    * Is Matrix user logged in
    * @return {Boolean}
    */
   get isLoggedIn(): boolean {
-    return Boolean(this.matrixClient?.isLoggedIn());
+    return Boolean(this.matrixClient.isLoggedIn());
+  }
+
+  /**
+   * Is Matrix client synced
+   * @return {Boolean}
+   */
+  get isSynced(): boolean {
+    return this.isLoggedIn && this.isClientSynced;
+  }
+
+  /**
+   * Stop the client and remove handlers
+   * @return {Promise}
+   */
+  stopClient(): void {
+    this.matrixClient.stopClient();
+    this.clearSubscribers();
+    this.matrixClient = createClient(BASE_URL);
   }
 
   /**
@@ -206,23 +172,16 @@ class Matrix implements SecureMessenger {
    * @return {Promise}
    * @throws {Error}
    */
-  async shutdown(): Promise<void | never> {
-    if (!this.matrixClient) {
-      throw this.createError('Client is not active');
-    }
-
+  async logout(): Promise<void | never> {
     this.checkClientLoggedIn();
 
     try {
       await this.matrixClient.logout();
       this.matrixClient.stopClient();
       this.clearSubscribers();
-      await this.matrixClient.clearStores();
-      await this.storage.matrixCredentials
-        .where({ userId: this.matrixUserId })
-        .delete();
-      // TODO: handle proper typing
-      this.matrixClient = undefined as unknown as MatrixClient;
+      // await this.matrixClient.clearStores();
+      await this.storage.mxCredentials.where({ userId: this.userId }).delete();
+      this.matrixClient = createClient(BASE_URL);
     } catch (error) {
       throw this.createError('Logout failed', error);
     }
@@ -261,76 +220,6 @@ class Matrix implements SecureMessenger {
     } catch (error) {
       throw this.createError((error as Error).message, error);
     }
-  }
-
-  private async initialStateEvents(
-    roomId: string,
-    params: RoomCreation,
-    signature: string,
-  ): Promise<void> {
-    await this.matrixClient.sendStateEvent(
-      roomId,
-      'm.room.encryption',
-      ROOM_CRYPTO_CONFIG,
-    );
-
-    const omniExtras = {
-      mst_account: {
-        threshold: params.threshold,
-        signatories: params.signatories.map((signatory) => signatory.accountId),
-        address: params.mstAccountAddress,
-      },
-      invite: {
-        signature,
-        public_key: params.inviterPublicKey,
-      },
-    };
-
-    const topicContent = {
-      topic: `Room for communications for ${params.mstAccountAddress} MST account`,
-      omni_extras: omniExtras,
-    };
-
-    await this.matrixClient.sendStateEvent(
-      roomId,
-      'm.room.topic',
-      topicContent,
-    );
-  }
-
-  private async inviteSignatories(
-    roomId: string,
-    signatories: Signatories,
-  ): Promise<void> {
-    const inviterAddress = signatories.find((s) => s.isInviter)?.matrixAddress;
-
-    const noDuplicates = uniq(
-      signatories
-        .filter((s) => !s.isInviter && s.matrixAddress !== inviterAddress)
-        .map((s) => s.matrixAddress),
-    );
-
-    const inviteRequests = noDuplicates.reduce((acc, matrixAddress) => {
-      acc.push(this.matrixClient.invite(roomId, matrixAddress));
-
-      return acc;
-    }, [] as Promise<unknown>[]);
-
-    await Promise.all(inviteRequests);
-  }
-
-  private async verifyDevices(members: string[]): Promise<void | never> {
-    const memberKeys = await this.matrixClient.downloadKeys(members);
-
-    const verifyRequests = members.reduce((acc, userId) => {
-      Object.keys(memberKeys[userId]).forEach((deviceId) => {
-        acc.push(this.matrixClient.setDeviceVerified(userId, deviceId));
-      });
-      return acc;
-    }, [] as Promise<void>[]);
-
-    await Promise.all(verifyRequests);
-    console.info('=== 🟢 Devices verified');
   }
 
   /**
@@ -393,17 +282,37 @@ class Matrix implements SecureMessenger {
   }
 
   /**
-   * Get timeline events for active room
+   * Get live timeline events for all rooms
    * @return {Array}
+   * @throws {Error}
    */
-  timelineMessages(): Record<string, unknown>[] | never {
-    const room = this.getActiveRoom(this.activeRoomId);
+  async timelineEvents(): Promise<MSTPayload[] | never> {
+    let rooms;
+    try {
+      rooms = (await this.matrixClient.getJoinedRooms()).joined_rooms;
+    } catch (error) {
+      throw this.createError('Failed to load joined rooms', error);
+    }
 
-    const timelineEvents = room.getLiveTimeline().getEvents();
-    return timelineEvents.map((event) => {
-      console.log(`===> 🔶 TYPE - ${event.getType()}`);
-      return event.getContent();
-    });
+    const omniEvents = Object.values(OMNI_MST_EVENTS);
+    const omniTimeline = rooms.reduce((acc, roomId) => {
+      const room = this.matrixClient.getRoom(roomId);
+
+      if (!room || !this.isOmniRoom(room.name)) return acc;
+
+      const timelineEvents = room
+        .getLiveTimeline()
+        .getEvents()
+        .filter((event) => omniEvents.includes(event.getType()));
+
+      if (timelineEvents.length > 0) {
+        acc.push(...timelineEvents);
+      }
+
+      return acc;
+    }, [] as MatrixEvent[]);
+
+    return omniTimeline.map((event) => this.createMstPayload(event));
   }
 
   /**
@@ -426,7 +335,7 @@ class Matrix implements SecureMessenger {
    * Setup subscription
    * @param handlers aggregated callback handlers
    */
-  setupSubscribers(handlers: Subscriptions): void {
+  setupSubscribers(handlers: Callbacks): void {
     this.subscribeHandlers = handlers;
   }
 
@@ -435,7 +344,30 @@ class Matrix implements SecureMessenger {
    */
   clearSubscribers(): void {
     this.matrixClient.removeAllListeners();
-    this.subscribeHandlers = undefined;
+    this.subscribeHandlers = undefined as unknown as Callbacks;
+  }
+
+  /**
+   * Check does User already exist
+   * @param userId matrix identifier
+   * @return {Promise}
+   * @throws {Error}
+   */
+  async checkUserExists(userId: string): Promise<boolean | never> {
+    if (!this.matrixClient) {
+      throw this.createError('Client is not active');
+    }
+
+    const userName = userId.match(/^@([a-z\d=_\-./]+):/);
+    if (!userName) {
+      throw new Error('User ID can only contain characters a-z, 0-9, or =_-./');
+    }
+
+    try {
+      return await this.matrixClient.isUsernameAvailable(userName?.[1]);
+    } catch (error) {
+      throw this.createError((error as Error).message, error);
+    }
   }
 
   /**
@@ -445,14 +377,14 @@ class Matrix implements SecureMessenger {
    * @return {Promise}
    * @throws {Error}
    */
-  async mstInitiate(params: MstInitParams): Promise<void | never> {
+  async mstInitiate(params: MstParams): Promise<void | never> {
     this.checkClientLoggedIn();
     this.checkInsideRoom();
 
     try {
       await this.matrixClient.sendEvent(
         this.activeRoomId,
-        OmniMstEvents.INIT,
+        OMNI_MST_EVENTS.INIT,
         params,
       );
     } catch (error) {
@@ -467,14 +399,14 @@ class Matrix implements SecureMessenger {
    * @return {Promise}
    * @throws {Error}
    */
-  async mstApprove(params: MstBaseParams): Promise<void | never> {
+  async mstApprove(params: MstParams): Promise<void | never> {
     this.checkClientLoggedIn();
     this.checkInsideRoom();
 
     try {
       await this.matrixClient.sendEvent(
         this.activeRoomId,
-        OmniMstEvents.APPROVE,
+        OMNI_MST_EVENTS.APPROVE,
         params,
       );
     } catch (error) {
@@ -489,14 +421,14 @@ class Matrix implements SecureMessenger {
    * @return {Promise}
    * @throws {Error}
    */
-  async mstFinalApprove(params: MstBaseParams): Promise<void | never> {
+  async mstFinalApprove(params: MstParams): Promise<void | never> {
     this.checkClientLoggedIn();
     this.checkInsideRoom();
 
     try {
       await this.matrixClient.sendEvent(
         this.activeRoomId,
-        OmniMstEvents.FINAL_APPROVE,
+        OMNI_MST_EVENTS.FINAL_APPROVE,
         params,
       );
     } catch (error) {
@@ -511,14 +443,14 @@ class Matrix implements SecureMessenger {
    * @return {Promise}
    * @throws {Error}
    */
-  async mstCancel(params: MstCancelParams): Promise<void | never> {
+  async mstCancel(params: MstParams): Promise<void | never> {
     this.checkClientLoggedIn();
     this.checkInsideRoom();
 
     try {
       await this.matrixClient.sendEvent(
         this.activeRoomId,
-        OmniMstEvents.CANCEL,
+        OMNI_MST_EVENTS.CANCEL,
         params,
       );
     } catch (error) {
@@ -526,12 +458,85 @@ class Matrix implements SecureMessenger {
     }
   }
 
+  // =====================================================
+  // ================= Private methods ===================
+  // =====================================================
+
+  private async initialStateEvents(
+    roomId: string,
+    params: RoomCreation,
+    signature: string,
+  ): Promise<void> {
+    await this.matrixClient.sendStateEvent(
+      roomId,
+      'm.room.encryption',
+      ROOM_CRYPTO_CONFIG,
+    );
+
+    const omniExtras = {
+      mst_account: {
+        threshold: params.threshold,
+        signatories: params.signatories.map((signatory) => signatory.accountId),
+        address: params.mstAccountAddress,
+      },
+      invite: {
+        signature,
+        public_key: params.inviterPublicKey,
+      },
+    };
+
+    const topicContent = {
+      topic: `Room for communications for ${params.mstAccountAddress} MST account`,
+      omni_extras: omniExtras,
+    };
+
+    await this.matrixClient.sendStateEvent(
+      roomId,
+      'm.room.topic',
+      topicContent,
+    );
+  }
+
+  private async inviteSignatories(
+    roomId: string,
+    signatories: Signatory[],
+  ): Promise<void> {
+    const inviterAddress = signatories.find((s) => s.isInviter)?.matrixAddress;
+
+    const noDuplicates = uniq(
+      signatories
+        .filter((s) => !s.isInviter && s.matrixAddress !== inviterAddress)
+        .map((s) => s.matrixAddress),
+    );
+
+    const inviteRequests = noDuplicates.reduce((acc, matrixAddress) => {
+      acc.push(this.matrixClient.invite(roomId, matrixAddress));
+
+      return acc;
+    }, [] as Promise<unknown>[]);
+
+    await Promise.all(inviteRequests);
+  }
+
+  private async verifyDevices(members: string[]): Promise<void | never> {
+    const memberKeys = await this.matrixClient.downloadKeys(members);
+
+    const verifyRequests = members.reduce((acc, userId) => {
+      Object.keys(memberKeys[userId]).forEach((deviceId) => {
+        acc.push(this.matrixClient.setDeviceVerified(userId, deviceId));
+      });
+      return acc;
+    }, [] as Promise<void>[]);
+
+    await Promise.all(verifyRequests);
+    console.info('=== 🟢 Devices verified');
+  }
+
   private async initClientWithCreds(
     login: string,
     password: string,
   ): Promise<void | never> {
-    const loginClient = createClient({ baseUrl: BASE_URL });
-    const userLoginResult = await loginClient.loginWithPassword(
+    const userLoginResult = await this.matrixClient.loginWithPassword(
       login,
       password,
     );
@@ -545,17 +550,17 @@ class Matrix implements SecureMessenger {
       cryptoStore: new IndexedDBCryptoStore(window.indexedDB, 'matrix'),
     });
 
-    await this.storage.matrixCredentials.add({
+    await this.storage.mxCredentials.add({
       userId: userLoginResult.user_id,
       accessToken: userLoginResult.access_token,
       deviceId: userLoginResult.device_id,
-      isLoggedIn: AuthState.LOGGED_IN,
+      isLoggedIn: BooleanValue.POSITIVE,
     });
   }
 
   private async initClientFromCache(): Promise<void | never> {
-    const credentials = await this.storage.matrixCredentials.get({
-      isLoggedIn: AuthState.LOGGED_IN,
+    const credentials = await this.storage.mxCredentials.get({
+      isLoggedIn: BooleanValue.POSITIVE,
     });
 
     if (!credentials) {
@@ -585,33 +590,38 @@ class Matrix implements SecureMessenger {
         this.subscribeHandlers?.onSyncProgress();
       }
       if (state === SyncState.Prepared) {
-        console.info('=== 🏁 Sync prepared');
-        this.isSynced = true;
+        console.info('=== 🔶 Sync prepared');
+        this.isClientSynced = true;
         this.subscribeHandlers?.onSyncEnd();
       }
     });
   }
 
   private handleInviteEvent(): void {
-    this.matrixClient.on(
-      RoomMemberEvent.Membership,
-      async (_, { roomId, userId, membership, name }) => {
-        if (!this.isSynced) return;
+    this.matrixClient.on(RoomMemberEvent.Membership, async (event, member) => {
+      if (event.getSender() === this.userId) return;
 
-        const isValidUser =
-          userId === this.matrixClient.getUserId() &&
-          membership === Membership.INVITE;
-        if (isValidUser && this.isOmniRoom(name)) {
-          this.subscribeHandlers?.onInvite(roomId);
-        }
-      },
-    );
+      const roomId = event.getRoomId();
+      const isValidUser =
+        member.userId === this.userId &&
+        member.membership === Membership.INVITE;
+
+      if (!isValidUser || !roomId) return;
+
+      const roomSummary = await this.matrixClient.getRoomSummary(roomId);
+      if (!this.isOmniRoom(roomSummary.name)) return;
+
+      const room = this.matrixClient.getRoom(roomId);
+      if (!room) return;
+
+      this.subscribeHandlers?.onInvite(
+        this.createInvitePayload(event, this.getOmniTopic(room), room.name),
+      );
+    });
   }
 
   private handleMatrixEvents(): void {
     this.matrixClient.on(MatrixEventEvent.Decrypted, async (event) => {
-      if (!this.isSynced) return;
-
       if (event.getType() !== EventType.RoomMessage) return;
 
       const roomId = event.getRoomId();
@@ -629,7 +639,10 @@ class Matrix implements SecureMessenger {
 
   private handleOmniEvents(): void {
     this.matrixClient.on(RoomEvent.Timeline, (event) => {
-      if (!this.isSynced) return;
+      const omniEvents = Object.values(OMNI_MST_EVENTS);
+      const isMstEvent = omniEvents.includes(event.getType());
+
+      if (event.getSender() === this.userId || !isMstEvent) return;
 
       const roomId = event.getRoomId();
       if (!roomId) return;
@@ -637,29 +650,20 @@ class Matrix implements SecureMessenger {
       const room = this.matrixClient.getRoom(roomId);
       if (!room || !this.isOmniRoom(room.name)) return;
 
-      switch (event.getType()) {
-        case OmniMstEvents.INIT:
-          this.subscribeHandlers?.onMstInitiate(event.getContent());
-          break;
-        case OmniMstEvents.APPROVE:
-          this.subscribeHandlers?.onMstInitiate(event.getContent());
-          break;
-        case OmniMstEvents.FINAL_APPROVE:
-          this.subscribeHandlers?.onMstInitiate(event.getContent());
-          break;
-        case OmniMstEvents.CANCEL:
-          this.subscribeHandlers?.onMstInitiate(event.getContent());
-          break;
-        default:
-          break;
-      }
+      this.subscribeHandlers?.onMstEvent(this.createMstPayload(event));
     });
   }
 
   // =====================================================
-  // ======================= UTILS =======================
+  // ====================== Helpers ======================
   // =====================================================
 
+  /**
+   * Create error object with a provided message
+   * @param message error's message value
+   * @param error optional error object
+   * @return {Error}
+   */
   private createError(message: string, error?: unknown): Error {
     const typedError =
       error instanceof Error
@@ -669,8 +673,13 @@ class Matrix implements SecureMessenger {
     return new Error(`🔶 Matrix: ${message} 🔶`, { cause: typedError });
   }
 
+  /**
+   * Verify that user is logged in
+   * @param message error's message value
+   * @throws {Error}
+   */
   private checkClientLoggedIn(message?: string): void | never {
-    if (!this.matrixClient?.isLoggedIn()) {
+    if (!this.matrixClient.isLoggedIn()) {
       const throwMsg = message
         ? `🔶 ${message} 🔶`
         : '🔶 Matrix client is not logged in 🔶';
@@ -678,6 +687,11 @@ class Matrix implements SecureMessenger {
     }
   }
 
+  /**
+   * Verify that user is inside room
+   * @param message error's message value
+   * @throws {Error}
+   */
   private checkInsideRoom(message?: string): void | never {
     if (!this.activeRoomId) {
       const throwMsg = message
@@ -687,13 +701,47 @@ class Matrix implements SecureMessenger {
     }
   }
 
-  private getActiveRoom(roomId: string): Room | never {
-    const room = this.matrixClient.getRoom(roomId);
-    if (!room) {
-      throw new Error('Room not found');
-    }
+  // TODO: try to use TS generics if possible
+  /**
+   * Create MST notification payload from Matrix Event
+   * @param event matrix event object
+   * @return {Object}
+   */
+  private createMstPayload(event: MatrixEvent): MSTPayload {
+    return {
+      eventId: event.getId(),
+      roomId: event.getRoomId(),
+      sender: event.getSender(),
+      client: this.matrixClient.getUserId(),
+      date: event.getDate() || new Date(),
+      type: event.getType() as OmniMstEvents,
+      content: event.getContent(),
+      roomName: '',
+    };
+  }
 
-    return room;
+  /**
+   * Create Invite notification payload from Matrix Event
+   * @param event matrix event object
+   * @param content room invitation content
+   * @param roomName name of the room
+   * @return {Object}
+   */
+  private createInvitePayload(
+    event: MatrixEvent,
+    content: OmniExtras,
+    roomName: string,
+  ): InvitePayload {
+    return {
+      eventId: event.getId(),
+      roomId: event.getRoomId(),
+      sender: event.getSender(),
+      client: this.matrixClient.getUserId(),
+      date: event.getDate() || new Date(),
+      type: event.getType() as EventType.RoomMember,
+      content,
+      roomName,
+    };
   }
 
   /**
@@ -704,15 +752,25 @@ class Matrix implements SecureMessenger {
   private isOmniRoom(roomName?: string): boolean {
     if (!roomName) return false;
 
-    return /^OMNI MST \| 0x[a-fA-F\d]+$/.test(roomName);
+    return /^OMNI MST \| [a-zA-Z\d]+$/.test(roomName);
   }
 
   /**
-   * Get matrix userId
-   * @return {string}
+   * Retrieve omni_extras from room's topic event
+   * @param room the room itself
+   * @return {Object}
    */
-  private get matrixUserId(): string {
-    return this.matrixClient.getUserId();
+  private getOmniTopic(room: Room): OmniExtras {
+    // on invited, user only sees stripped state, which has '' as state key for all events
+    const strippedStateKey = '';
+
+    const topicEvent = room
+      .getLiveTimeline()
+      .getState(Direction.Forward)
+      .events.get(EventType.RoomTopic)
+      ?.get(strippedStateKey)?.event;
+
+    return topicEvent?.content?.omni_extras;
   }
 }
 

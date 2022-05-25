@@ -18,7 +18,8 @@ import {
 import { HexString } from '../../common/types';
 import LinkButton from '../ui/LinkButton';
 import { Routes } from '../../common/constants';
-import { db, TransactionStatus } from '../db/db';
+import { db } from '../db/db';
+import { TransactionStatus } from '../db/types';
 
 // TODO: Move this function to utils
 function createSignedTx(

@@ -2,35 +2,17 @@ import React, { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 import { Room } from 'matrix-js-sdk';
 import InputText from '../../ui/Input';
 import Button from '../../ui/Button';
-import { useMatrix } from '../../modules/matrixProvider';
-import { Membership } from '../../modules/matrix';
+import { useMatrix } from '../Providers/MatrixProvider';
+import { Membership } from '../../modules/types';
 
 const Chat: React.FC = () => {
+  const { matrix } = useMatrix();
+
+  const [inviteValue, setInviteValue] = useState('');
+  const [roomName, setRoomName] = useState('');
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
   const [roomList, setRoomList] = useState<Room[]>([]);
-
-  const matrix = useMatrix();
-
-  useEffect(() => {
-    if (matrix.isLoggedIn) {
-      matrix.setupSubscribers({
-        onSyncProgress: () => console.log('=== 🟢 progess'),
-        onSyncEnd: () => console.log('=== 🟢 end'),
-        onMessage: () => console.log('=== 🟢 message'),
-        onInvite: () => console.log('=== 🟢 invite'),
-        onMstInitiate: (value) =>
-          console.log(`=== 🟢 OmniMstEvents.INIT ${value.toString()}`),
-        onMstApprove: (value) =>
-          console.log(`=== 🟢 OmniMstEvents.APPROVE ${value.toString()}`),
-        onMstFinalApprove: (value) =>
-          console.log(`=== 🟢 OmniMstnts.FINAL_APPROVE ${value.toString()}`),
-        onMstCancel: (value) =>
-          console.log(`=== 🟢 OmniMstEvents.CANCEL ${value.toString()}`),
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matrix?.isLoggedIn]);
 
   useEffect(() => {
     if (matrix.isLoggedIn) {
@@ -50,18 +32,18 @@ const Chat: React.FC = () => {
   const onCreateRoom = () => {
     matrix.createRoom(
       {
-        mstAccountAddress: '0xCCCC',
+        mstAccountAddress: roomName,
         inviterPublicKey: '0x24dsfb',
         threshold: 2,
         signatories: [
           {
             isInviter: true,
-            matrixAddress: '@tuul_wq:matrix.org',
+            matrixAddress: matrix.userId,
             accountId: '0x8acac2',
           },
           {
             isInviter: false,
-            matrixAddress: '@pamelo:matrix.org',
+            matrixAddress: inviteValue,
             accountId: '0x2340dfa',
           },
           // {
@@ -71,7 +53,7 @@ const Chat: React.FC = () => {
           // },
         ],
       },
-      (value) => Promise.resolve(`SIGNATURE ${value}`),
+      (value: string) => Promise.resolve(`SIGNATURE ${value}`),
     );
   };
   const onChangeLogin = (event: ChangeEvent<HTMLInputElement>) => {
@@ -80,13 +62,13 @@ const Chat: React.FC = () => {
   const onChangePassword = (event: ChangeEvent<HTMLInputElement>) => {
     setPassword(event.target.value);
   };
-  const onInvite = () => {
-    matrix.invite('123', 'asd');
-  };
+  // const onInvite = () => {
+  //   matrix.invite('123', 'asd');
+  // };
 
-  const onSetRoom = (roomId: string) => () => {
+  const onSetRoom = (roomId: string) => async () => {
     matrix.setRoom(roomId);
-    const messages = matrix.timelineMessages();
+    const messages = await matrix.timelineEvents();
     console.log(messages);
   };
 
@@ -100,10 +82,9 @@ const Chat: React.FC = () => {
   };
 
   const onMstApprove = () => {
-    matrix.mstCancel({
+    matrix.mstApprove({
       callHash: '0x233',
       chainId: '0xdsfsf',
-      description: 'maaan',
     });
   };
 
@@ -122,9 +103,9 @@ const Chat: React.FC = () => {
     });
   };
 
-  const onSendText = () => {
-    matrix.sendMessage('TEST 123');
-  };
+  // const onSendText = () => {
+  //   matrix.sendMessage('TEST 123');
+  // };
 
   return (
     <>
@@ -135,6 +116,7 @@ const Chat: React.FC = () => {
             className="w-full"
             label="Login"
             placeholder="Login"
+            disabled
             value={login}
             onChange={onChangeLogin}
           />
@@ -143,6 +125,7 @@ const Chat: React.FC = () => {
             className="w-full"
             label="Password"
             placeholder="Password"
+            disabled
             type="password"
             value={password}
             onChange={onChangePassword}
@@ -150,21 +133,43 @@ const Chat: React.FC = () => {
         </div>
 
         <div className="p-2">
-          <Button type="submit">Login</Button>
-          <Button className="mt-2" onClick={onCreateRoom}>
-            Create room
+          <Button type="submit" disabled>
+            Login
           </Button>
+          <div className="flex gap-4">
+            <Button
+              className="mt-2"
+              disabled={!inviteValue || !roomName}
+              onClick={onCreateRoom}
+            >
+              Create room
+            </Button>
+            <input
+              className="border-b-black border-2"
+              type="text"
+              placeholder="Room name"
+              value={roomName}
+              onChange={(e) => setRoomName(e.target.value)}
+            />
+            <input
+              className="border-b-black border-2"
+              type="text"
+              placeholder="Matrix ID to invite"
+              value={inviteValue}
+              onChange={(e) => setInviteValue(e.target.value)}
+            />
+          </div>
         </div>
       </form>
 
       <div className="p-2 flex gap-2">
-        <button
-          className="border-2 border-b-blue-700"
-          type="button"
-          onClick={onInvite}
-        >
-          Invite
-        </button>
+        {/* <button */}
+        {/*   className="border-2 border-b-blue-700" */}
+        {/*   type="button" */}
+        {/*   onClick={onInvite} */}
+        {/* > */}
+        {/*   Invite */}
+        {/* </button> */}
         <button
           className="border-2 border-b-blue-700"
           type="button"
@@ -193,15 +198,16 @@ const Chat: React.FC = () => {
         >
           MST cancel
         </button>
-        <button
-          className="border-2 border-b-blue-700"
-          type="button"
-          onClick={onSendText}
-        >
-          Send text
-        </button>
+        {/* <button */}
+        {/*   className="border-2 border-b-blue-700" */}
+        {/*   type="button" */}
+        {/*   onClick={onSendText} */}
+        {/* > */}
+        {/*   Send text */}
+        {/* </button> */}
       </div>
 
+      <h2>Rooms:</h2>
       <ul>
         {roomList.map((room) => (
           <li key={room.roomId} className="flex gap-3">
