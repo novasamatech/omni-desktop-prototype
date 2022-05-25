@@ -53,8 +53,8 @@ export const enum ActiveType {
 }
 
 export const enum BooleanValue {
-  NEGATIVE = 0,
-  POSITIVE = 1,
+  FALSE = 0,
+  TRUE = 1,
 }
 
 // TODO: move Domain types (Wallet, etc.) from DB and make ID mandatory
