@@ -55,4 +55,3 @@ To package app for the local platform:
 ```bash
 yarn package
 ```
-
