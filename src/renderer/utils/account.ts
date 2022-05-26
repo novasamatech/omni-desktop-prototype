@@ -34,7 +34,7 @@ export const getAddressFromWallet = <T extends WalletAccounts>(
   return formatAddress(account.accountId, network.addressPrefix);
 };
 
-type WalletProps = {
+type MultisigWalletProps = {
   walletName: string;
   threshold: string | number;
   addresses: string[];
@@ -45,7 +45,10 @@ export const createMultisigWalletPayload = ({
   threshold,
   addresses,
   contacts,
-}: WalletProps): { mstSs58Address: string; payload: MultisigWallet } => {
+}: MultisigWalletProps): {
+  mstSs58Address: string;
+  payload: MultisigWallet;
+} => {
   const SS58_PREFIX = 42;
 
   const multiAddress = createKeyMulti(addresses, Number(threshold));
@@ -58,6 +61,7 @@ export const createMultisigWalletPayload = ({
       threshold: threshold.toString(),
       originContacts: contacts,
       isMultisig: BooleanValue.TRUE,
+      chainAccounts: [],
       mainAccounts: [
         {
           accountId: Ss58Address,
@@ -65,7 +69,6 @@ export const createMultisigWalletPayload = ({
           cryptoType: CryptoType.ED25519,
         },
       ],
-      chainAccounts: [],
     },
   };
 };

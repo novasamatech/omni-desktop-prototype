@@ -70,8 +70,8 @@ const InviteNotif: React.FC<Props> = ({ notif }) => {
 
   const onDetailsClick = () => {
     // TODO: enable after implementing Parity Signer room signature
-    // const extras = notif.rawData.content as OmniExtras;
-    // if (!checkIsInviteValid(notif.rawData.roomId, extras)) {
+    // const extras = notif.content as OmniExtras;
+    // if (!checkIsInviteValid(notif.roomId, extras)) {
     //   console.warn('Invite is invalid');
     //   return;
     // }
