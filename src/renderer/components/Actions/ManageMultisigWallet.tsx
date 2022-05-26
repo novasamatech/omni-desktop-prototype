@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router';
-import { createKeyMulti, encodeAddress } from '@polkadot/util-crypto';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
-import { u8aToHex } from '@polkadot/util';
 import { Dialog } from '@headlessui/react';
 
 import Button from '../../ui/Button';
 import InputText from '../../ui/Input';
-import { Contact, CryptoType, MultisigWallet } from '../../db/types';
+import { Contact, MultisigWallet } from '../../db/types';
 import { db } from '../../db/db';
 import Card from '../../ui/Card';
 import Checkbox from '../../ui/Checkbox';
@@ -17,13 +15,13 @@ import DialogContent from '../../ui/DialogContent';
 import useToggle from '../../hooks/toggle';
 import { Routes } from '../../../common/constants';
 import { useMatrix } from '../Providers/MatrixProvider';
+import { createMultisigWalletPayload } from '../../utils/account';
 import { isMultisig } from '../../utils/validation';
 
-const SS58Prefix = 42;
 const DEFAULT_THRESHOLD = '2';
 
 type MultisigWalletForm = {
-  name: string;
+  walletName: string;
   threshold: string;
 };
 
@@ -58,14 +56,14 @@ const ManageMultisigWallet: React.FC = () => {
   } = useForm<MultisigWalletForm>({
     mode: 'onChange',
     defaultValues: {
-      name: '',
+      walletName: '',
       threshold: DEFAULT_THRESHOLD,
     },
   });
 
   useEffect(() => {
     reset({
-      name: wallet?.name || '',
+      walletName: wallet?.name || '',
       threshold: wallet?.threshold || DEFAULT_THRESHOLD,
     });
   }, [wallet, reset]);
@@ -77,31 +75,10 @@ const ManageMultisigWallet: React.FC = () => {
     db.wallets.put({ ...multisigWallet, name: name.trim() });
   };
 
-  const createMultisigWallet = (
-    addresses: string[],
-    { name, threshold }: MultisigWalletForm,
-  ): string => {
-    const multiAddress = createKeyMulti(addresses, Number(threshold));
-    const Ss58Address = encodeAddress(multiAddress, SS58Prefix);
-
-    db.wallets.add({
-      name: name.trim(),
-      threshold,
-      originContacts: selectedContacts,
-      mainAccounts: [
-        {
-          accountId: Ss58Address,
-          publicKey: u8aToHex(multiAddress),
-          cryptoType: CryptoType.ED25519,
-        },
-      ],
-      chainAccounts: [],
-    });
-
-    return Ss58Address;
-  };
-
-  const createMatrixRoom = (mstAccountAddress: string, threshold: string) => {
+  const createMatrixRoom = async (
+    mstAccountAddress: string,
+    threshold: string,
+  ) => {
     if (!matrix.isLoggedIn) return;
     if (!wallets) return; // FIXME: need wallets to identify MY contact
 
@@ -139,20 +116,40 @@ const ManageMultisigWallet: React.FC = () => {
     );
   };
 
-  const handleMultisigSubmit: SubmitHandler<MultisigWalletForm> = (
-    formData,
-  ) => {
+  const handleMultisigSubmit: SubmitHandler<MultisigWalletForm> = ({
+    walletName,
+    threshold,
+  }) => {
     if (wallet) {
-      updateMultisigWallet(wallet, formData.name);
+      updateMultisigWallet(wallet, walletName);
     } else {
+      // TODO: won't be needed after Parity Signer
       const addresses = selectedContacts.map(
         (c) => c.mainAccounts[0].accountId,
       );
       if (addresses.length === 0) return;
 
-      const mstAddress = createMultisigWallet(addresses, formData);
+      const { mstSs58Address, payload } = createMultisigWalletPayload({
+        walletName,
+        threshold,
+        addresses,
+        contacts: selectedContacts,
+      });
+
+      const sameMstAccount = wallets?.find((w) =>
+        w.mainAccounts.some((main) => main.accountId === mstSs58Address),
+      );
+      if (sameMstAccount) {
+        console.warn('MST account already exist');
+        return;
+      }
+
+      db.wallets.add(payload);
+
       // TODO: show some kind of loader | handle async error
-      createMatrixRoom(mstAddress, formData.threshold);
+      // TODO: if user forgets MST acc and creates a new one
+      // duplicate room will be created (user should wait for invite from MST acc members)
+      createMatrixRoom(mstSs58Address, threshold);
       setSelectedContacts([]);
       reset();
     }
@@ -179,6 +176,8 @@ const ManageMultisigWallet: React.FC = () => {
     return collection.some((c) => c.id === contactId);
   };
 
+  const availableContacts = wallet ? wallet.originContacts : contacts;
+
   return (
     <>
       <h2 className="font-light text-xl p-4">
@@ -189,7 +188,7 @@ const ManageMultisigWallet: React.FC = () => {
         <div className="flex">
           <div className="p-2 w-1/2">
             <Controller
-              name="name"
+              name="walletName"
               control={control}
               rules={{ required: true }}
               defaultValue={wallet?.name || ''}
@@ -241,20 +240,16 @@ const ManageMultisigWallet: React.FC = () => {
           <Card className={`m-0 ${wallet && 'bg-gray-100'}`}>
             <div className="text-gray-500 text-sm mb-2">Signatures</div>
 
-            {contacts?.map((contact: Contact) => (
-              <div key={contact.id} className="flex items-center p-2">
-                <div className="mr-3">
-                  <Checkbox
-                    disabled={!!wallet}
-                    checked={isContactSelected(contact.id)}
-                    onChange={() => updateSelectedContact(contact)}
-                  />
-                </div>
+            {availableContacts?.map((contact) => (
+              <div key={contact.id} className="flex items-center gap-3 p-2">
+                <Checkbox
+                  disabled={!!wallet}
+                  checked={isContactSelected(contact.id)}
+                  onChange={() => updateSelectedContact(contact)}
+                />
                 <div>
-                  <div>{contact.name}</div>
-                  <div>
-                    <Address full address={contact.mainAccounts[0].accountId} />
-                  </div>
+                  {contact.name && <div>{contact.name}</div>}
+                  <Address full address={contact.mainAccounts[0].accountId} />
                 </div>
               </div>
             ))}

@@ -7,25 +7,14 @@ import React, {
   useState,
 } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { EventType } from 'matrix-js-sdk';
 import Matrix from '../../modules/matrix';
 import {
   InvitePayload,
   ISecureMessenger,
   MSTPayload,
-  OmniMstEvents,
 } from '../../modules/types';
 import { db } from '../../db/db';
-import { BooleanValue, Notification as DbNotification } from '../../db/types';
-
-export type Notification = {
-  id: string;
-  title: string;
-  description: string;
-  date: Date;
-  isRead: boolean;
-  rawData: DbNotification;
-};
+import { BooleanValue, Notification } from '../../db/types';
 
 type MatrixContextProps = {
   matrix: ISecureMessenger;
@@ -42,40 +31,6 @@ type Props = {
   onAutoLoginFail: (message: string) => void;
 };
 
-const TITLES = {
-  [OmniMstEvents.INIT]: 'MST initiated',
-  [OmniMstEvents.APPROVE]: 'MST approved',
-  [OmniMstEvents.FINAL_APPROVE]: 'MST executed',
-  [OmniMstEvents.CANCEL]: 'MST cancelled',
-  [EventType.RoomMember]: 'Room invitation',
-};
-
-const DESCRIPTIONS = {
-  [OmniMstEvents.INIT]: (sender: string) =>
-    `The transaction was initiated by ${sender}`,
-  [OmniMstEvents.APPROVE]: (sender: string) =>
-    `The transaction was approved by ${sender}`,
-  [OmniMstEvents.FINAL_APPROVE]: (sender: string) =>
-    `The transaction was executed by ${sender}`,
-  [OmniMstEvents.CANCEL]: (sender: string) =>
-    `The transaction was cancelled by ${sender}`,
-  [EventType.RoomMember]: (sender: string, roomName = '') =>
-    `You were invited in room ${roomName} by ${sender}`,
-};
-
-function prepareNotifications(
-  dbNotifications: DbNotification[],
-): Notification[] {
-  return dbNotifications.map((n) => ({
-    id: n.id || n.date.getTime().toString(),
-    title: TITLES[n.type],
-    description: DESCRIPTIONS[n.type](n.sender, n.roomName),
-    date: n.date,
-    isRead: Boolean(n.isRead),
-    rawData: n,
-  }));
-}
-
 const MatrixProvider: React.FC<Props> = ({
   loader,
   onAutoLoginFail,
@@ -86,15 +41,13 @@ const MatrixProvider: React.FC<Props> = ({
   const [isMatrixLoading, setIsMatrixLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  const notifications = useLiveQuery(async () => {
+  const notifications = useLiveQuery(() => {
     if (!isLoggedIn) return [];
 
-    const data = await db.mxNotifications
+    return db.mxNotifications
       .where({ client: matrix.userId })
       .reverse()
       .sortBy('date');
-
-    return prepareNotifications(data);
   }, [isLoggedIn]);
 
   useEffect(() => {
@@ -105,9 +58,9 @@ const MatrixProvider: React.FC<Props> = ({
         setIsLoggedIn(true);
       } catch (error) {
         onAutoLoginFail((error as Error).message);
-      } finally {
-        setIsMatrixLoading(false);
       }
+
+      setIsMatrixLoading(false);
     };
 
     initMatrix();

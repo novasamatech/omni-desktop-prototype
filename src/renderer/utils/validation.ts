@@ -1,15 +1,15 @@
 import { ApiPromise } from '@polkadot/api';
 import { decodeAddress, encodeAddress } from '@polkadot/keyring';
-import { Header, BlockNumber } from '@polkadot/types/interfaces';
-import { Wallet, MultisigWallet } from '../db/types';
+import { BlockNumber, Header } from '@polkadot/types/interfaces';
 import {
+  checkRootExists,
   getBlockHash,
   getHeader,
-  getProofs,
-  checkRootExists,
   getParachainId,
+  getProofs,
 } from './merkle';
 import { MatrixIdRegex } from '../../common/constants';
+import { MultisigWallet, Wallet } from '../db/types';
 
 export const validateWithBlockNumber = async (
   relaychainApi: ApiPromise,
@@ -76,7 +76,7 @@ export const validateAddress = (address: string): boolean => {
 };
 
 export const isMultisig = (wallet: Wallet | MultisigWallet): boolean =>
-  'originContacts' in wallet;
+  Boolean(wallet.isMultisig);
 
 export const validateMatrixLogin = (matrixId: string): boolean => {
   return MatrixIdRegex.test(matrixId);

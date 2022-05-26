@@ -14,7 +14,7 @@ import Login from '../../renderer/components/Login';
 import MainLayout from '../../renderer/components/Layout/MainLayout';
 import ManageMultisigWallet from '../../renderer/components/Actions/ManageMultisigWallet';
 import AddWallet from '../../renderer/components/Actions/AddWallet';
-import Notifications from '../../renderer/components/Notifications';
+import Notifications from '../../renderer/components/Notifications/Notifications';
 import TransferDetails from '../../renderer/components/Transactions/TransferDetails';
 import { Routes } from '../constants';
 
