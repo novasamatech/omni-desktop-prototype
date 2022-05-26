@@ -176,9 +176,9 @@ class Matrix implements ISecureMessenger {
     this.checkClientLoggedIn();
 
     try {
-      await this.matrixClient.logout();
-      this.matrixClient.stopClient();
       this.clearSubscribers();
+      this.matrixClient.stopClient();
+      await this.matrixClient.logout();
       // await this.matrixClient.clearStores();
       await this.storage.mxCredentials.where({ userId: this.userId }).delete();
       this.createDefaultClient();
@@ -223,7 +223,7 @@ class Matrix implements ISecureMessenger {
   }
 
   /**
-   * Join existing MST room
+   * Join existing MST room, skips if already joined
    * @param roomId room's identifier
    * @return {Promise}
    * @throws {Error}
