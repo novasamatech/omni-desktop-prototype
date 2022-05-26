@@ -175,6 +175,7 @@ export type Transaction = WithID<{
   address: string;
   blockHash?: HexString;
   blockHeight?: number;
+  extrinsicIndex?: number;
   transactionHash?: HexString;
   type: TransactionType;
   status: TransactionStatus;
