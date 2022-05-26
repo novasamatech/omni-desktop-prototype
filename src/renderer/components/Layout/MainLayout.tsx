@@ -81,7 +81,7 @@ const MainLayout: React.FC<Props> = ({ route }) => {
   // }, [activeNetworks, connections, setConnections, inited]);
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-ribbon">
       <FirstColumn />
       <SecondColumn />
       <div

@@ -145,7 +145,7 @@ const ShowCode: React.FC = () => {
   }, [setupTransaction]);
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-ribbon flex flex-col">
       <div className="flex justify-center items-center">
         <LinkButton className="ml-2 absolute left-0" to={Routes.BASKET}>
           Back
