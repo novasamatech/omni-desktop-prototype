@@ -2,17 +2,23 @@ import React from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { renderRoutes, RouteConfig } from 'react-router-config';
 import cn from 'classnames';
-import { db, TransactionStatus } from '../../db/db';
+import { db } from '../../db/db';
+import { TransactionStatus } from '../../db/types';
 import FirstColumn from '../FirstColumn';
 import SecondColumn from '../SecondColumn';
 import LinkButton from '../../ui/LinkButton';
 import { Routes } from '../../../common/constants';
+import { useMatrix } from '../Providers/MatrixProvider';
 
 type Props = {
   route?: RouteConfig;
 };
 
 const MainLayout: React.FC<Props> = ({ route }) => {
+  const { matrix, notifications } = useMatrix();
+
+  const hasUnreadNotifs = notifications.some((n) => !n.isRead);
+
   // TODO: Connect to the chain on app start
 
   // const [connections, setConnections] = useRecoilState(connectionState);
@@ -84,15 +90,26 @@ const MainLayout: React.FC<Props> = ({ route }) => {
         {renderRoutes(route?.routes)}
       </div>
 
-      <div className="flex items-center fixed bottom-0 w-screen h-20 p-3 bg-gray-100">
-        <LinkButton to={Routes.BASKET} size="lg">
-          Operations
-        </LinkButton>
-        {isTransactionsExist && (
-          <div className="ml-3">
-            {transactions.length} pending{' '}
-            {transactions.length > 1 ? 'operations' : 'operation'}
-          </div>
+      <div className="flex fixed bottom-0 w-screen bg-gray-100 p-3">
+        <div>
+          <LinkButton to={Routes.BASKET} size="md">
+            Operations
+          </LinkButton>
+          {isTransactionsExist && (
+            <div className="ml-3">
+              {transactions.length} pending{' '}
+              {transactions.length > 1 ? 'operations' : 'operation'}
+            </div>
+          )}
+        </div>
+        {matrix.isLoggedIn && (
+          <LinkButton
+            className={cn('ml-auto', hasUnreadNotifs && 'bg-red-400')}
+            to={Routes.NOTIFICATIONS}
+            size="md"
+          >
+            Notifications
+          </LinkButton>
         )}
       </div>
     </div>

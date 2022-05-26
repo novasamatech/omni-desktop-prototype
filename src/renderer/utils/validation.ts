@@ -1,7 +1,7 @@
 import { ApiPromise } from '@polkadot/api';
 import { decodeAddress, encodeAddress } from '@polkadot/keyring';
 import { Header, BlockNumber } from '@polkadot/types/interfaces';
-import { Wallet, MultisigWallet } from '../db/db';
+import { Wallet, MultisigWallet } from '../db/types';
 import {
   getBlockHash,
   getHeader,

@@ -1,6 +1,6 @@
 /* eslint-disable import/prefer-default-export */
 import { decodeAddress, encodeAddress } from '@polkadot/keyring';
-import { Wallet, Chain } from '../db/db';
+import { Wallet, Chain } from '../db/types';
 
 export const formatAddress = (address: string, prefix = 42): string => {
   if (!address) return '';

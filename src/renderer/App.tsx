@@ -2,7 +2,7 @@ import React from 'react';
 import { RecoilRoot } from 'recoil';
 import { useHistory } from 'react-router';
 import { renderRoutes } from 'react-router-config';
-import MatrixProvider from './modules/matrixProvider';
+import MatrixProvider from './components/Providers/MatrixProvider';
 import createRouter from '../common/utils/routing';
 import SplashScreen from './components/SplashScreen';
 import { Routes } from '../common/constants';

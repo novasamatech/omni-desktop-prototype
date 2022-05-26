@@ -1,5 +1,4 @@
-/* eslint-disable react/require-default-props */
-import { PropsWithChildren } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 
 const SizeClass = {
@@ -14,12 +13,12 @@ type Props = {
   size?: keyof typeof SizeClass;
 };
 
-const LinkButton = ({
+const LinkButton: React.FC<Props> = ({
   to,
-  children,
   className = '',
   size = 'md',
-}: PropsWithChildren<Props>) => {
+  children,
+}) => {
   return (
     <Link
       to={to}
@@ -37,4 +36,5 @@ const LinkButton = ({
     </Link>
   );
 };
+
 export default LinkButton;

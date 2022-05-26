@@ -4,7 +4,8 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import Checkbox from '../ui/Checkbox';
 
 import { selectedWalletsState } from '../store/selectedWallets';
-import { db, Wallet } from '../db/db';
+import { db } from '../db/db';
+import { Wallet } from '../db/types';
 import mst from '../../../assets/mst.svg';
 import { isMultisig } from '../utils/validation';
 

@@ -7,8 +7,7 @@ import {
   Transaction as TransactionData,
   TransactionStatus,
   TransactionType,
-  // TransactionStatus,
-} from '../db/db';
+} from '../db/types';
 import { toShortText } from '../utils/strings';
 import right from '../../../assets/right.svg';
 import Status from '../ui/Status';
@@ -17,7 +16,7 @@ type Props = {
   transaction: TransactionData;
 };
 
-const Transaction: React.FC<Props> = ({ transaction }: Props) => {
+const Transaction: React.FC<Props> = ({ transaction }) => {
   return (
     <div className="bg-gray-100 px-4 py-3 m-2 rounded-2xl">
       <div>

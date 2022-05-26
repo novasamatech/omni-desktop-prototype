@@ -23,7 +23,7 @@ import { Routes, DEFAULT } from '../../common/constants';
 import { getAddressFromWallet } from '../utils/account';
 import { formatAmount, getAssetById } from '../utils/assets';
 import Shimmer from '../ui/Shimmer';
-import { AssetType, MultisigWallet, TransactionType } from '../db/db';
+import { AssetType, MultisigWallet, TransactionType } from '../db/types';
 import { selectedWalletsState } from '../store/selectedWallets';
 // import { isMultisig } from '../utils/dataValidation';
 

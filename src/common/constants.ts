@@ -5,6 +5,7 @@ export const Routes = {
   // Independent routes
   LOGIN: '/login',
   BASKET: '/basket',
+  NOTIFICATIONS: '/notifications',
   SHOW_CODE: '/show-code',
   SCAN_CODE: '/scan-code',
   TRANSFER_DETAILS: '/transfer-details/:id',
