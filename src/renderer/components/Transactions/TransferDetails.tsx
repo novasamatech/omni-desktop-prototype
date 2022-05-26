@@ -96,7 +96,7 @@ const TransferDetails: React.FC = () => {
     return transaction.data.approvals.includes(address);
   };
 
-  const signatures =
+  const signatories =
     network &&
     ((transaction?.wallet as MultisigWallet).originContacts ?? []).map(
       (signature) => ({
@@ -214,14 +214,14 @@ const TransferDetails: React.FC = () => {
         </div>
         {isMultisigTransfer && (
           <div className="mb-10 w-[350px] bg-gray-100 px-4 py-3 rounded-2xl">
-            <h1 className="text-2xl font-normal mb-4">Signatures</h1>
+            <h1 className="text-2xl font-normal mb-4">Signatories</h1>
             <div className="text-3xl font-medium mb-7">
               {transaction.data.approvals?.length || 0} of{' '}
               {(transaction.wallet as MultisigWallet).threshold}
             </div>
             <div>
-              {signatures &&
-                signatures.map(({ status, name, address }) => (
+              {signatories &&
+                signatories.map(({ status, name, address }) => (
                   <div
                     key={address}
                     className="flex justify-between items-center mb-4"

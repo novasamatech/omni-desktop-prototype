@@ -177,6 +177,7 @@ export type Transaction = {
   blockHash?: HexString;
   blockHeight?: number;
   transactionHash?: HexString;
+  extrinsicIndex?: number;
   type: TransactionType;
   status: TransactionStatus;
   data: Record<string, any>;

@@ -23,7 +23,8 @@ import { Routes, DEFAULT } from '../../common/constants';
 import { getAddressFromWallet } from '../utils/account';
 import { formatAmount, getAssetById } from '../utils/assets';
 import Shimmer from '../ui/Shimmer';
-import { AssetType } from '../db/db';
+import { AssetType, MultisigWallet, TransactionType } from '../db/db';
+import { selectedWalletsState } from '../store/selectedWallets';
 // import { isMultisig } from '../utils/dataValidation';
 
 const ShowCode: React.FC = () => {
@@ -33,6 +34,7 @@ const ShowCode: React.FC = () => {
   const networks = useRecoilValue(connectionState);
   const transaction = useRecoilValue(currentTransactionState);
   const [, setUnsigned] = useRecoilState(currentUnsignedState);
+  const selectedAccounts = useRecoilValue(selectedWalletsState);
 
   useEffect(() => {
     if (transaction && Object.values(networks).length) {
@@ -128,9 +130,93 @@ const ShowCode: React.FC = () => {
             options,
           ),
       };
+      const MAX_WEIGHT = 640000000;
 
-      const unsigned = transfers[asset?.type || DEFAULT]();
+      const when =
+        transaction.blockHeight && transaction.extrinsicIndex
+          ? {
+              height: transaction.blockHeight,
+              index: transaction.extrinsicIndex,
+            }
+          : null;
 
+      const multisig = {
+        aprove: () => {
+          return methods.multisig.approveAsMulti(
+            {
+              threshold: (transaction.wallet as MultisigWallet).threshold,
+              otherSignatories: (
+                transaction.wallet as MultisigWallet
+              ).originContacts
+                .map((c) => getAddressFromWallet(c, connection.network))
+                .filter((c) => c !== address)
+                .sort(),
+              maybeTimepoint: when,
+              callHash: transaction.data.callHash,
+              maxWeight: MAX_WEIGHT,
+            },
+            info,
+            options,
+          );
+        },
+        finalApprove: () => {
+          return methods.multisig.asMulti(
+            {
+              threshold: (transaction.wallet as MultisigWallet).threshold,
+              otherSignatories: (
+                transaction.wallet as MultisigWallet
+              ).originContacts
+                .map((c) => getAddressFromWallet(c, connection.network))
+                .filter((c) => c !== address)
+                .sort(),
+              maybeTimepoint: when,
+              callHash: transaction.data.callHash,
+              maxWeight: MAX_WEIGHT,
+              call: transaction.data.callData,
+              storeCall: true,
+            },
+            info,
+            options,
+          );
+        },
+        cancel: () => {
+          return (
+            when &&
+            methods.multisig.cancelAsMulti(
+              {
+                threshold: transaction.data.threshold,
+                otherSignatories: (
+                  transaction.wallet as MultisigWallet
+                ).originContacts
+                  .map((c) => getAddressFromWallet(c, connection.network))
+                  .filter((c) => c !== address)
+                  .sort(),
+                timepoint: when,
+                callHash: transaction.data.callHash,
+              },
+              info,
+              options,
+            )
+          );
+        },
+      };
+      let unsigned;
+
+      if (transaction.type === TransactionType.MULTISIG_TRANSFER) {
+        setAddress(
+          getAddressFromWallet(selectedAccounts[0], connection.network),
+        );
+        if (
+          transaction.data.approvals?.length >=
+          Number((transaction.wallet as MultisigWallet).threshold) - 1
+        ) {
+          unsigned = multisig.finalApprove();
+        } else {
+          unsigned = multisig.aprove();
+        }
+      } else {
+        unsigned = transfers[asset?.type || DEFAULT]();
+      }
       const signingPayloadHex = construct.signingPayload(unsigned, {
         registry,
       });
@@ -138,7 +224,7 @@ const ShowCode: React.FC = () => {
       setPayload(hexToU8a(signingPayloadHex));
       setUnsigned(unsigned);
     }
-  }, [connection, transaction, setUnsigned, address]);
+  }, [connection, transaction, setUnsigned, selectedAccounts, address]);
 
   useEffect(() => {
     setupTransaction();

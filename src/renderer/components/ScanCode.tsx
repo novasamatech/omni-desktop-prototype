@@ -18,7 +18,7 @@ import {
 import { HexString } from '../../common/types';
 import LinkButton from '../ui/LinkButton';
 import { Routes } from '../../common/constants';
-import { db, TransactionStatus } from '../db/db';
+import { db, TransactionStatus, TransactionType } from '../db/db';
 
 // TODO: Move this function to utils
 function createSignedTx(
@@ -90,10 +90,17 @@ const ScanCode: React.FC = () => {
 
     if (!actualTxHash || !transaction.id) return;
 
-    db.transactions.update(transaction.id, {
-      ...transaction,
-      status: TransactionStatus.CONFIRMED,
-    });
+    if (transaction.type === TransactionType.TRANSFER) {
+      db.transactions.update(transaction.id, {
+        ...transaction,
+        status: TransactionStatus.CONFIRMED,
+      });
+    } else if (transaction.type === TransactionType.MULTISIG_TRANSFER) {
+      db.transactions.update(transaction.id, {
+        ...transaction,
+        status: TransactionStatus.PENDING,
+      });
+    }
 
     history.push(Routes.BASKET);
   };

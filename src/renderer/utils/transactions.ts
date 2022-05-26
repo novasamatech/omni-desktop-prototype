@@ -46,27 +46,14 @@ export const isSameTransactions = (
   transaction: Transaction,
   multisigTransaction: MultisigTransaction,
 ) => {
-  const isMultisigTransfer =
-    transaction.type === TransactionType.MULTISIG_TRANSFER;
-  const isSameDepositor =
-    multisigTransaction.opt.depositor.toString() === transaction.address;
-  const isSameBlockHeight =
-    multisigTransaction.opt.when.height.toString() ===
-    transaction.blockHeight?.toString();
-  const isSameDeposit =
-    multisigTransaction.opt.deposit.toString() ===
-    transaction.data.deposit?.toString();
+  // const isSameBlockHeight =
+  //   multisigTransaction.opt.when.height.toString() ===
+  //   transaction.blockHeight?.toString();
   const isSameCallHash =
     multisigTransaction.callHash.toString() ===
     transaction.data.callHash?.toString();
 
-  return (
-    isMultisigTransfer &&
-    isSameDeposit &&
-    isSameBlockHeight &&
-    isSameDepositor &&
-    isSameCallHash
-  );
+  return isSameCallHash;
 };
 
 export const updateTransactionPayload = (
@@ -77,6 +64,7 @@ export const updateTransactionPayload = (
     ...transaction,
     blockHeight: pendingTransaction.opt.when.height.toNumber(),
     blockHash: pendingTransaction.opt.when.hash.toHex(),
+    extrinsicIndex: pendingTransaction.opt.when.index.toNumber(),
     data: {
       ...transaction.data,
       deposit: pendingTransaction.opt.deposit.toString(),

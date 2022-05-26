@@ -3,17 +3,14 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useRecoilValue } from 'recoil';
 import Transaction from './Transaction';
 import LinkButton from '../ui/LinkButton';
-import { db, TransactionStatus } from '../db/db';
+import { db } from '../db/db';
 import { connectionState } from '../store/connections';
 import { updateTransactions } from '../utils/transactions';
 import { isMultisig } from '../utils/validation';
 
 const Basket: React.FC = () => {
   const transactions = useLiveQuery(() =>
-    db.transactions
-      .where('status')
-      .notEqual(TransactionStatus.CONFIRMED)
-      .sortBy('id'),
+    db.transactions.toCollection().reverse().sortBy('id'),
   );
 
   const wallets = useLiveQuery(() => db.wallets.toArray());
