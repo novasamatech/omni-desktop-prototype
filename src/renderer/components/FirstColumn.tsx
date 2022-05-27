@@ -31,7 +31,7 @@ const FirstColumn: React.FC = () => {
         <SelectWallets />
         {matrix.isLoggedIn && (
           <Button
-            className="m-4"
+            className="m-4 mb-20"
             size="md"
             disabled={isShutdownInProgress}
             isLoading={isShutdownInProgress}

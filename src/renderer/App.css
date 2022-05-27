@@ -32,3 +32,14 @@ input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
+
+.ribbon {
+  background-color: #333333;
+  color: white;
+  font-weight: 600;
+  font-family: system-ui;
+  text-transform: uppercase;
+  text-align: center;
+  font-size: 14px;
+  line-height: 25px;
+}

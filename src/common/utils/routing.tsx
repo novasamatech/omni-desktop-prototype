@@ -14,7 +14,7 @@ import Login from '../../renderer/components/Login';
 import MainLayout from '../../renderer/components/Layout/MainLayout';
 import ManageMultisigWallet from '../../renderer/components/Actions/ManageMultisigWallet';
 import AddWallet from '../../renderer/components/Actions/AddWallet';
-import Notifications from '../../renderer/components/Notifications';
+import Notifications from '../../renderer/components/Notifications/Notifications';
 import TransferDetails from '../../renderer/components/Transactions/TransferDetails';
 import { Routes } from '../constants';
 
@@ -30,12 +30,10 @@ const ConfigRoutes: Record<'pages' | 'mainLayout', RouteConfig[]> = {
   mainLayout: [
     { path: Routes.TRANSFER, component: Transfer },
     { path: Routes.WALLETS, component: WalletList },
-
     { path: Routes.CREATE_WALLET, component: AddWallet },
     { path: Routes.WALLET, component: Wallet },
     { path: Routes.CREATE_MULTISIG_WALLET, component: ManageMultisigWallet },
     { path: Routes.EDIT_MULTISIG_WALLET, component: ManageMultisigWallet },
-
     { path: Routes.CHAT, component: Chat },
     { path: Routes.NETWORK_LIST, component: NetworkList },
     { path: Routes.BALANCES, component: Balances },

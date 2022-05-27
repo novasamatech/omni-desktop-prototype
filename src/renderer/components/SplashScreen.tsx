@@ -4,7 +4,7 @@ import spinner from '../../../assets/spinner.svg';
 
 const SplashScreen: React.FC = () => {
   return (
-    <main className="h-screen w-[500px] flex flex-col justify-center items-center mx-auto">
+    <main className="h-ribbon w-[500px] flex flex-col justify-center items-center mx-auto">
       <header className="flex flex-col items-center">
         <img className="w-16 h-16" src={omni} alt="Omni logo" />
         <h1 className="mt-5 mb-3 font-bold text-3xl">

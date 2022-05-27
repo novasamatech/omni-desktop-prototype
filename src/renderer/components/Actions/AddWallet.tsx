@@ -1,27 +1,29 @@
-import React, { ChangeEvent, useState } from 'react';
+import React, { ChangeEvent, FormEvent, useState } from 'react';
 import { useHistory } from 'react-router';
 import InputText from '../../ui/Input';
 import Button from '../../ui/Button';
 import { db } from '../../db/db';
 import { Routes } from '../../../common/constants';
 import ErrorMessage from '../../ui/ErrorMessage';
+import { BooleanValue } from '../../db/types';
 
 const AddWallet: React.FC = () => {
   const [walletName, setWalletName] = useState('');
   const history = useHistory();
 
-  const addWallet = async (event: React.FormEvent<HTMLFormElement>) => {
+  const addWallet = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (walletName.length > 0) {
-      await db.wallets.add({
-        name: walletName.trim(),
-        mainAccounts: [],
-        chainAccounts: [],
-      });
+    if (walletName.length === 0) return;
 
-      history.push(Routes.WALLETS);
-    }
+    await db.wallets.add({
+      name: walletName.trim(),
+      mainAccounts: [],
+      chainAccounts: [],
+      isMultisig: BooleanValue.FALSE,
+    });
+
+    history.push(Routes.WALLETS);
   };
 
   const onChangeWalletName = (event: ChangeEvent<HTMLInputElement>) => {

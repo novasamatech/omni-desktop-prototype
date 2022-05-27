@@ -107,7 +107,7 @@ const ScanCode: React.FC = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-ribbon flex flex-col">
       <div className="flex justify-center items-center">
         <LinkButton className="ml-2 absolute left-0" to={Routes.SHOW_CODE}>
           Back

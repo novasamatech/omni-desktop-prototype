@@ -17,6 +17,8 @@ type Props = {
 };
 
 const Transaction: React.FC<Props> = ({ transaction }) => {
+  const isTxConfirmed = transaction.status === TransactionStatus.CONFIRMED;
+
   return (
     <div className="bg-gray-100 px-4 py-3 m-2 rounded-2xl">
       <div>
@@ -56,11 +58,8 @@ const Transaction: React.FC<Props> = ({ transaction }) => {
             </span>
           )}
           <Status
-            status={
-              transaction.status === TransactionStatus.CONFIRMED
-                ? StatusType.SUCCESS
-                : StatusType.WAITING
-            }
+            status={isTxConfirmed ? StatusType.SUCCESS : StatusType.WAITING}
+            alt={isTxConfirmed ? 'success' : 'pending'}
           />
         </div>
       </div>
