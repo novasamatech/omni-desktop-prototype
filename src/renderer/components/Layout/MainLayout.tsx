@@ -91,7 +91,7 @@ const MainLayout: React.FC<Props> = ({ route }) => {
       </div>
 
       <div className="flex fixed bottom-0 w-screen bg-gray-100 p-3">
-        <div>
+        <div className="flex items-center">
           <LinkButton to={Routes.BASKET} size="md">
             Operations
           </LinkButton>
