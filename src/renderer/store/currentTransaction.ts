@@ -13,7 +13,7 @@ export const currentUnsignedState = atom<UnsignedTransaction | undefined>({
   default: undefined,
 });
 
-export const signFromState = atom<Wallet | undefined>({
-  key: 'signFromState',
+export const signByState = atom<Wallet | undefined>({
+  key: 'signByState',
   default: undefined,
 });

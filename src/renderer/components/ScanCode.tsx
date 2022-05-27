@@ -16,17 +16,15 @@ import { connectionState } from '../store/connections';
 import {
   currentTransactionState,
   currentUnsignedState,
-  signFromState,
+  signByState,
 } from '../store/currentTransaction';
 import { HexString } from '../../common/types';
 import LinkButton from '../ui/LinkButton';
-import { Routes } from '../../common/constants';
+import { Routes, withId } from '../../common/constants';
 import { db } from '../db/db';
-import {
-  MultisigWallet,
-  TransactionStatus,
-  TransactionType,
-} from '../db/types';
+import { TransactionStatus, TransactionType } from '../db/types';
+import { isFinalApprove } from '../utils/transactions';
+import { formatAddress } from '../utils/account';
 
 // TODO: Move this function to utils
 function createSignedTx(
@@ -63,7 +61,7 @@ const ScanCode: React.FC = () => {
   const [isTxSent, setIsTxSent] = useState(false);
 
   const transaction = useRecoilValue(currentTransactionState);
-  const signFrom = useRecoilValue(signFromState);
+  const signBy = useRecoilValue(signByState);
   const unsigned = useRecoilValue(currentUnsignedState);
 
   // TODO: Refactor sign and send transaction flow
@@ -97,6 +95,7 @@ const ScanCode: React.FC = () => {
     });
     const actualTxHash = await network.api.rpc.author.submitExtrinsic(tx);
 
+    console.log('act', actualTxHash);
     if (!actualTxHash || !transaction.id) return;
 
     if (transaction.type === TransactionType.TRANSFER) {
@@ -105,25 +104,28 @@ const ScanCode: React.FC = () => {
         status: TransactionStatus.CONFIRMED,
       });
     } else if (transaction.type === TransactionType.MULTISIG_TRANSFER) {
-      db.transactions.update(transaction.id, {
+      const transactionStatus = isFinalApprove(transaction)
+        ? TransactionStatus.CONFIRMED
+        : TransactionStatus.PENDING;
+
+      db.transactions.put({
         ...transaction,
-        status:
-          Number((transaction.wallet as MultisigWallet).threshold) -
-            transaction.data.approvals?.length <=
-          1
-            ? TransactionStatus.CONFIRMED
-            : TransactionStatus.PENDING,
+        status: transactionStatus,
+        transactionHash: actualTxHash.toHex(),
         data: {
           ...transaction.data,
           approvals: uniq([
             ...transaction.data.approvals,
-            signFrom?.mainAccounts[0].accountId,
+            formatAddress(
+              signBy?.mainAccounts[0].accountId || '',
+              network.network.addressPrefix,
+            ),
           ]),
         },
       });
     }
 
-    history.push(Routes.BASKET);
+    history.push(withId(Routes.TRANSFER_DETAILS, transaction.id));
   };
 
   return (

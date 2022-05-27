@@ -11,7 +11,7 @@ import { SubmittableExtrinsic } from '@polkadot/api/types';
 import Button from '../../ui/Button';
 import {
   currentTransactionState,
-  signFromState,
+  signByState,
 } from '../../store/currentTransaction';
 import Address from '../../ui/Address';
 import { Routes, StatusType } from '../../../common/constants';
@@ -22,6 +22,7 @@ import {
   MultisigWallet,
   TransactionType,
   Wallet,
+  TransactionStatus,
 } from '../../db/types';
 import { formatAddress, getAddressFromWallet } from '../../utils/account';
 import {
@@ -45,11 +46,23 @@ const TransferDetails: React.FC = () => {
 
   const [availableWallets, setAvailableWallets] = useState<OptionType[]>([]);
   const wallets = useLiveQuery(() => db.wallets.toArray());
-  const [, setSignFrom] = useRecoilState(signFromState);
+  const [, setsignBy] = useRecoilState(signByState);
 
   const isTransfer = transaction?.type === TransactionType.TRANSFER;
   const isMultisigTransfer =
     transaction?.type === TransactionType.MULTISIG_TRANSFER;
+
+  const isCreated = transaction?.status === TransactionStatus.CREATED;
+  const isConfirmed = transaction?.status === TransactionStatus.CONFIRMED;
+
+  const isSelectWalletAvailable =
+    isMultisigTransfer &&
+    transaction.data.callData &&
+    availableWallets.length > 0 &&
+    !isConfirmed;
+  const isSignable =
+    (isTransfer || (isMultisigTransfer && transaction.data.callData)) &&
+    !isConfirmed;
 
   const [connection, setConnection] = useState<Connection>();
   const networks = useRecoilValue(connectionState);
@@ -88,7 +101,7 @@ const TransferDetails: React.FC = () => {
     }, [] as Wallet[]);
 
     if (walletsToSign) {
-      setSignFrom(walletsToSign[0]);
+      setsignBy(walletsToSign[0]);
       setAvailableWallets(
         walletsToSign.map((w) => ({
           value: w.mainAccounts[0].accountId,
@@ -102,7 +115,7 @@ const TransferDetails: React.FC = () => {
     transaction?.wallet,
     isMultisigTransfer,
     network,
-    setSignFrom,
+    setsignBy,
   ]);
 
   const setupTransaction = useCallback(() => {
@@ -169,10 +182,10 @@ const TransferDetails: React.FC = () => {
     return transaction.data.approvals.includes(address);
   };
 
-  const handleSignFromChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handlesignByChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const walletAddress = e.target.value;
 
-    setSignFrom(
+    setsignBy(
       wallets?.find(
         (w) => w.mainAccounts[0].accountId === walletAddress,
       ) as Wallet,
@@ -416,30 +429,29 @@ const TransferDetails: React.FC = () => {
           </div>
         )}
       </div>
-      {isMultisigTransfer &&
-        transaction.data.callData &&
-        availableWallets.length > 0 && (
-          <div className="mx-auto mb-2 w-[350px]">
-            <Select
-              label="Select wallet to sign from"
-              options={availableWallets}
-              onChange={handleSignFromChange}
-            />
-          </div>
-        )}
-      {isTransfer ||
-        (isMultisigTransfer && transaction.data.callData && (
-          <div className="mx-auto mb-2 w-[350px]">
-            <Button className="w-full" size="lg" onClick={showQR}>
-              Send for signing
-            </Button>
-          </div>
-        ))}
-      <div className="mx-auto w-[350px]">
-        <Button className="w-full" size="lg" onClick={removeTransaction}>
-          Remove
-        </Button>
-      </div>
+      {isSelectWalletAvailable && (
+        <div className="mx-auto mb-2 w-[350px]">
+          <Select
+            label="Select wallet to sign by"
+            options={availableWallets}
+            onChange={handlesignByChange}
+          />
+        </div>
+      )}
+      {isSignable && (
+        <div className="mx-auto mb-2 w-[350px]">
+          <Button className="w-full" size="lg" onClick={showQR}>
+            Send for signing
+          </Button>
+        </div>
+      )}
+      {isCreated && (
+        <div className="mx-auto w-[350px]">
+          <Button className="w-full" size="lg" onClick={removeTransaction}>
+            Remove
+          </Button>
+        </div>
+      )}
     </>
   );
 };

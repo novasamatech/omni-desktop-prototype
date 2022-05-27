@@ -17,7 +17,7 @@ import { Connection, connectionState } from '../store/connections';
 import {
   currentTransactionState,
   currentUnsignedState,
-  signFromState,
+  signByState,
 } from '../store/currentTransaction';
 import LinkButton from '../ui/LinkButton';
 import { Routes, DEFAULT } from '../../common/constants';
@@ -25,6 +25,7 @@ import { getAddressFromWallet } from '../utils/account';
 import { formatAmount, getAssetById } from '../utils/assets';
 import Shimmer from '../ui/Shimmer';
 import { AssetType, MultisigWallet, TransactionType } from '../db/types';
+import { isFinalApprove } from '../utils/transactions';
 
 const ShowCode: React.FC = () => {
   const [payload, setPayload] = useState<Uint8Array>();
@@ -32,7 +33,7 @@ const ShowCode: React.FC = () => {
   const [connection, setConnection] = useState<Connection>();
   const networks = useRecoilValue(connectionState);
   const transaction = useRecoilValue(currentTransactionState);
-  const signFrom = useRecoilValue(signFromState);
+  const signBy = useRecoilValue(signByState);
   const [, setUnsigned] = useRecoilState(currentUnsignedState);
 
   useEffect(() => {
@@ -129,8 +130,8 @@ const ShowCode: React.FC = () => {
             options,
           ),
       };
-      const MAX_WEIGHT = 640000000;
 
+      const MAX_WEIGHT = 640000000;
       const when =
         transaction.blockHeight && transaction.extrinsicIndex
           ? {
@@ -138,18 +139,20 @@ const ShowCode: React.FC = () => {
               index: transaction.extrinsicIndex,
             }
           : null;
+      const otherSignatories = (
+        transaction.wallet as MultisigWallet
+      ).originContacts
+        .map((c) => getAddressFromWallet(c, connection.network))
+        .filter((c) => c !== address)
+        .sort();
+      const { threshold } = transaction.wallet as MultisigWallet;
 
       const multisig = {
-        aprove: () => {
+        approve: () => {
           return methods.multisig.approveAsMulti(
             {
-              threshold: (transaction.wallet as MultisigWallet).threshold,
-              otherSignatories: (
-                transaction.wallet as MultisigWallet
-              ).originContacts
-                .map((c) => getAddressFromWallet(c, connection.network))
-                .filter((c) => c !== address)
-                .sort(),
+              threshold,
+              otherSignatories,
               maybeTimepoint: when,
               callHash: transaction.data.callHash,
               maxWeight: MAX_WEIGHT,
@@ -161,13 +164,8 @@ const ShowCode: React.FC = () => {
         finalApprove: () => {
           return methods.multisig.asMulti(
             {
-              threshold: (transaction.wallet as MultisigWallet).threshold,
-              otherSignatories: (
-                transaction.wallet as MultisigWallet
-              ).originContacts
-                .map((c) => getAddressFromWallet(c, connection.network))
-                .filter((c) => c !== address)
-                .sort(),
+              threshold,
+              otherSignatories,
               maybeTimepoint: when,
               callHash: transaction.data.callHash,
               maxWeight: MAX_WEIGHT,
@@ -178,42 +176,34 @@ const ShowCode: React.FC = () => {
             options,
           );
         },
-        cancel: () => {
-          return (
-            when &&
-            methods.multisig.cancelAsMulti(
-              {
-                threshold: transaction.data.threshold,
-                otherSignatories: (
-                  transaction.wallet as MultisigWallet
-                ).originContacts
-                  .map((c) => getAddressFromWallet(c, connection.network))
-                  .filter((c) => c !== address)
-                  .sort(),
-                timepoint: when,
-                callHash: transaction.data.callHash,
-              },
-              info,
-              options,
-            )
-          );
-        },
+        // TODO: Use it for cancel transaction
+        // cancel: () => {
+        //   return (
+        //     when &&
+        //     methods.multisig.cancelAsMulti(
+        //       {
+        //         threshold,
+        //         otherSignatories,
+        //         timepoint: when,
+        //         callHash: transaction.data.callHash,
+        //       },
+        //       info,
+        //       options,
+        //     )
+        //   );
+        // },
       };
-      let unsigned;
+      let unsignedAction = transfers[asset?.type || DEFAULT];
 
-      if (transaction.type === TransactionType.MULTISIG_TRANSFER && signFrom) {
-        setAddress(getAddressFromWallet(signFrom, connection.network));
-        if (
-          transaction.data.approvals?.length >=
-          Number((transaction.wallet as MultisigWallet).threshold) - 1
-        ) {
-          unsigned = multisig.finalApprove();
-        } else {
-          unsigned = multisig.aprove();
-        }
-      } else {
-        unsigned = transfers[asset?.type || DEFAULT]();
+      if (transaction.type === TransactionType.MULTISIG_TRANSFER && signBy) {
+        setAddress(getAddressFromWallet(signBy, connection.network));
+
+        unsignedAction = isFinalApprove(transaction)
+          ? multisig.finalApprove
+          : multisig.approve;
       }
+
+      const unsigned = unsignedAction();
       const signingPayloadHex = construct.signingPayload(unsigned, {
         registry,
       });
@@ -221,7 +211,7 @@ const ShowCode: React.FC = () => {
       setPayload(hexToU8a(signingPayloadHex));
       setUnsigned(unsigned);
     }
-  }, [connection, transaction, setUnsigned, address, signFrom]);
+  }, [connection, transaction, setUnsigned, address, signBy]);
 
   useEffect(() => {
     setupTransaction();

@@ -5,6 +5,7 @@ import { PalletMultisigMultisig } from '@polkadot/types/lookup';
 import { Connection } from '../store/connections';
 import {
   Chain,
+  MultisigWallet,
   Transaction,
   TransactionStatus,
   TransactionType,
@@ -123,3 +124,7 @@ export const updateTransactions = async (
     }
   });
 };
+
+export const isFinalApprove = (transaction: Transaction) =>
+  transaction.data.approvals?.length >=
+  Number((transaction.wallet as MultisigWallet).threshold) - 1;
