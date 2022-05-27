@@ -10,16 +10,21 @@ import {
   OptionsWithMeta,
   UnsignedTransaction,
 } from '@substrate/txwrapper-polkadot';
+import { uniq } from 'lodash';
+
 import { connectionState } from '../store/connections';
 import {
   currentTransactionState,
   currentUnsignedState,
+  signByState,
 } from '../store/currentTransaction';
 import { HexString } from '../../common/types';
 import LinkButton from '../ui/LinkButton';
-import { Routes } from '../../common/constants';
+import { Routes, withId } from '../../common/constants';
 import { db } from '../db/db';
-import { TransactionStatus } from '../db/types';
+import { TransactionStatus, TransactionType } from '../db/types';
+import { isFinalApprove } from '../utils/transactions';
+import { formatAddress } from '../utils/account';
 
 // TODO: Move this function to utils
 function createSignedTx(
@@ -56,6 +61,7 @@ const ScanCode: React.FC = () => {
   const [isTxSent, setIsTxSent] = useState(false);
 
   const transaction = useRecoilValue(currentTransactionState);
+  const signBy = useRecoilValue(signByState);
   const unsigned = useRecoilValue(currentUnsignedState);
 
   // TODO: Refactor sign and send transaction flow
@@ -89,14 +95,37 @@ const ScanCode: React.FC = () => {
     });
     const actualTxHash = await network.api.rpc.author.submitExtrinsic(tx);
 
+    console.log('act', actualTxHash);
     if (!actualTxHash || !transaction.id) return;
 
-    db.transactions.update(transaction.id, {
-      ...transaction,
-      status: TransactionStatus.CONFIRMED,
-    });
+    if (transaction.type === TransactionType.TRANSFER) {
+      db.transactions.update(transaction.id, {
+        ...transaction,
+        status: TransactionStatus.CONFIRMED,
+      });
+    } else if (transaction.type === TransactionType.MULTISIG_TRANSFER) {
+      const transactionStatus = isFinalApprove(transaction)
+        ? TransactionStatus.CONFIRMED
+        : TransactionStatus.PENDING;
 
-    history.push(Routes.BASKET);
+      db.transactions.put({
+        ...transaction,
+        status: transactionStatus,
+        transactionHash: actualTxHash.toHex(),
+        data: {
+          ...transaction.data,
+          approvals: uniq([
+            ...transaction.data.approvals,
+            formatAddress(
+              signBy?.mainAccounts[0].accountId || '',
+              network.network.addressPrefix,
+            ),
+          ]),
+        },
+      });
+    }
+
+    history.push(withId(Routes.TRANSFER_DETAILS, transaction.id));
   };
 
   return (

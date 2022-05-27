@@ -1,9 +1,18 @@
 /* eslint-disable promise/always-return */
-import React, { useEffect, useState } from 'react';
-import { useSetRecoilState } from 'recoil';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 import { useHistory, useParams } from 'react-router';
+import { format } from 'date-fns';
+import cn from 'classnames';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { Call } from '@polkadot/types/interfaces';
+import { SubmittableExtrinsic } from '@polkadot/api/types';
+
 import Button from '../../ui/Button';
-import { currentTransactionState } from '../../store/currentTransaction';
+import {
+  currentTransactionState,
+  signByState,
+} from '../../store/currentTransaction';
 import Address from '../../ui/Address';
 import { Routes, StatusType } from '../../../common/constants';
 import { db } from '../../db/db';
@@ -12,24 +21,104 @@ import {
   Transaction,
   MultisigWallet,
   TransactionType,
+  Wallet,
+  TransactionStatus,
 } from '../../db/types';
 import { formatAddress, getAddressFromWallet } from '../../utils/account';
-import { formatBalanceFromAmount, getAssetById } from '../../utils/assets';
+import {
+  formatBalance,
+  formatBalanceFromAmount,
+  getAssetById,
+} from '../../utils/assets';
 import LinkButton from '../../ui/LinkButton';
 import copy from '../../../../assets/copy.svg';
 import Status from '../../ui/Status';
+import Select, { OptionType } from '../../ui/Select';
+import InputText from '../../ui/Input';
+import { Connection, connectionState } from '../../store/connections';
 
 const TransferDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const history = useHistory();
   const [transaction, setTransaction] = useState<Transaction>();
   const [network, setNetwork] = useState<Chain>();
+  const [callData, setCallData] = useState<string>();
+
+  const [availableWallets, setAvailableWallets] = useState<OptionType[]>([]);
+  const wallets = useLiveQuery(() => db.wallets.toArray());
+  const [, setsignBy] = useRecoilState(signByState);
 
   const isTransfer = transaction?.type === TransactionType.TRANSFER;
   const isMultisigTransfer =
     transaction?.type === TransactionType.MULTISIG_TRANSFER;
 
+  const isCreated = transaction?.status === TransactionStatus.CREATED;
+  const isConfirmed = transaction?.status === TransactionStatus.CONFIRMED;
+
+  const isSelectWalletAvailable =
+    isMultisigTransfer &&
+    transaction.data.callData &&
+    availableWallets.length > 0 &&
+    !isConfirmed;
+  const isSignable =
+    (isTransfer || (isMultisigTransfer && transaction.data.callData)) &&
+    !isConfirmed;
+
+  const [connection, setConnection] = useState<Connection>();
+  const networks = useRecoilValue(connectionState);
+
   useEffect(() => {
+    if (transaction && Object.values(networks).length) {
+      const currentConnection = Object.values(networks).find(
+        (n) => n.network.chainId === transaction.chainId,
+      );
+
+      if (currentConnection) {
+        setConnection(currentConnection);
+      }
+    }
+  }, [transaction, networks]);
+
+  useEffect(() => {
+    if (!network || !isMultisigTransfer) return;
+
+    const walletsToSign = wallets?.reduce((acc, w) => {
+      const address = getAddressFromWallet(w, network);
+
+      const contacts = (
+        transaction?.wallet as MultisigWallet
+      ).originContacts?.map((c) => c.mainAccounts[0].accountId);
+
+      if (
+        address &&
+        !transaction?.data?.approvals?.includes(address) &&
+        contacts?.includes(address)
+      ) {
+        acc.push(w as Wallet);
+      }
+
+      return acc;
+    }, [] as Wallet[]);
+
+    if (walletsToSign) {
+      setsignBy(walletsToSign[0]);
+      setAvailableWallets(
+        walletsToSign.map((w) => ({
+          value: w.mainAccounts[0].accountId,
+          label: w.name,
+        })),
+      );
+    }
+  }, [
+    wallets,
+    transaction?.data.approvals,
+    transaction?.wallet,
+    isMultisigTransfer,
+    network,
+    setsignBy,
+  ]);
+
+  const setupTransaction = useCallback(() => {
     if (!id) return;
 
     db.transactions
@@ -41,6 +130,10 @@ const TransferDetails: React.FC = () => {
       })
       .catch((e) => console.log(e));
   }, [id]);
+
+  useEffect(() => {
+    setupTransaction();
+  }, [setupTransaction]);
 
   useEffect(() => {
     if (!transaction?.chainId) return;
@@ -70,10 +163,10 @@ const TransferDetails: React.FC = () => {
   };
 
   const removeTransaction = () => {
-    if (transaction?.id) {
-      db.transactions.delete(transaction.id);
-      history.push(Routes.BASKET);
-    }
+    if (!transaction?.id) return;
+
+    db.transactions.delete(transaction.id);
+    history.push(Routes.BASKET);
   };
 
   const formatRecipientAddress = (address: string) =>
@@ -89,7 +182,79 @@ const TransferDetails: React.FC = () => {
     return transaction.data.approvals.includes(address);
   };
 
-  const signatures =
+  const handlesignByChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const walletAddress = e.target.value;
+
+    setsignBy(
+      wallets?.find(
+        (w) => w.mainAccounts[0].accountId === walletAddress,
+      ) as Wallet,
+    );
+  };
+
+  const updateCallData = () => {
+    if (!transaction || !callData || !connection) return;
+
+    const data: Record<string, any> = {
+      ...transaction.data,
+      callData,
+    };
+    let extrinsicCall: Call;
+    let decoded: SubmittableExtrinsic<'promise'> | null = null;
+
+    try {
+      // cater for an extrinsic input...
+      decoded = connection.api.tx(callData);
+      extrinsicCall = connection.api.createType('Call', decoded.method);
+    } catch (e) {
+      extrinsicCall = connection.api.createType('Call', callData);
+    }
+
+    const { method, section } = connection.api.registry.findMetaCall(
+      extrinsicCall.callIndex,
+    );
+    const extrinsicFn = connection.api.tx[section][method];
+    const extrinsic = extrinsicFn(...extrinsicCall.args);
+
+    if (!decoded) {
+      decoded = extrinsic;
+    }
+    if (method === 'transfer' && section === 'balances') {
+      data.address = decoded.args[0].toString();
+      data.amount = formatBalance(
+        decoded.args[1].toString(),
+        network?.assets[0].precision || 0,
+      );
+      console.log(data.amount);
+    }
+    if (method === 'transfer' && section === 'assets') {
+      data.assetId = decoded.args[0].toString();
+      data.address = decoded.args[1].toString();
+      const asset = getAssetById(network?.assets || [], data.assetId);
+      data.amount = formatBalance(
+        decoded.args[2].toString(),
+        asset?.precision || 0,
+      );
+    }
+    if (method === 'transfer' && section === 'currencies') {
+      data.address = decoded.args[0].toString();
+      data.assetId = decoded.args[1].toString();
+      const asset = getAssetById(network?.assets || [], data.assetId);
+      data.amount = formatBalance(
+        decoded.args[2].toString(),
+        asset?.precision || 0,
+      );
+    }
+
+    db.transactions.put({
+      ...transaction,
+      data,
+    });
+    setupTransaction();
+    setCallData('');
+  };
+
+  const signatories =
     network &&
     ((transaction?.wallet as MultisigWallet).originContacts ?? []).map(
       (signature) => ({
@@ -112,9 +277,10 @@ const TransferDetails: React.FC = () => {
         <div className="mb-10 w-[350px] bg-gray-100 px-4 py-3 rounded-2xl">
           <div className="flex justify-between items-center  mb-6">
             <h1 className="text-2xl font-normal">Preview</h1>
-            <Button size="md" onClick={removeTransaction}>
-              Remove
-            </Button>
+            <span className="text-gray-500 text-sm">
+              {transaction &&
+                format(transaction.createdAt, 'HH:mm:ss dd MMM, yyyy')}
+            </span>
           </div>
 
           <div className="mb-6">
@@ -134,7 +300,7 @@ const TransferDetails: React.FC = () => {
 
           {isTransfer && (
             <div className="inline">
-              Transfer{' '}
+              Transfer {currentAsset?.precision}
               {formatBalanceFromAmount(
                 transaction.data.amount,
                 currentAsset?.precision,
@@ -160,6 +326,18 @@ const TransferDetails: React.FC = () => {
                       className="ml-1"
                       address={formatRecipientAddress(transaction.data.address)}
                     />
+                  </>
+                )}
+              </div>
+              <div className="flex">
+                {transaction.data.deposit && currentAsset?.precision && (
+                  <>
+                    Deposit:{' '}
+                    {formatBalance(
+                      transaction.data.deposit,
+                      currentAsset.precision,
+                    )}{' '}
+                    {tokenSymbol}
                   </>
                 )}
               </div>
@@ -189,15 +367,29 @@ const TransferDetails: React.FC = () => {
                   <div className="break-words">{transaction.data.callData}</div>
                 </div>
               )}
+              {isMultisigTransfer && !transaction.data.callData && (
+                <div className="flex mt-3">
+                  <InputText
+                    className="mr-3"
+                    label="Call data"
+                    onChange={(e) => setCallData(e.target.value)}
+                  />
+                  <Button onClick={updateCallData}>Save</Button>
+                </div>
+              )}
             </>
           )}
         </div>
         {isMultisigTransfer && (
           <div className="mb-10 w-[350px] bg-gray-100 px-4 py-3 rounded-2xl">
-            <h1 className="text-2xl font-normal mb-6">Signatures</h1>
+            <h1 className="text-2xl font-normal mb-4">Signatories</h1>
+            <div className="text-3xl font-medium mb-7">
+              {transaction.data.approvals?.length || 0} of{' '}
+              {(transaction.wallet as MultisigWallet).threshold}
+            </div>
             <div>
-              {signatures &&
-                signatures.map(({ status, name, address }) => (
+              {signatories &&
+                signatories.map(({ status, name, address }) => (
                   <div
                     key={address}
                     className="flex justify-between items-center mb-4"
@@ -210,7 +402,12 @@ const TransferDetails: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex">
+                    <div
+                      className={cn(
+                        'flex items-center font-medium text-xs',
+                        !status && 'text-gray-500',
+                      )}
+                    >
                       {status ? 'signed' : 'waiting'}
                       <Status
                         className="ml-1"
@@ -232,11 +429,29 @@ const TransferDetails: React.FC = () => {
           </div>
         )}
       </div>
-      <div className="mx-auto mb-10 w-[350px]">
-        <Button className="w-full" size="lg" onClick={showQR}>
-          Send for signing
-        </Button>
-      </div>
+      {isSelectWalletAvailable && (
+        <div className="mx-auto mb-2 w-[350px]">
+          <Select
+            label="Select wallet to sign by"
+            options={availableWallets}
+            onChange={handlesignByChange}
+          />
+        </div>
+      )}
+      {isSignable && (
+        <div className="mx-auto mb-2 w-[350px]">
+          <Button className="w-full" size="lg" onClick={showQR}>
+            Send for signing
+          </Button>
+        </div>
+      )}
+      {isCreated && (
+        <div className="mx-auto w-[350px]">
+          <Button className="w-full" size="lg" onClick={removeTransaction}>
+            Remove
+          </Button>
+        </div>
+      )}
     </>
   );
 };

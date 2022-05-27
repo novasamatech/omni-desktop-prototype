@@ -35,7 +35,7 @@ export const getAssetId = (asset: Asset) => {
 };
 
 export const getAssetById = (assets: Asset[], id: string): Asset | undefined =>
-  assets.find((a) => getAssetId(a) === id);
+  assets.find((a) => getAssetId(a) === id) || assets[0];
 
 export const formatBalance = (balance: string, precision = 0): string => {
   const BNWithConfig = BigNumber.clone();

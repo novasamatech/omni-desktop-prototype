@@ -84,9 +84,7 @@ const MainLayout: React.FC<Props> = ({ route }) => {
     <div className="flex h-ribbon">
       <FirstColumn />
       <SecondColumn />
-      <div
-        className={cn('flex-1 overflow-auto', isTransactionsExist && 'pb-20')}
-      >
+      <div className={cn('flex-1 overflow-auto pb-20')}>
         {renderRoutes(route?.routes)}
       </div>
 
