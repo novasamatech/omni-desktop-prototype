@@ -64,7 +64,7 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col items-center mx-auto">
+    <div className="h-ribbon flex flex-col items-center mx-auto">
       <header className="flex flex-col items-center pt-14">
         <img className="w-16 h-16" src={omni} alt="Omni logo" />
         <h1 className="mt-5 mb-3 font-bold text-3xl">
