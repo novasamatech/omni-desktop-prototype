@@ -28,7 +28,7 @@ const InputText: React.FC<Props> = ({
   return (
     <div
       className={cn(
-        'relative border border-gray-500 rounded-lg pt-2 pl-3 pr-3 pb-3',
+        'relative border border-gray-500 bg-white rounded-lg pt-2 pl-3 pr-3 pb-3',
         disabled && 'bg-gray-100 pointer-events-none',
         className,
       )}

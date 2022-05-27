@@ -199,6 +199,7 @@ const Transfer: React.FC = () => {
             precision: currentAsset.precision,
             address,
             amount,
+            approvals: [],
           },
         };
       });

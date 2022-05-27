@@ -17,6 +17,7 @@ import { Connection, connectionState } from '../store/connections';
 import {
   currentTransactionState,
   currentUnsignedState,
+  signFromState,
 } from '../store/currentTransaction';
 import LinkButton from '../ui/LinkButton';
 import { Routes, DEFAULT } from '../../common/constants';
@@ -24,7 +25,6 @@ import { getAddressFromWallet } from '../utils/account';
 import { formatAmount, getAssetById } from '../utils/assets';
 import Shimmer from '../ui/Shimmer';
 import { AssetType, MultisigWallet, TransactionType } from '../db/types';
-import { selectedWalletsState } from '../store/selectedWallets';
 
 const ShowCode: React.FC = () => {
   const [payload, setPayload] = useState<Uint8Array>();
@@ -32,8 +32,8 @@ const ShowCode: React.FC = () => {
   const [connection, setConnection] = useState<Connection>();
   const networks = useRecoilValue(connectionState);
   const transaction = useRecoilValue(currentTransactionState);
+  const signFrom = useRecoilValue(signFromState);
   const [, setUnsigned] = useRecoilState(currentUnsignedState);
-  const selectedAccounts = useRecoilValue(selectedWalletsState);
 
   useEffect(() => {
     if (transaction && Object.values(networks).length) {
@@ -201,10 +201,8 @@ const ShowCode: React.FC = () => {
       };
       let unsigned;
 
-      if (transaction.type === TransactionType.MULTISIG_TRANSFER) {
-        setAddress(
-          getAddressFromWallet(selectedAccounts[0], connection.network),
-        );
+      if (transaction.type === TransactionType.MULTISIG_TRANSFER && signFrom) {
+        setAddress(getAddressFromWallet(signFrom, connection.network));
         if (
           transaction.data.approvals?.length >=
           Number((transaction.wallet as MultisigWallet).threshold) - 1
@@ -223,7 +221,7 @@ const ShowCode: React.FC = () => {
       setPayload(hexToU8a(signingPayloadHex));
       setUnsigned(unsigned);
     }
-  }, [connection, transaction, setUnsigned, selectedAccounts, address]);
+  }, [connection, transaction, setUnsigned, address, signFrom]);
 
   useEffect(() => {
     setupTransaction();

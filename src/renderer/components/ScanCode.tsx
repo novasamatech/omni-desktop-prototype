@@ -10,16 +10,23 @@ import {
   OptionsWithMeta,
   UnsignedTransaction,
 } from '@substrate/txwrapper-polkadot';
+import { uniq } from 'lodash';
+
 import { connectionState } from '../store/connections';
 import {
   currentTransactionState,
   currentUnsignedState,
+  signFromState,
 } from '../store/currentTransaction';
 import { HexString } from '../../common/types';
 import LinkButton from '../ui/LinkButton';
 import { Routes } from '../../common/constants';
 import { db } from '../db/db';
-import { TransactionStatus, TransactionType } from '../db/types';
+import {
+  MultisigWallet,
+  TransactionStatus,
+  TransactionType,
+} from '../db/types';
 
 // TODO: Move this function to utils
 function createSignedTx(
@@ -56,6 +63,7 @@ const ScanCode: React.FC = () => {
   const [isTxSent, setIsTxSent] = useState(false);
 
   const transaction = useRecoilValue(currentTransactionState);
+  const signFrom = useRecoilValue(signFromState);
   const unsigned = useRecoilValue(currentUnsignedState);
 
   // TODO: Refactor sign and send transaction flow
@@ -99,7 +107,19 @@ const ScanCode: React.FC = () => {
     } else if (transaction.type === TransactionType.MULTISIG_TRANSFER) {
       db.transactions.update(transaction.id, {
         ...transaction,
-        status: TransactionStatus.PENDING,
+        status:
+          Number((transaction.wallet as MultisigWallet).threshold) -
+            transaction.data.approvals?.length <=
+          1
+            ? TransactionStatus.CONFIRMED
+            : TransactionStatus.PENDING,
+        data: {
+          ...transaction.data,
+          approvals: uniq([
+            ...transaction.data.approvals,
+            signFrom?.mainAccounts[0].accountId,
+          ]),
+        },
       });
     }
 
