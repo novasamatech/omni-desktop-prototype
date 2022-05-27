@@ -241,7 +241,10 @@ const ManageMultisigWallet: React.FC = () => {
             <div className="text-gray-500 text-sm mb-2">Signatures</div>
 
             {availableContacts?.map((contact) => (
-              <div key={contact.id} className="flex items-center gap-3 p-2">
+              <div
+                key={contact.id || contact.mainAccounts[0].accountId}
+                className="flex items-center gap-3 p-2"
+              >
                 <Checkbox
                   disabled={!!wallet}
                   checked={isContactSelected(contact.id)}

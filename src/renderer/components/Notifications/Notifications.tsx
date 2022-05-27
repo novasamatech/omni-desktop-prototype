@@ -10,7 +10,7 @@ const Notifications: React.FC = () => {
 
   return (
     <>
-      <div className="h-screen flex flex-col">
+      <div className="h-ribbon flex flex-col">
         <header className="flex justify-center items-center">
           <LinkButton className="ml-2 absolute left-0" to="/">
             Back

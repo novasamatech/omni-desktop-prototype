@@ -6,9 +6,7 @@ import { decodeAddress } from '@polkadot/keyring';
 import { Dialog } from '@headlessui/react';
 import { useHistory } from 'react-router';
 import { useMatrix } from '../Providers/MatrixProvider';
-import right from '../../../../assets/right.svg';
-import Status from '../../ui/Status';
-import { Routes, StatusType, withId } from '../../../common/constants';
+import { Routes, withId } from '../../../common/constants';
 import useToggle from '../../hooks/toggle';
 import { db } from '../../db/db';
 import { BooleanValue, CryptoType, Notification } from '../../db/types';
@@ -17,6 +15,7 @@ import { createMultisigWalletPayload } from '../../utils/account';
 import DialogContent from '../../ui/DialogContent';
 import InputText from '../../ui/Input';
 import Button from '../../ui/Button';
+import NotifyItem from './NotifyItem';
 
 type Props = {
   notif: Notification;
@@ -131,32 +130,13 @@ const InviteNotif: React.FC<Props> = ({ notif }) => {
 
   return (
     <>
-      <li className="bg-gray-100 p-4 rounded-lg">
-        <div className="flex justify-between">
-          <span className="text-gray-500 text-sm">
-            {format(notif.date, 'HH:mm:ss dd MMM, yyyy')}
-          </span>
-          <button
-            className="flex items-center gap-2"
-            type="button"
-            onClick={onDetailsClick}
-          >
-            <span className="text-sm">Details</span>
-            <img src={right} alt="" />
-          </button>
-        </div>
-        <div className="mt-3">
-          <div className="text-2xl font-medium">Room invitation</div>
-          <div className="text-gray-500 mt-1">
-            You were invited in room {notif.sender} by {notif.roomName}
-          </div>
-        </div>
-        <Status
-          className="ml-auto"
-          status={notif.isRead ? StatusType.SUCCESS : StatusType.WAITING}
-          alt={notif.isRead ? 'is read' : 'is not read'}
-        />
-      </li>
+      <NotifyItem
+        title="Room invitation"
+        description={`You were invited in room ${notif.sender} by ${notif.roomName}`}
+        date={format(notif.date, 'HH:mm:ss dd MMM, yyyy')}
+        isRead={Boolean(notif.isRead)}
+        onClick={onDetailsClick}
+      />
 
       <Dialog
         as="div"
