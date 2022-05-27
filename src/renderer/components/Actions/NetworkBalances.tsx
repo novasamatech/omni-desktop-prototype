@@ -11,7 +11,7 @@ type Props = {
   connection: Connection;
 };
 
-const getRelaychain = (
+const getRelayChain = (
   networks: Connection[],
   network: Chain,
 ): Connection | undefined => {
@@ -30,7 +30,7 @@ const NetworkBalances: React.FC<Props> = ({ wallet, connection }: Props) => {
   const [account, setAccount] = useState<Account>();
 
   useEffect(() => {
-    setRelayChain(getRelaychain(Object.values(networks), network));
+    setRelayChain(getRelayChain(Object.values(networks), network));
   }, [networks, network]);
 
   useEffect(() => {

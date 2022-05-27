@@ -44,9 +44,9 @@ const Login: React.FC = () => {
       history.push(Routes.WALLETS);
     } catch (error) {
       setIsLoginFailed(true);
-    } finally {
-      setIsLoginInProgress(false);
     }
+
+    setIsLoginInProgress(false);
   };
 
   const handleInputChange = (

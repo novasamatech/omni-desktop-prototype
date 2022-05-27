@@ -66,6 +66,7 @@ export type Wallet = WithID<{
   name: string;
   mainAccounts: Account[];
   chainAccounts: ChainAccount[];
+  isMultisig: BooleanValue;
 }>;
 
 export type MultisigWallet = Wallet & {
@@ -156,7 +157,7 @@ export type ChainConnection = WithID<{
 }>;
 
 export type Contact = WithID<{
-  name: string;
+  name?: string;
   mainAccounts: Account[];
   chainAccounts: ChainAccount[];
   secureProtocolId: string;

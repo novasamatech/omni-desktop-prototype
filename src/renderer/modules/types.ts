@@ -95,7 +95,7 @@ export type MstParams = {
 
 type EventPayload = {
   eventId: string;
-  roomId?: string;
+  roomId: string;
   sender: string;
   client: string;
   roomName?: string;

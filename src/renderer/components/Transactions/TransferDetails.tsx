@@ -9,8 +9,8 @@ import { Routes, StatusType } from '../../../common/constants';
 import { db } from '../../db/db';
 import {
   Chain,
-  MultisigWallet,
   Transaction,
+  MultisigWallet,
   TransactionType,
 } from '../../db/types';
 import { formatAddress, getAddressFromWallet } from '../../utils/account';
@@ -217,6 +217,7 @@ const TransferDetails: React.FC = () => {
                         status={
                           status ? StatusType.SUCCESS : StatusType.WAITING
                         }
+                        alt={status ? 'success' : 'pending'}
                       />
                     </div>
                   </div>
