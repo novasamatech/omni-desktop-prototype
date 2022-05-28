@@ -41,79 +41,83 @@ const Details: React.FC<Props> = ({ network, transaction, onRemove }) => {
         </Button>
       </div>
 
-      <div className="mb-6">
-        <div className="text-sm text-gray-500 mb-2">Selected account</div>
-        <div>{transaction?.wallet.name}</div>
-        <div>
-          {network && transaction && (
-            <div>
-              <Address
-                address={getAddressFromWallet(transaction.wallet, network)}
-              />
-            </div>
-          )}
-        </div>
-      </div>
-      <div className="text-sm text-gray-500">Operations details:</div>
-
-      {isTransfer && (
-        <div className="inline">
-          Transfer{' '}
-          {formatBalanceFromAmount(
-            transaction.data.amount,
-            currentAsset?.precision,
-          )}{' '}
-          {tokenSymbol} to{' '}
-          <Address address={formatRecipientAddress(transaction.data.address)} />
-        </div>
-      )}
-
-      {isMultisigTransfer && (
-        <>
-          <div className="flex">
-            {transaction.data.amount && (
-              <>
-                Transfer{' '}
-                {formatBalanceFromAmount(
-                  transaction.data.amount,
-                  currentAsset?.precision,
-                )}{' '}
-                {tokenSymbol} to
+      <div className="max-h-[450px] overflow-y-auto">
+        <div className="mb-6">
+          <div className="text-sm text-gray-500 mb-2">Selected account</div>
+          <div>{transaction?.wallet.name}</div>
+          <div>
+            {network && transaction && (
+              <div>
                 <Address
-                  className="ml-1"
-                  address={formatRecipientAddress(transaction.data.address)}
+                  address={getAddressFromWallet(transaction.wallet, network)}
                 />
-              </>
+              </div>
             )}
           </div>
-          {!!transaction.data.callHash && (
-            <div className="text-xs text-gray-500 mt-3">
-              <div className="flex justify-between items-center">
-                <div className="font-bold">Call hash:</div>
-                <button
-                  onClick={() => copyToClipboard(transaction.data.callHash)}
-                >
-                  <img src={copy} alt="copy" />
-                </button>
-              </div>
-              <div className="break-words">{transaction.data.callHash}</div>
+        </div>
+        <div className="text-sm text-gray-500">Operations details:</div>
+
+        {isTransfer && (
+          <div className="inline">
+            Transfer{' '}
+            {formatBalanceFromAmount(
+              transaction.data.amount,
+              currentAsset?.precision,
+            )}{' '}
+            {tokenSymbol} to{' '}
+            <Address
+              address={formatRecipientAddress(transaction.data.address)}
+            />
+          </div>
+        )}
+
+        {isMultisigTransfer && (
+          <>
+            <div className="flex">
+              {transaction.data.amount && (
+                <>
+                  Transfer{' '}
+                  {formatBalanceFromAmount(
+                    transaction.data.amount,
+                    currentAsset?.precision,
+                  )}{' '}
+                  {tokenSymbol} to
+                  <Address
+                    className="ml-1"
+                    address={formatRecipientAddress(transaction.data.address)}
+                  />
+                </>
+              )}
             </div>
-          )}
-          {!!transaction.data.callData && (
-            <div className="text-xs text-gray-500 mt-3">
-              <div className="flex justify-between items-center">
-                <div className="font-bold">Call data:</div>
-                <button
-                  onClick={() => copyToClipboard(transaction.data.callData)}
-                >
-                  <img src={copy} alt="copy" />
-                </button>
+            {!!transaction.data.callHash && (
+              <div className="text-xs text-gray-500 mt-3">
+                <div className="flex justify-between items-center">
+                  <div className="font-bold">Call hash:</div>
+                  <button
+                    onClick={() => copyToClipboard(transaction.data.callHash)}
+                  >
+                    <img src={copy} alt="copy" />
+                  </button>
+                </div>
+                <div className="break-words">{transaction.data.callHash}</div>
               </div>
-              <div className="break-words">{transaction.data.callData}</div>
-            </div>
-          )}
-        </>
-      )}
+            )}
+            {!!transaction.data.callData && (
+              <div className="text-xs text-gray-500 mt-3">
+                <div className="flex justify-between items-center">
+                  <div className="font-bold">Call data:</div>
+                  <button
+                    onClick={() => copyToClipboard(transaction.data.callData)}
+                  >
+                    <img src={copy} alt="copy" />
+                  </button>
+                </div>
+                <div className="break-words">{transaction.data.callData}</div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 };

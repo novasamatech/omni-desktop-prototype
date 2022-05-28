@@ -27,9 +27,9 @@ const Signatories: React.FC<Props> = ({ network, transaction }) => {
   return (
     <div className="mb-10 w-[350px] bg-gray-100 px-4 py-3 rounded-2xl">
       <h2 className="text-2xl font-normal mb-6">Signatures</h2>
-      <div>
+      <ul className="max-h-[450px] overflow-y-auto">
         {signatories?.map(({ status, name, address }) => (
-          <div key={address} className="flex justify-between items-center mb-4">
+          <li key={address} className="flex justify-between items-center mb-4">
             <div>
               <div>{name}</div>
               <div>
@@ -46,9 +46,9 @@ const Signatories: React.FC<Props> = ({ network, transaction }) => {
                 alt={status ? 'success' : 'pending'}
               />
             </div>
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 };

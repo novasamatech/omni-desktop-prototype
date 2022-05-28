@@ -74,7 +74,7 @@ const TransferDetails: React.FC = () => {
           onRemove={onRemoveTransaction}
         />
         <Signatories network={network} transaction={transaction} />
-        <Chat />
+        <Chat callData={transaction?.data.callData} />
       </div>
       <div className="mx-auto mb-10 w-[350px]">
         <Button className="w-full" size="lg" onClick={showQR}>
