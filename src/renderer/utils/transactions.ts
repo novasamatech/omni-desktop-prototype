@@ -5,6 +5,7 @@ import { PalletMultisigMultisig } from '@polkadot/types/lookup';
 import { Connection } from '../store/connections';
 import {
   Chain,
+  MultisigWallet,
   Transaction,
   TransactionStatus,
   TransactionType,
@@ -45,27 +46,14 @@ export const isSameTransactions = (
   transaction: Transaction,
   multisigTransaction: MultisigTransaction,
 ) => {
-  const isMultisigTransfer =
-    transaction.type === TransactionType.MULTISIG_TRANSFER;
-  const isSameDepositor =
-    multisigTransaction.opt.depositor.toString() === transaction.address;
-  const isSameBlockHeight =
-    multisigTransaction.opt.when.height.toString() ===
-    transaction.blockHeight?.toString();
-  const isSameDeposit =
-    multisigTransaction.opt.deposit.toString() ===
-    transaction.data.deposit?.toString();
+  // const isSameBlockHeight =
+  //   multisigTransaction.opt.when.height.toString() ===
+  //   transaction.blockHeight?.toString();
   const isSameCallHash =
     multisigTransaction.callHash.toString() ===
     transaction.data.callHash?.toString();
 
-  return (
-    isMultisigTransfer &&
-    isSameDeposit &&
-    isSameBlockHeight &&
-    isSameDepositor &&
-    isSameCallHash
-  );
+  return isSameCallHash;
 };
 
 export const updateTransactionPayload = (
@@ -76,6 +64,7 @@ export const updateTransactionPayload = (
     ...transaction,
     blockHeight: pendingTransaction.opt.when.height.toNumber(),
     blockHash: pendingTransaction.opt.when.hash.toHex(),
+    extrinsicIndex: pendingTransaction.opt.when.index.toNumber(),
     data: {
       ...transaction.data,
       deposit: pendingTransaction.opt.deposit.toString(),
@@ -116,11 +105,11 @@ export const updateTransactions = async (
   wallet: Wallet,
   connection: Connection,
 ) => {
+  console.log(getAddressFromWallet(wallet, connection.network));
   const pendingTransactions = await getPendingTransactionsFromChain(
     connection.api,
     getAddressFromWallet(wallet, connection.network),
   );
-
   pendingTransactions.forEach((p) => {
     const savedTransaction = savedTransactions.find((s) =>
       isSameTransactions(s, p),
@@ -135,3 +124,7 @@ export const updateTransactions = async (
     }
   });
 };
+
+export const isFinalApprove = (transaction: Transaction) =>
+  transaction.data.approvals?.length >=
+  Number((transaction.wallet as MultisigWallet).threshold) - 1;
