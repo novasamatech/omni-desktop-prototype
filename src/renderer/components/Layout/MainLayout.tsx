@@ -17,7 +17,9 @@ type Props = {
 const MainLayout: React.FC<Props> = ({ route }) => {
   const { matrix, notifications } = useMatrix();
 
-  const hasUnreadNotifs = notifications.some((n) => !n.isRead);
+  const hasUnreadNotifs = notifications.some(
+    (n) => n.sender !== n.client && !n.isRead,
+  );
 
   // TODO: Connect to the chain on app start
 

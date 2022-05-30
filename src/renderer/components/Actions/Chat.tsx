@@ -75,7 +75,9 @@ const Chat: React.FC = () => {
   const onMstInit = () => {
     matrix.mstInitiate({
       callData: '0x12',
-      callHash: '0x233',
+      callHash:
+        '0x77f5a3bb0db5dee9fda13d426fa356ad79064e58e10181fe3e43dcaafda24733',
+      accountId: '5GmedEVixRJoE8TjMePLqz7DnnQG1d5517sXdiAvAF2t7EYW',
       chainId: '0xdsfsf',
       description: 'maaan',
     });
@@ -83,7 +85,9 @@ const Chat: React.FC = () => {
 
   const onMstApprove = () => {
     matrix.mstApprove({
-      callHash: '0x233',
+      callHash:
+        '0x77f5a3bb0db5dee9fda13d426fa356ad79064e58e10181fe3e43dcaafda24733',
+      accountId: '5GmedEVixRJoE8TjMePLqz7DnnQG1d5517sXdiAvAF2t7EYW',
       chainId: '0xdsfsf',
     });
   };
@@ -91,13 +95,17 @@ const Chat: React.FC = () => {
   const onMstFinal = () => {
     matrix.mstFinalApprove({
       chainId: '0xdfd',
-      callHash: '0x21dsf',
+      callHash:
+        '0x77f5a3bb0db5dee9fda13d426fa356ad79064e58e10181fe3e43dcaafda24733',
+      accountId: '5GmedEVixRJoE8TjMePLqz7DnnQG1d5517sXdiAvAF2t7EYW',
     });
   };
 
   const onMstCancel = () => {
     matrix.mstCancel({
-      callHash: '0x233',
+      callHash:
+        '0x77f5a3bb0db5dee9fda13d426fa356ad79064e58e10181fe3e43dcaafda24733',
+      accountId: '5GmedEVixRJoE8TjMePLqz7DnnQG1d5517sXdiAvAF2t7EYW',
       chainId: '0xdsfsf',
       description: 'CANCEL',
     });

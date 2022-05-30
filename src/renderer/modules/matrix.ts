@@ -21,6 +21,7 @@ import {
 } from 'matrix-js-sdk';
 import { SyncState } from 'matrix-js-sdk/lib/sync';
 import { uniq } from 'lodash';
+import { EventStatus } from 'matrix-js-sdk/lib/models/event-status';
 import { OmniDexie } from '../db/db';
 import { BooleanValue } from '../db/types';
 import {
@@ -645,11 +646,14 @@ class Matrix implements ISecureMessenger {
   }
 
   private handleOmniEvents(): void {
-    this.matrixClient.on(RoomEvent.Timeline, (event) => {
-      const omniEvents = Object.values(OmniMstEvents);
+    const omniEvents = Object.values(OmniMstEvents);
+
+    this.matrixClient.on(RoomEvent.LocalEchoUpdated, (event) => {
+      if (event.status !== EventStatus.SENT) return;
+
       const isMstEvent = omniEvents.includes(event.getType() as OmniMstEvents);
 
-      if (event.getSender() === this.userId || !isMstEvent) return;
+      if (!isMstEvent) return;
 
       const roomId = event.getRoomId();
       if (!roomId) return;

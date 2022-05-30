@@ -44,10 +44,7 @@ const MatrixProvider: React.FC<Props> = ({
   const notifications = useLiveQuery(() => {
     if (!isLoggedIn) return [];
 
-    return db.mxNotifications
-      .where({ client: matrix.userId })
-      .reverse()
-      .sortBy('date');
+    return db.mxNotifications.where({ client: matrix.userId }).sortBy('date');
   }, [isLoggedIn]);
 
   useEffect(() => {

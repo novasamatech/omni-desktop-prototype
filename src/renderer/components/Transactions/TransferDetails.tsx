@@ -3,26 +3,24 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 import { useHistory, useParams } from 'react-router';
 import { format } from 'date-fns';
-import cn from 'classnames';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Call } from '@polkadot/types/interfaces';
 import { SubmittableExtrinsic } from '@polkadot/api/types';
-
 import Button from '../../ui/Button';
 import {
   currentTransactionState,
   signByState,
 } from '../../store/currentTransaction';
 import Address from '../../ui/Address';
-import { Routes, StatusType } from '../../../common/constants';
+import { Routes } from '../../../common/constants';
 import { db } from '../../db/db';
 import {
   Chain,
-  Transaction,
   MultisigWallet,
+  Transaction,
+  TransactionStatus,
   TransactionType,
   Wallet,
-  TransactionStatus,
 } from '../../db/types';
 import { formatAddress, getAddressFromWallet } from '../../utils/account';
 import {
@@ -32,21 +30,27 @@ import {
 } from '../../utils/assets';
 import LinkButton from '../../ui/LinkButton';
 import copy from '../../../../assets/copy.svg';
-import Status from '../../ui/Status';
 import Select, { OptionType } from '../../ui/Select';
 import InputText from '../../ui/Input';
 import { Connection, connectionState } from '../../store/connections';
+import Signatories from './Signatories';
+import Chat from './Chat';
 
 const TransferDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const history = useHistory();
+
+  const [, setSignBy] = useRecoilState(signByState);
+  const networks = useRecoilValue(connectionState);
+  const setCurrentTransaction = useSetRecoilState(currentTransactionState);
+
   const [transaction, setTransaction] = useState<Transaction>();
   const [network, setNetwork] = useState<Chain>();
   const [callData, setCallData] = useState<string>();
-
   const [availableWallets, setAvailableWallets] = useState<OptionType[]>([]);
+  const [connection, setConnection] = useState<Connection>();
+
   const wallets = useLiveQuery(() => db.wallets.toArray());
-  const [, setsignBy] = useRecoilState(signByState);
 
   const isTransfer = transaction?.type === TransactionType.TRANSFER;
   const isMultisigTransfer =
@@ -54,18 +58,15 @@ const TransferDetails: React.FC = () => {
 
   const isCreated = transaction?.status === TransactionStatus.CREATED;
   const isConfirmed = transaction?.status === TransactionStatus.CONFIRMED;
-
   const isSelectWalletAvailable =
     isMultisigTransfer &&
     transaction.data.callData &&
     availableWallets.length > 0 &&
     !isConfirmed;
+
   const isSignable =
     (isTransfer || (isMultisigTransfer && transaction.data.callData)) &&
     !isConfirmed;
-
-  const [connection, setConnection] = useState<Connection>();
-  const networks = useRecoilValue(connectionState);
 
   useEffect(() => {
     if (transaction && Object.values(networks).length) {
@@ -101,7 +102,7 @@ const TransferDetails: React.FC = () => {
     }, [] as Wallet[]);
 
     if (walletsToSign) {
-      setsignBy(walletsToSign[0]);
+      setSignBy(walletsToSign[0]);
       setAvailableWallets(
         walletsToSign.map((w) => ({
           value: w.mainAccounts[0].accountId,
@@ -115,7 +116,7 @@ const TransferDetails: React.FC = () => {
     transaction?.wallet,
     isMultisigTransfer,
     network,
-    setsignBy,
+    setSignBy,
   ]);
 
   const setupTransaction = useCallback(() => {
@@ -148,8 +149,6 @@ const TransferDetails: React.FC = () => {
       .catch((e) => console.log(e));
   }, [transaction?.chainId]);
 
-  const setCurrentTransaction = useSetRecoilState(currentTransactionState);
-
   const currentAsset = getAssetById(
     network?.assets || [],
     transaction?.data.assetId,
@@ -176,16 +175,10 @@ const TransferDetails: React.FC = () => {
     navigator.clipboard.writeText(text);
   };
 
-  const isApproved = (address: string): boolean => {
-    if (!transaction?.data.approvals) return false;
-
-    return transaction.data.approvals.includes(address);
-  };
-
-  const handlesignByChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const selectSignWallet = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const walletAddress = e.target.value;
 
-    setsignBy(
+    setSignBy(
       wallets?.find(
         (w) => w.mainAccounts[0].accountId === walletAddress,
       ) as Wallet,
@@ -254,16 +247,6 @@ const TransferDetails: React.FC = () => {
     setCallData('');
   };
 
-  const signatories =
-    network &&
-    ((transaction?.wallet as MultisigWallet).originContacts ?? []).map(
-      (signature) => ({
-        name: signature.name,
-        address: getAddressFromWallet(signature, network),
-        status: isApproved(getAddressFromWallet(signature, network)),
-      }),
-    );
-
   return (
     <>
       <div className="flex justify-center items-center mb-8">
@@ -283,7 +266,7 @@ const TransferDetails: React.FC = () => {
             </span>
           </div>
 
-          <div className="mb-6">
+          <div className="max-h-[450px] overflow-y-auto mb-6">
             <div className="text-sm text-gray-500 mb-2">Selected account</div>
             <div>{transaction?.wallet.name}</div>
             <div>
@@ -380,61 +363,24 @@ const TransferDetails: React.FC = () => {
             </>
           )}
         </div>
-        {isMultisigTransfer && (
-          <div className="mb-10 w-[350px] bg-gray-100 px-4 py-3 rounded-2xl">
-            <h1 className="text-2xl font-normal mb-4">Signatories</h1>
-            <div className="text-3xl font-medium mb-7">
-              {transaction.data.approvals?.length || 0} of{' '}
-              {(transaction.wallet as MultisigWallet).threshold}
-            </div>
-            <div>
-              {signatories &&
-                signatories.map(({ status, name, address }) => (
-                  <div
-                    key={address}
-                    className="flex justify-between items-center mb-4"
-                  >
-                    <div>
-                      <div>{name}</div>
-                      <div>
-                        <div>
-                          <Address address={address} />
-                        </div>
-                      </div>
-                    </div>
-                    <div
-                      className={cn(
-                        'flex items-center font-medium text-xs',
-                        !status && 'text-gray-500',
-                      )}
-                    >
-                      {status ? 'signed' : 'waiting'}
-                      <Status
-                        className="ml-1"
-                        status={
-                          status ? StatusType.SUCCESS : StatusType.WAITING
-                        }
-                        alt={status ? 'success' : 'pending'}
-                      />
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </div>
-        )}
-        {isMultisigTransfer && (
-          <div className="mb-10 w-[350px] bg-gray-100 px-4 py-3 rounded-2xl">
-            <h1 className="text-2xl font-normal mb-6">Chat</h1>
-            {/* TODO: Add chat implimentation */}
-          </div>
-        )}
+        <Signatories
+          network={network}
+          transaction={transaction}
+          isMultisigTransfer={isMultisigTransfer}
+        />
+        <Chat
+          network={network}
+          transaction={transaction}
+          callHash={transaction?.data.callHash}
+          isMultisigTransfer={isMultisigTransfer}
+        />
       </div>
       {isSelectWalletAvailable && (
         <div className="mx-auto mb-2 w-[350px]">
           <Select
             label="Select wallet to sign by"
             options={availableWallets}
-            onChange={handlesignByChange}
+            onChange={selectSignWallet}
           />
         </div>
       )}

@@ -1,4 +1,5 @@
 import React from 'react';
+import cn from 'classnames';
 import Address from '../../ui/Address';
 import Status from '../../ui/Status';
 import { StatusType } from '../../../common/constants';
@@ -8,9 +9,14 @@ import { getAddressFromWallet } from '../../utils/account';
 type Props = {
   network?: Chain;
   transaction?: Transaction;
+  isMultisigTransfer: boolean;
 };
 
-const Signatories: React.FC<Props> = ({ network, transaction }) => {
+const Signatories: React.FC<Props> = ({
+  network,
+  transaction,
+  isMultisigTransfer,
+}) => {
   const isApproved = (address: string): boolean =>
     Boolean(transaction?.data.approvals?.includes(address));
 
@@ -24,31 +30,48 @@ const Signatories: React.FC<Props> = ({ network, transaction }) => {
       }),
     );
 
+  if (!isMultisigTransfer) {
+    return null;
+  }
+
   return (
     <div className="mb-10 w-[350px] bg-gray-100 px-4 py-3 rounded-2xl">
-      <h2 className="text-2xl font-normal mb-6">Signatures</h2>
-      <ul className="max-h-[450px] overflow-y-auto">
-        {signatories?.map(({ status, name, address }) => (
-          <li key={address} className="flex justify-between items-center mb-4">
-            <div>
-              <div>{name}</div>
+      <h1 className="text-2xl font-normal mb-4">Signatories</h1>
+      <div className="text-3xl font-medium mb-7">
+        {transaction?.data.approvals?.length || 0} of{' '}
+        {(transaction?.wallet as MultisigWallet).threshold}
+      </div>
+      <div className="max-h-[450px] overflow-y-auto">
+        {signatories &&
+          signatories.map(({ status, name, address }) => (
+            <div
+              key={address}
+              className="flex justify-between items-center mb-4"
+            >
               <div>
+                <div>{name}</div>
                 <div>
-                  <Address address={address} />
+                  <div>
+                    <Address address={address} />
+                  </div>
                 </div>
               </div>
+              <div
+                className={cn(
+                  'flex items-center font-medium text-xs',
+                  !status && 'text-gray-500',
+                )}
+              >
+                {status ? 'signed' : 'waiting'}
+                <Status
+                  className="ml-1"
+                  status={status ? StatusType.SUCCESS : StatusType.WAITING}
+                  alt={status ? 'success' : 'pending'}
+                />
+              </div>
             </div>
-            <div className="flex">
-              {status ? 'signed' : 'waiting'}
-              <Status
-                className="ml-1"
-                status={status ? StatusType.SUCCESS : StatusType.WAITING}
-                alt={status ? 'success' : 'pending'}
-              />
-            </div>
-          </li>
-        ))}
-      </ul>
+          ))}
+      </div>
     </div>
   );
 };

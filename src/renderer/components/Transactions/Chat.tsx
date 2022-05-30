@@ -1,22 +1,133 @@
 import React from 'react';
+import { format } from 'date-fns';
+import cn from 'classnames';
 import { useMatrix } from '../Providers/MatrixProvider';
 import { Routes } from '../../../common/constants';
 import LinkButton from '../../ui/LinkButton';
 import arrowUp from '../../../../assets/arrow-up.svg';
 import { HexString } from '../../../common/types';
-import { MstParams } from '../../modules/types';
+import { MstParams, OmniMstEvents } from '../../modules/types';
+import { getAddressFromWallet } from '../../utils/account';
+import {
+  Chain,
+  MultisigWallet,
+  Notification,
+  Transaction,
+} from '../../db/types';
+import { toShortText } from '../../utils/strings';
 
-type Props = {
-  callData: HexString;
+type MessageProps = {
+  isFinal?: boolean;
+  date: Date;
+};
+const ChatMessage: React.FC<MessageProps> = ({
+  isFinal = false,
+  date,
+  children,
+}) => {
+  return (
+    <li
+      className={cn(
+        'w-max max-w-[318px] rounded-lg shadow-md bg-white text-sm p-2',
+        isFinal && 'bg-green-500 text-white',
+      )}
+    >
+      {children}
+      <span
+        className={cn(
+          'float-right ml-1 text-gray-400 text-xs leading-[21px]',
+          isFinal && 'text-white',
+        )}
+      >
+        {format(date, 'HH:mm')}
+      </span>
+    </li>
+  );
 };
 
-const Chat: React.FC<Props> = ({ callData }) => {
+type ChatProps = {
+  network?: Chain;
+  transaction?: Transaction;
+  callHash: HexString;
+  isMultisigTransfer: boolean;
+};
+
+const Chat: React.FC<ChatProps> = ({
+  callHash,
+  network,
+  transaction,
+  isMultisigTransfer,
+}) => {
   const { matrix, notifications } = useMatrix();
 
-  const txNotif = notifications.filter(
-    (notif) => (notif.content as MstParams).callData === callData,
+  const txNotifs = notifications.filter(
+    (notif) => (notif.content as MstParams).callHash === callHash,
   );
-  console.log(txNotif);
+
+  const contacts =
+    network &&
+    ((transaction?.wallet as MultisigWallet).originContacts || []).reduce(
+      (acc, signature) => {
+        const address = getAddressFromWallet(signature, network);
+        acc[address] = signature.name || '';
+
+        return acc;
+      },
+      {} as Record<string, string>,
+    );
+
+  const notificationMessage = (notif: Notification) => {
+    const { accountId, description } = notif.content as MstParams;
+    const signerName = contacts?.[accountId] || toShortText(accountId);
+
+    const messages = {
+      [OmniMstEvents.INIT]: (
+        <ChatMessage key={notif.id} date={notif.date}>
+          {description ? (
+            <span>
+              Description:
+              <br />
+              {description}
+            </span>
+          ) : (
+            'MST has been initiated'
+          )}
+        </ChatMessage>
+      ),
+      [OmniMstEvents.APPROVE]: (
+        <ChatMessage key={notif.id} date={notif.date}>
+          <span>✅ {signerName} has signed the transaction</span>
+        </ChatMessage>
+      ),
+      [OmniMstEvents.FINAL_APPROVE]: (
+        <>
+          <ChatMessage key={notif.id} date={notif.date}>
+            <span>✅ {signerName} has signed the transaction</span>
+          </ChatMessage>
+          <ChatMessage isFinal key={`${notif.id}-0`} date={notif.date}>
+            <span>Transaction executed</span>
+          </ChatMessage>
+        </>
+      ),
+      [OmniMstEvents.CANCEL]: (
+        <ChatMessage key={notif.id} date={notif.date}>
+          <span>❌ {signerName} has cancelled the transaction</span>
+          {description && (
+            <>
+              <br />
+              <span>Description: {description}</span>
+            </>
+          )}
+        </ChatMessage>
+      ),
+    };
+
+    return messages[notif.type as OmniMstEvents] || '';
+  };
+
+  if (!isMultisigTransfer) {
+    return null;
+  }
 
   if (!matrix.isLoggedIn) {
     return (
@@ -38,22 +149,7 @@ const Chat: React.FC<Props> = ({ callData }) => {
 
       <div className="flex flex-col h-[calc(100%-56px)] justify-between gap-3">
         <ul className="flex flex-col max-h-[412px] overflow-y-auto gap-3 pb-2">
-          {txNotif.map((_) => (
-            <li className="w-max max-w-[318px] rounded-lg shadow-md bg-white p-2">
-              <span className="text-sm">
-                ✅ Validator 1 approved transaction
-              </span>
-              <span className="float-right ml-1 text-gray-400 text-xs leading-[25px]">
-                18:16
-              </span>
-            </li>
-          ))}
-          {/* <li className="w-max max-w-[318px] rounded-lg shadow-md bg-white p-2"> */}
-          {/*   <span className="text-sm">✅ Validator 1 approved transaction</span> */}
-          {/*   <span className="float-right ml-1 text-gray-400 text-xs leading-[25px]"> */}
-          {/*       18:16 */}
-          {/*     </span> */}
-          {/* </li> */}
+          {txNotifs.map(notificationMessage)}
         </ul>
 
         <div className="relative">
