@@ -21,7 +21,6 @@ import {
 } from 'matrix-js-sdk';
 import { SyncState } from 'matrix-js-sdk/lib/sync';
 import { uniq } from 'lodash';
-import { EventStatus } from 'matrix-js-sdk/lib/models/event-status';
 import { OmniDexie } from '../db/db';
 import { BooleanValue } from '../db/types';
 import {
@@ -36,7 +35,7 @@ import {
   RoomCreation,
   Signatory,
 } from './types';
-import { BASE_MATRIX_URL, ROOM_CRYPTO_CONFIG } from './constants';
+import { BASE_MATRIX_URL } from './constants';
 
 class Matrix implements ISecureMessenger {
   private static instance: Matrix;
@@ -472,11 +471,12 @@ class Matrix implements ISecureMessenger {
     params: RoomCreation,
     signature: string,
   ): Promise<void> {
-    await this.matrixClient.sendStateEvent(
-      roomId,
-      'm.room.encryption',
-      ROOM_CRYPTO_CONFIG,
-    );
+    // TODO: temporary disabled
+    // await this.matrixClient.sendStateEvent(
+    //   roomId,
+    //   'm.room.encryption',
+    //   ROOM_CRYPTO_CONFIG,
+    // );
 
     const omniExtras = {
       mst_account: {
@@ -648,9 +648,7 @@ class Matrix implements ISecureMessenger {
   private handleOmniEvents(): void {
     const omniEvents = Object.values(OmniMstEvents);
 
-    this.matrixClient.on(RoomEvent.LocalEchoUpdated, (event) => {
-      if (event.status !== EventStatus.SENT) return;
-
+    this.matrixClient.on(RoomEvent.Timeline, (event) => {
       const isMstEvent = omniEvents.includes(event.getType() as OmniMstEvents);
 
       if (!isMstEvent) return;

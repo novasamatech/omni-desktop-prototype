@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Fragment } from 'react';
 import { format } from 'date-fns';
 import cn from 'classnames';
 import { useMatrix } from '../Providers/MatrixProvider';
@@ -100,14 +100,14 @@ const Chat: React.FC<ChatProps> = ({
         </ChatMessage>
       ),
       [OmniMstEvents.FINAL_APPROVE]: (
-        <>
-          <ChatMessage key={notif.id} date={notif.date}>
+        <Fragment key={notif.id}>
+          <ChatMessage date={notif.date}>
             <span>✅ {signerName} has signed the transaction</span>
           </ChatMessage>
-          <ChatMessage isFinal key={`${notif.id}-0`} date={notif.date}>
+          <ChatMessage isFinal date={notif.date}>
             <span>Transaction executed</span>
           </ChatMessage>
-        </>
+        </Fragment>
       ),
       [OmniMstEvents.CANCEL]: (
         <ChatMessage key={notif.id} date={notif.date}>
