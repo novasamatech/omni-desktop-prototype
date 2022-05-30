@@ -300,7 +300,7 @@ const TransferDetails: React.FC = () => {
 
           {isTransfer && (
             <div className="inline">
-              Transfer {currentAsset?.precision}
+              Transfer{' '}
               {formatBalanceFromAmount(
                 transaction.data.amount,
                 currentAsset?.precision,

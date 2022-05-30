@@ -139,12 +139,12 @@ const ShowCode: React.FC = () => {
               index: transaction.extrinsicIndex,
             }
           : null;
-      const otherSignatories = (
-        transaction.wallet as MultisigWallet
-      ).originContacts
-        .map((c) => getAddressFromWallet(c, connection.network))
-        .filter((c) => c !== address)
-        .sort();
+      const otherSignatories = transaction.wallet.isMultisig
+        ? (transaction.wallet as MultisigWallet).originContacts
+            .map((c) => getAddressFromWallet(c, connection.network))
+            .filter((c) => c !== address)
+            .sort()
+        : [];
       const { threshold } = transaction.wallet as MultisigWallet;
 
       const multisig = {
