@@ -8,6 +8,10 @@ import MstNotif from './MstNotif';
 const Notifications: React.FC = () => {
   const { notifications } = useMatrix();
 
+  const myNotifications = notifications
+    .filter((n) => n.sender !== n.client)
+    .reverse();
+
   return (
     <>
       <div className="h-ribbon flex flex-col">
@@ -20,7 +24,7 @@ const Notifications: React.FC = () => {
 
         <main className="overflow-y-auto">
           <ul className="flex flex-col w-1/3 mx-auto gap-5">
-            {notifications.map((notif) =>
+            {myNotifications.map((notif) =>
               notif.type === EventType.RoomMember ? (
                 <InviteNotif key={notif.id} notif={notif} />
               ) : (

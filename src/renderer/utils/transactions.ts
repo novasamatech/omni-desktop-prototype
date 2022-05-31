@@ -105,7 +105,6 @@ export const updateTransactions = async (
   wallet: Wallet,
   connection: Connection,
 ) => {
-  console.log(getAddressFromWallet(wallet, connection.network));
   const pendingTransactions = await getPendingTransactionsFromChain(
     connection.api,
     getAddressFromWallet(wallet, connection.network),

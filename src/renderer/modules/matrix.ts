@@ -35,7 +35,7 @@ import {
   RoomCreation,
   Signatory,
 } from './types';
-import { BASE_MATRIX_URL, ROOM_CRYPTO_CONFIG } from './constants';
+import { BASE_MATRIX_URL } from './constants';
 
 class Matrix implements ISecureMessenger {
   private static instance: Matrix;
@@ -471,11 +471,12 @@ class Matrix implements ISecureMessenger {
     params: RoomCreation,
     signature: string,
   ): Promise<void> {
-    await this.matrixClient.sendStateEvent(
-      roomId,
-      'm.room.encryption',
-      ROOM_CRYPTO_CONFIG,
-    );
+    // TODO: temporary disabled
+    // await this.matrixClient.sendStateEvent(
+    //   roomId,
+    //   'm.room.encryption',
+    //   ROOM_CRYPTO_CONFIG,
+    // );
 
     const omniExtras = {
       mst_account: {
@@ -645,11 +646,12 @@ class Matrix implements ISecureMessenger {
   }
 
   private handleOmniEvents(): void {
+    const omniEvents = Object.values(OmniMstEvents);
+
     this.matrixClient.on(RoomEvent.Timeline, (event) => {
-      const omniEvents = Object.values(OmniMstEvents);
       const isMstEvent = omniEvents.includes(event.getType() as OmniMstEvents);
 
-      if (event.getSender() === this.userId || !isMstEvent) return;
+      if (!isMstEvent) return;
 
       const roomId = event.getRoomId();
       if (!roomId) return;
