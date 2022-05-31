@@ -363,17 +363,16 @@ const TransferDetails: React.FC = () => {
             </>
           )}
         </div>
-        <Signatories
-          network={network}
-          transaction={transaction}
-          isMultisigTransfer={isMultisigTransfer}
-        />
-        <Chat
-          network={network}
-          transaction={transaction}
-          callHash={transaction?.data.callHash}
-          isMultisigTransfer={isMultisigTransfer}
-        />
+        {isMultisigTransfer && (
+          <>
+            <Signatories network={network} transaction={transaction} />
+            <Chat
+              network={network}
+              transaction={transaction}
+              callHash={transaction?.data.callHash}
+            />
+          </>
+        )}
       </div>
       {isSelectWalletAvailable && (
         <div className="mx-auto mb-2 w-[350px]">

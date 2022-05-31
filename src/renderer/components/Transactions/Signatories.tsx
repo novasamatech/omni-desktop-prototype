@@ -9,14 +9,9 @@ import { getAddressFromWallet } from '../../utils/account';
 type Props = {
   network?: Chain;
   transaction?: Transaction;
-  isMultisigTransfer: boolean;
 };
 
-const Signatories: React.FC<Props> = ({
-  network,
-  transaction,
-  isMultisigTransfer,
-}) => {
+const Signatories: React.FC<Props> = ({ network, transaction }) => {
   const isApproved = (address: string): boolean =>
     Boolean(transaction?.data.approvals?.includes(address));
 
@@ -29,10 +24,6 @@ const Signatories: React.FC<Props> = ({
         status: isApproved(getAddressFromWallet(signature, network)),
       }),
     );
-
-  if (!isMultisigTransfer) {
-    return null;
-  }
 
   return (
     <div className="mb-10 w-[350px] bg-gray-100 px-4 py-3 rounded-2xl">
@@ -50,11 +41,7 @@ const Signatories: React.FC<Props> = ({
             >
               <div>
                 <div>{name}</div>
-                <div>
-                  <div>
-                    <Address address={address} />
-                  </div>
-                </div>
+                <Address address={address} />
               </div>
               <div
                 className={cn(

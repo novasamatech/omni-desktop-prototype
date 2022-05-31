@@ -49,15 +49,9 @@ type ChatProps = {
   network?: Chain;
   transaction?: Transaction;
   callHash: HexString;
-  isMultisigTransfer: boolean;
 };
 
-const Chat: React.FC<ChatProps> = ({
-  callHash,
-  network,
-  transaction,
-  isMultisigTransfer,
-}) => {
+const Chat: React.FC<ChatProps> = ({ callHash, network, transaction }) => {
   const { matrix, notifications } = useMatrix();
 
   const txNotifs = notifications.filter(
@@ -124,10 +118,6 @@ const Chat: React.FC<ChatProps> = ({
 
     return messages[notif.type as OmniMstEvents] || '';
   };
-
-  if (!isMultisigTransfer) {
-    return null;
-  }
 
   if (!matrix.isLoggedIn) {
     return (
