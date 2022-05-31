@@ -235,7 +235,7 @@ const ManageMultisigWallet: React.FC = () => {
               name="threshold"
               control={control}
               defaultValue={wallet?.threshold || DEFAULT_THRESHOLD}
-              rules={{ min: 2, max: selectedContacts.length }}
+              rules={!wallet ? {} : { min: 2, max: selectedContacts.length }}
               render={({ field: { onChange, onBlur, value } }) => (
                 <InputText
                   type="number"
