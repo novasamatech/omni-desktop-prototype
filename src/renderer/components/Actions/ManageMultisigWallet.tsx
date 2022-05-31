@@ -1,12 +1,9 @@
-/* eslint-disable promise/catch-or-return */
-/* eslint-disable promise/always-return */
 import React, { useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { Dialog } from '@headlessui/react';
 import { IndexableType } from 'dexie';
-
 import Button from '../../ui/Button';
 import InputText from '../../ui/Input';
 import { Contact, MultisigWallet } from '../../db/types';
@@ -55,6 +52,7 @@ const ManageMultisigWallet: React.FC = () => {
     handleSubmit,
     control,
     reset,
+    trigger,
     formState: { isValid },
   } = useForm<MultisigWalletForm>({
     mode: 'onChange',
@@ -70,6 +68,11 @@ const ManageMultisigWallet: React.FC = () => {
       threshold: wallet?.threshold || DEFAULT_THRESHOLD,
     });
   }, [wallet, reset]);
+
+  useEffect(() => {
+    trigger('threshold');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedContacts.length]);
 
   const updateMultisigWallet = (
     multisigWallet: MultisigWallet,
@@ -129,14 +132,10 @@ const ManageMultisigWallet: React.FC = () => {
     });
   };
 
-  const handleMultisigSubmit: SubmitHandler<MultisigWalletForm> = ({
-    walletName,
-    threshold,
-  }) => {
-    if (wallet) {
-      updateMultisigWallet(wallet, walletName);
-      return;
-    }
+  const createMultisigWallet = async (
+    walletName: string,
+    threshold: string,
+  ) => {
     // TODO: won't be needed after Parity Signer
     const addresses = selectedContacts.map((c) => c.mainAccounts[0].accountId);
     if (addresses.length === 0) return;
@@ -156,14 +155,24 @@ const ManageMultisigWallet: React.FC = () => {
       return;
     }
 
-    db.wallets.add(payload).then((walletId) => {
-      // TODO: show some kind of loader | handle async error
-      // TODO: if user forgets MST acc and creates a new one
-      // duplicate room will be created (user should wait for invite from MST acc members)
-      createMatrixRoom(mstSs58Address, threshold, walletId);
-    });
+    const walletId = await db.wallets.add(payload);
+    // TODO: show some kind of loader | handle async error
+    // TODO: if user forgets MST acc and creates a new one
+    // duplicate room will be created (user should wait for invite from MST acc members)
+    createMatrixRoom(mstSs58Address, threshold, walletId);
     setSelectedContacts([]);
     reset();
+  };
+
+  const handleMultisigSubmit: SubmitHandler<MultisigWalletForm> = ({
+    walletName,
+    threshold,
+  }) => {
+    if (wallet) {
+      updateMultisigWallet(wallet, walletName);
+    } else {
+      createMultisigWallet(walletName, threshold);
+    }
   };
 
   const updateSelectedContact = (contact: Contact) => {
@@ -229,7 +238,6 @@ const ManageMultisigWallet: React.FC = () => {
               name="walletName"
               control={control}
               rules={{ required: true }}
-              defaultValue={wallet?.name || ''}
               render={({ field: { onChange, onBlur, value } }) => (
                 <InputText
                   onChange={onChange}
@@ -246,8 +254,7 @@ const ManageMultisigWallet: React.FC = () => {
             <Controller
               name="threshold"
               control={control}
-              defaultValue={wallet?.threshold || DEFAULT_THRESHOLD}
-              rules={!wallet ? {} : { min: 2, max: selectedContacts.length }}
+              rules={wallet ? {} : { min: 2, max: selectedContacts.length }}
               render={({ field: { onChange, onBlur, value } }) => (
                 <InputText
                   type="number"

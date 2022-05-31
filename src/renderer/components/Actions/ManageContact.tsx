@@ -76,20 +76,20 @@ const ManageContact: React.FC = () => {
     name,
     matrixId,
   }) => {
-    try {
-      const contactObject = {
-        name: name.trim(),
-        secureProtocolId: matrixId,
-        mainAccounts: [
-          {
-            accountId: encodeAddress(decodeAddress(address), 42) || '',
-            publicKey: u8aToHex(decodeAddress(address)),
-            cryptoType: CryptoType.ED25519,
-          },
-        ],
-        chainAccounts: [],
-      };
+    const contactObject = {
+      name: name.trim(),
+      secureProtocolId: matrixId,
+      chainAccounts: [],
+      mainAccounts: [
+        {
+          accountId: encodeAddress(decodeAddress(address), 42) || '',
+          publicKey: u8aToHex(decodeAddress(address)),
+          cryptoType: CryptoType.ED25519,
+        },
+      ],
+    };
 
+    try {
       if (contact?.id) {
         await db.contacts.update(contact.id, contactObject);
         history.push(Routes.CONTACTS);
