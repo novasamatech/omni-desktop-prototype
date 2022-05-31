@@ -39,12 +39,14 @@ type MultisigWalletProps = {
   threshold: string | number;
   addresses: string[];
   contacts: Contact[];
+  matrixRoomId?: string;
 };
 export const createMultisigWalletPayload = ({
   walletName,
   threshold,
   addresses,
   contacts,
+  matrixRoomId,
 }: MultisigWalletProps): {
   mstSs58Address: string;
   payload: MultisigWallet;
@@ -62,6 +64,7 @@ export const createMultisigWalletPayload = ({
       originContacts: contacts,
       isMultisig: BooleanValue.TRUE,
       chainAccounts: [],
+      matrixRoomId,
       mainAccounts: [
         {
           accountId: Ss58Address,

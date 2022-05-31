@@ -38,7 +38,7 @@ export const validateWithBlockNumber = async (
     return checkRootExists(proofs, parachainStateRoot.toHex());
   }
 
-  console.log('block is not found');
+  console.warn('block is not found');
   return validateWithBlockNumber(
     relaychainApi,
     parachainApi,

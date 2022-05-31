@@ -4,8 +4,6 @@ import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 import { useHistory, useParams } from 'react-router';
 import { format } from 'date-fns';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Call } from '@polkadot/types/interfaces';
-import { SubmittableExtrinsic } from '@polkadot/api/types';
 import Button from '../../ui/Button';
 import {
   currentTransactionState,
@@ -35,6 +33,7 @@ import InputText from '../../ui/Input';
 import { Connection, connectionState } from '../../store/connections';
 import Signatories from './Signatories';
 import Chat from './Chat';
+import { decodeCallData } from '../../utils/transactions';
 
 const TransferDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -129,7 +128,7 @@ const TransferDetails: React.FC = () => {
           setTransaction(tx);
         }
       })
-      .catch((e) => console.log(e));
+      .catch((e) => console.warn(e));
   }, [id]);
 
   useEffect(() => {
@@ -146,7 +145,7 @@ const TransferDetails: React.FC = () => {
           setNetwork(chain);
         }
       })
-      .catch((e) => console.log(e));
+      .catch((e) => console.warn(e));
   }, [transaction?.chainId]);
 
   const currentAsset = getAssetById(
@@ -188,61 +187,21 @@ const TransferDetails: React.FC = () => {
   const updateCallData = () => {
     if (!transaction || !callData || !connection) return;
 
-    const data: Record<string, any> = {
-      ...transaction.data,
+    const decodedData = decodeCallData(
+      connection.api,
+      connection.network,
       callData,
-    };
-    let extrinsicCall: Call;
-    let decoded: SubmittableExtrinsic<'promise'> | null = null;
-
-    try {
-      // cater for an extrinsic input...
-      decoded = connection.api.tx(callData);
-      extrinsicCall = connection.api.createType('Call', decoded.method);
-    } catch (e) {
-      extrinsicCall = connection.api.createType('Call', callData);
-    }
-
-    const { method, section } = connection.api.registry.findMetaCall(
-      extrinsicCall.callIndex,
     );
-    const extrinsicFn = connection.api.tx[section][method];
-    const extrinsic = extrinsicFn(...extrinsicCall.args);
-
-    if (!decoded) {
-      decoded = extrinsic;
-    }
-    if (method === 'transfer' && section === 'balances') {
-      data.address = decoded.args[0].toString();
-      data.amount = formatBalance(
-        decoded.args[1].toString(),
-        network?.assets[0].precision || 0,
-      );
-      console.log(data.amount);
-    }
-    if (method === 'transfer' && section === 'assets') {
-      data.assetId = decoded.args[0].toString();
-      data.address = decoded.args[1].toString();
-      const asset = getAssetById(network?.assets || [], data.assetId);
-      data.amount = formatBalance(
-        decoded.args[2].toString(),
-        asset?.precision || 0,
-      );
-    }
-    if (method === 'transfer' && section === 'currencies') {
-      data.address = decoded.args[0].toString();
-      data.assetId = decoded.args[1].toString();
-      const asset = getAssetById(network?.assets || [], data.assetId);
-      data.amount = formatBalance(
-        decoded.args[2].toString(),
-        asset?.precision || 0,
-      );
-    }
 
     db.transactions.put({
       ...transaction,
-      data,
+      data: {
+        ...transaction.data,
+        callData,
+        ...decodedData,
+      },
     });
+
     setupTransaction();
     setCallData('');
   };
@@ -272,9 +231,7 @@ const TransferDetails: React.FC = () => {
             <div>
               {network && transaction && (
                 <div>
-                  <Address
-                    address={getAddressFromWallet(transaction.wallet, network)}
-                  />
+                  <Address address={transaction.address} />
                 </div>
               )}
             </div>

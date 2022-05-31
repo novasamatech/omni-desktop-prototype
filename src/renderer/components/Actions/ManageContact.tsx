@@ -52,7 +52,7 @@ const ManageContact: React.FC = () => {
             setContact(c);
           }
         })
-        .catch((e) => console.log(e));
+        .catch((e) => console.warn(e));
     }
   }, [id]);
 
@@ -98,9 +98,9 @@ const ManageContact: React.FC = () => {
 
         reset();
       }
-    } catch (error) {
+    } catch (e) {
       // TODO: Add notification system
-      console.log(error);
+      console.warn(e);
     }
   };
 

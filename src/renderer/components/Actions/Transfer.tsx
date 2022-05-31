@@ -1,8 +1,9 @@
 /* eslint-disable promise/always-return */
 import React, { useCallback, useEffect, useState } from 'react';
 import { useRecoilValue } from 'recoil';
-import { decodeAddress, encodeAddress } from '@polkadot/keyring';
+// import { decodeAddress, encodeAddress } from '@polkadot/keyring';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import { BN } from '@polkadot/util';
 
 import { Connection, connectionState } from '../../store/connections';
 import { selectedWalletsState } from '../../store/selectedWallets';
@@ -18,11 +19,14 @@ import {
   TransactionType,
   OrmlExtras,
   StatemineExtras,
+  MultisigWallet,
 } from '../../db/types';
 import { isMultisig, validateAddress } from '../../utils/validation';
 import { getAddressFromWallet } from '../../utils/account';
 import { ErrorTypes } from '../../../common/constants';
 import { formatAmount, formatBalance, getAssetId } from '../../utils/assets';
+import { useMatrix } from '../Providers/MatrixProvider';
+import { HexString } from '../../../common/types';
 
 type TransferForm = {
   address: string;
@@ -30,6 +34,8 @@ type TransferForm = {
 };
 
 const Transfer: React.FC = () => {
+  const { matrix } = useMatrix();
+
   const [transactionFee, setTransactionFee] = useState('0');
   const [currentNetwork, setCurrentNetwork] = useState<Connection | undefined>(
     undefined,
@@ -39,8 +45,8 @@ const Transfer: React.FC = () => {
   );
   const [networkOptions, setNetworkOptions] = useState<OptionType[]>([]);
   const [assetOptions, setAssetOptions] = useState<OptionType[]>([]);
-  const [callHash, setCallHash] = useState<string>('');
-  const [callData, setCallData] = useState<string>('');
+  const [callHash, setCallHash] = useState<HexString>();
+  const [callData, setCallData] = useState<HexString>();
 
   const networks = useRecoilValue(connectionState);
   const wallets = useRecoilValue(selectedWalletsState);
@@ -107,7 +113,7 @@ const Transfer: React.FC = () => {
           );
         })
         .catch((e) => {
-          console.log(e);
+          console.warn(e);
           setTransactionFee('0');
         });
     }
@@ -168,22 +174,31 @@ const Transfer: React.FC = () => {
   }) => {
     if (currentNetwork && currentAsset) {
       const transactions = wallets.map((w) => {
-        const account =
-          w.chainAccounts.find(
-            (a) => a.chainId === currentNetwork.network.chainId,
-          ) || w.mainAccounts[0];
-
-        const addressFrom =
-          encodeAddress(
-            decodeAddress(account.accountId),
-            currentNetwork.network.addressPrefix,
-          ) || '';
+        const addressFrom = getAddressFromWallet(w, currentNetwork.network);
 
         const type = isMultisig(w)
           ? TransactionType.MULTISIG_TRANSFER
           : TransactionType.TRANSFER;
 
         const assetId = getAssetId(currentAsset);
+
+        const wallet = w as MultisigWallet;
+
+        if (
+          type === TransactionType.MULTISIG_TRANSFER &&
+          matrix.isLoggedIn &&
+          wallet.matrixRoomId &&
+          callHash &&
+          callData
+        ) {
+          matrix.setRoom(wallet.matrixRoomId);
+          matrix.mstInitiate({
+            accountId: addressFrom,
+            chainId: currentNetwork.network.chainId,
+            callHash,
+            callData,
+          });
+        }
 
         return {
           createdAt: new Date(),
@@ -209,6 +224,8 @@ const Transfer: React.FC = () => {
       reset();
     }
   };
+
+  const multisigWallet = wallets?.find(isMultisig) as MultisigWallet;
 
   return (
     <form onSubmit={handleSubmit(addTransaction)}>
@@ -287,23 +304,19 @@ const Transfer: React.FC = () => {
           {transactionFee} {defaultAsset?.symbol}
         </div>
       </div>
-      {wallets?.find(isMultisig) && currentNetwork && (
+      {multisigWallet && currentNetwork && (
         <>
           <div className="p-2 text-gray-500 flex justify-between">
-            <div>Base deposit:</div>
+            <div>Deposit:</div>
             <div>
               {formatBalance(
-                currentNetwork.api.consts.multisig.depositBase.toString(),
-                currentAsset?.precision,
-              )}{' '}
-              {defaultAsset?.symbol}
-            </div>
-          </div>
-          <div className="p-2 text-gray-500 flex justify-between">
-            <div>Deposit factor:</div>
-            <div>
-              {formatBalance(
-                currentNetwork.api.consts.multisig.depositFactor.toString(),
+                currentNetwork.api.consts.multisig.depositBase
+                  .add(
+                    currentNetwork.api.consts.multisig.depositFactor.mul(
+                      new BN(multisigWallet.threshold),
+                    ),
+                  )
+                  .toString(),
                 currentAsset?.precision,
               )}{' '}
               {defaultAsset?.symbol}

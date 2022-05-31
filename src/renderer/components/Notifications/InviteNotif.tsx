@@ -24,6 +24,7 @@ type Props = {
 const InviteNotif: React.FC<Props> = ({ notif }) => {
   const history = useHistory();
   const { matrix } = useMatrix();
+  const account = (notif.content as OmniExtras).mst_account;
 
   const [isDialogOpen, toggleDialogOpen] = useToggle(false);
   const [walletName, setWalletName] = useState('');
@@ -34,8 +35,6 @@ const InviteNotif: React.FC<Props> = ({ notif }) => {
   );
 
   const handleReadInvite = async () => {
-    const account = (notif.content as OmniExtras).mst_account;
-
     const mstAccountId = multisigWallets?.find((m) =>
       m.mainAccounts.some((a) => a.accountId === account.address),
     )?.id;
@@ -48,6 +47,15 @@ const InviteNotif: React.FC<Props> = ({ notif }) => {
   };
 
   const handleUnreadInvite = () => {
+    const mstAccountId = multisigWallets?.find((m) =>
+      m.mainAccounts.some((a) => a.accountId === account.address),
+    )?.id;
+    if (mstAccountId) {
+      db.wallets.update(mstAccountId, {
+        matrixRoomId: notif.roomId,
+      });
+    }
+
     db.mxNotifications.update(notif, {
       isRead: BooleanValue.TRUE,
     });
@@ -83,8 +91,6 @@ const InviteNotif: React.FC<Props> = ({ notif }) => {
   };
 
   const createMstAccount = () => {
-    const account = (notif.content as OmniExtras).mst_account;
-
     const walletContacts = account.signatories.map((signatory) => {
       const match = contacts?.find((contact) =>
         contact.mainAccounts.some((main) => signatory === main.accountId),
@@ -107,6 +113,7 @@ const InviteNotif: React.FC<Props> = ({ notif }) => {
 
     const { payload } = createMultisigWalletPayload({
       walletName,
+      matrixRoomId: notif.roomId,
       threshold: account.threshold,
       addresses: account.signatories,
       contacts: walletContacts,
