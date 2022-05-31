@@ -26,7 +26,7 @@ const Chat: React.FC = () => {
     try {
       await matrix.loginWithCreds(login, password);
     } catch (e) {
-      console.log(e);
+      console.warn(e);
     }
   };
   const onCreateRoom = () => {

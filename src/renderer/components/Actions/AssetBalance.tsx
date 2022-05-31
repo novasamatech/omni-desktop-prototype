@@ -69,7 +69,7 @@ const AssetBalance: React.FC<Props> = ({
           };
         });
       } else {
-        console.log('no relay chain');
+        console.warn('no relay chain');
         setBalance((b) => {
           return {
             ...b,

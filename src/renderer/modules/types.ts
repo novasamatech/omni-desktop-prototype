@@ -17,7 +17,7 @@ export interface ISecureMessenger {
   createRoom: (
     params: RoomCreation,
     signWithParity: (value: string) => Promise<string>,
-  ) => Promise<void | never>;
+  ) => Promise<string | never>;
   joinRoom: (roomId: string) => Promise<void | never>;
   invite: (roomId: string, signatoryId: string) => Promise<void | never>;
   listOfOmniRooms: (type: Membership.INVITE | Membership.JOIN) => Room[];

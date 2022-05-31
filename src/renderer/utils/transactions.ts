@@ -2,6 +2,9 @@
 import { ApiPromise } from '@polkadot/api';
 import { U8aFixed } from '@polkadot/types';
 import { PalletMultisigMultisig } from '@polkadot/types/lookup';
+import { Call } from '@polkadot/types/interfaces';
+import { SubmittableExtrinsic } from '@polkadot/api/types';
+
 import { Connection } from '../store/connections';
 import {
   Chain,
@@ -13,6 +16,7 @@ import {
 } from '../db/types';
 import { getAddressFromWallet } from './account';
 import { db } from '../db/db';
+import { formatBalance, getAssetById } from './assets';
 
 type MultisigTransaction = {
   callHash: U8aFixed;
@@ -127,3 +131,58 @@ export const updateTransactions = async (
 export const isFinalApprove = (transaction: Transaction) =>
   transaction.data.approvals?.length >=
   Number((transaction.wallet as MultisigWallet).threshold) - 1;
+
+export const decodeCallData = (
+  api: ApiPromise,
+  network: Chain,
+  callData: string,
+) => {
+  const data: Record<string, any> = {};
+  let extrinsicCall: Call;
+  let decoded: SubmittableExtrinsic<'promise'> | null = null;
+
+  try {
+    // cater for an extrinsic input...
+    decoded = api.tx(callData);
+    extrinsicCall = api.createType('Call', decoded.method);
+  } catch (e) {
+    extrinsicCall = api.createType('Call', callData);
+  }
+
+  const { method, section } = api.registry.findMetaCall(
+    extrinsicCall.callIndex,
+  );
+  const extrinsicFn = api.tx[section][method];
+  const extrinsic = extrinsicFn(...extrinsicCall.args);
+
+  if (!decoded) {
+    decoded = extrinsic;
+  }
+  if (method === 'transfer' && section === 'balances') {
+    data.address = decoded.args[0].toString();
+    data.amount = formatBalance(
+      decoded.args[1].toString(),
+      network?.assets[0].precision || 0,
+    );
+  }
+  if (method === 'transfer' && section === 'assets') {
+    data.assetId = decoded.args[0].toString();
+    data.address = decoded.args[1].toString();
+    const asset = getAssetById(network?.assets || [], data.assetId);
+    data.amount = formatBalance(
+      decoded.args[2].toString(),
+      asset?.precision || 0,
+    );
+  }
+  if (method === 'transfer' && section === 'currencies') {
+    data.address = decoded.args[0].toString();
+    data.assetId = decoded.args[1].toString();
+    const asset = getAssetById(network?.assets || [], data.assetId);
+    data.amount = formatBalance(
+      decoded.args[2].toString(),
+      asset?.precision || 0,
+    );
+  }
+
+  return data;
+};
