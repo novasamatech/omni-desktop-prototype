@@ -24,7 +24,8 @@ import { Routes, withId } from '../../common/constants';
 import { db } from '../db/db';
 import { TransactionStatus, TransactionType } from '../db/types';
 import { isFinalApprove } from '../utils/transactions';
-import { formatAddress } from '../utils/account';
+import { formatAddress, getAddressFromWallet } from '../utils/account';
+import { useMatrix } from './Providers/MatrixProvider';
 
 // TODO: Move this function to utils
 function createSignedTx(
@@ -57,6 +58,7 @@ function createSignedTx(
 const ScanCode: React.FC = () => {
   const networks = useRecoilValue(connectionState);
   const history = useHistory();
+  const { matrix } = useMatrix();
 
   const [isTxSent, setIsTxSent] = useState(false);
 
@@ -95,7 +97,6 @@ const ScanCode: React.FC = () => {
     });
     const actualTxHash = await network.api.rpc.author.submitExtrinsic(tx);
 
-    console.log('act', actualTxHash);
     if (!actualTxHash || !transaction.id) return;
 
     if (transaction.type === TransactionType.TRANSFER) {
@@ -123,6 +124,30 @@ const ScanCode: React.FC = () => {
           ]),
         },
       });
+
+      if (
+        signBy &&
+        'matrixRoomId' in transaction.wallet &&
+        transaction.wallet.matrixRoomId
+      ) {
+        matrix.setRoom(transaction.wallet.matrixRoomId);
+
+        if (transactionStatus === TransactionStatus.CONFIRMED) {
+          matrix.mstFinalApprove({
+            accountId: getAddressFromWallet(signBy, network.network),
+            chainId: network.network.chainId,
+            callHash: transaction.data.callHash,
+          });
+        }
+
+        if (transactionStatus === TransactionStatus.PENDING) {
+          matrix.mstApprove({
+            accountId: getAddressFromWallet(signBy, network.network),
+            chainId: network.network.chainId,
+            callHash: transaction.data.callHash,
+          });
+        }
+      }
     }
 
     history.push(withId(Routes.TRANSFER_DETAILS, transaction.id));

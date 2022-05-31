@@ -51,7 +51,7 @@ const InputText: React.FC<Props> = ({
           'flex-1 appearance-none w-full mt-1',
           'placeholder-gray-400 text-xl focus:outline-none',
           invalid ? 'text-red-500' : 'text-black',
-          disabled && 'bg-gray-100',
+          disabled ? 'bg-gray-100' : 'bg-white',
           inputClassName,
         )}
         value={value}

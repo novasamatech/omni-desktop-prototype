@@ -1,10 +1,17 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { useHistory } from 'react-router';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
-import { BooleanValue, Notification } from '../../db/types';
-import { OmniMstEvents } from '../../modules/types';
+import {
+  BooleanValue,
+  Notification,
+  TransactionStatus,
+  TransactionType,
+} from '../../db/types';
+import { OmniMstEvents, MstParams } from '../../modules/types';
 import NotifyItem from './NotifyItem';
+import { Routes, withId } from '../../../common/constants';
 
 const TITLES = {
   [OmniMstEvents.INIT]: 'MST initiated',
@@ -24,28 +31,68 @@ const DESCRIPTIONS = {
     `The transaction was cancelled by ${sender}`,
 };
 
+const Statuses = {
+  [OmniMstEvents.INIT]: TransactionStatus.CREATED,
+  [OmniMstEvents.APPROVE]: TransactionStatus.PENDING,
+  [OmniMstEvents.FINAL_APPROVE]: TransactionStatus.CONFIRMED,
+  [OmniMstEvents.CANCEL]: TransactionStatus.CANCELLED,
+};
+
 type Props = {
   notif: Notification;
 };
 
 const MstNotif: React.FC<Props> = ({ notif }) => {
   const history = useHistory();
+  const type = notif.type as OmniMstEvents;
 
-  const onDetailsClick = () => {
+  const transactions = useLiveQuery(() => db.transactions.toArray());
+  const wallets = useLiveQuery(() => db.wallets.toArray());
+
+  const onDetailsClick = async () => {
     if (!notif.isRead) {
       db.mxNotifications.update(notif, {
         isRead: BooleanValue.TRUE,
       });
     }
 
-    // TODO: got to MST details, etc.
-    history.push('/');
+    const content = notif.content as MstParams;
+
+    const transaction = transactions?.find(
+      (t) => t.data.callHash === content.callHash,
+    );
+
+    if (transaction?.id) {
+      history.push(withId(Routes.TRANSFER_DETAILS, transaction.id));
+    } else {
+      const transactionStatus = Statuses[type];
+      const wallet = wallets?.find(
+        (w) => w.mainAccounts[0].accountId === content.accountId,
+      );
+
+      if (!wallet?.id) return;
+
+      const id = db.transactions.add({
+        wallet,
+        status: transactionStatus,
+        createdAt: notif.date,
+        address: content.accountId,
+        chainId: content.chainId,
+        data: {
+          callHash: content.callHash,
+          callData: content.callData,
+        },
+        type: TransactionType.MULTISIG_TRANSFER,
+      });
+
+      history.push(withId(Routes.TRANSFER_DETAILS, id));
+    }
   };
 
   return (
     <NotifyItem
-      title={TITLES[notif.type as OmniMstEvents]}
-      description={DESCRIPTIONS[notif.type as OmniMstEvents](notif.sender)}
+      title={TITLES[type]}
+      description={DESCRIPTIONS[type](notif.sender)}
       date={format(notif.date, 'HH:mm:ss dd MMM, yyyy')}
       isRead={Boolean(notif.isRead)}
       onClick={onDetailsClick}

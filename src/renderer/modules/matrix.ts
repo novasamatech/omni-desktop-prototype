@@ -197,7 +197,7 @@ class Matrix implements ISecureMessenger {
   async createRoom(
     params: RoomCreation,
     signWithColdWallet: (value: string) => Promise<string>,
-  ): Promise<void | never> {
+  ): Promise<string | never> {
     this.checkClientLoggedIn();
 
     try {
@@ -217,6 +217,8 @@ class Matrix implements ISecureMessenger {
         (signatory) => signatory.matrixAddress,
       );
       await this.verifyDevices(members);
+
+      return roomId;
     } catch (error) {
       throw this.createError((error as Error).message, error);
     }

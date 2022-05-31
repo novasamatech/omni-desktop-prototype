@@ -1,8 +1,12 @@
+/* eslint-disable promise/catch-or-return */
+/* eslint-disable promise/always-return */
 import React, { useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { Dialog } from '@headlessui/react';
+import { IndexableType } from 'dexie';
+
 import Button from '../../ui/Button';
 import InputText from '../../ui/Input';
 import { Contact, MultisigWallet } from '../../db/types';
@@ -77,6 +81,7 @@ const ManageMultisigWallet: React.FC = () => {
   const createMatrixRoom = async (
     mstAccountAddress: string,
     threshold: string,
+    walletId: IndexableType,
   ) => {
     if (!matrix.isLoggedIn) return;
     if (!wallets) return; // FIXME: need wallets to identify MY contact
@@ -105,7 +110,7 @@ const ManageMultisigWallet: React.FC = () => {
       isInviter: myAddress.accountId === s.mainAccounts[0].accountId,
     }));
 
-    matrix.createRoom(
+    const roomId = await matrix.createRoom(
       {
         inviterPublicKey: myAddress.publicKey,
         threshold: Number(threshold),
@@ -118,9 +123,13 @@ const ManageMultisigWallet: React.FC = () => {
         return Promise.resolve('TEST');
       },
     );
+
+    db.wallets.update(walletId, {
+      matrixRoomId: roomId,
+    });
   };
 
-  const handleMultisigSubmit: SubmitHandler<MultisigWalletForm> = ({
+  const handleMultisigSubmit: SubmitHandler<MultisigWalletForm> = async ({
     walletName,
     threshold,
   }) => {
@@ -147,12 +156,12 @@ const ManageMultisigWallet: React.FC = () => {
       return;
     }
 
-    db.wallets.add(payload);
-
-    // TODO: show some kind of loader | handle async error
-    // TODO: if user forgets MST acc and creates a new one
-    // duplicate room will be created (user should wait for invite from MST acc members)
-    createMatrixRoom(mstSs58Address, threshold);
+    db.wallets.add(payload).then((walletId) => {
+      // TODO: show some kind of loader | handle async error
+      // TODO: if user forgets MST acc and creates a new one
+      // duplicate room will be created (user should wait for invite from MST acc members)
+      createMatrixRoom(mstSs58Address, threshold, walletId);
+    });
     setSelectedContacts([]);
     reset();
   };

@@ -69,6 +69,7 @@ export type Wallet = WithID<{
 export type MultisigWallet = Wallet & {
   originContacts: Contact[];
   threshold: string;
+  matrixRoomId?: string;
 };
 
 export type StatemineExtras = {
