@@ -22,7 +22,11 @@ import { HexString } from '../../common/types';
 import LinkButton from '../ui/LinkButton';
 import { Routes, withId } from '../../common/constants';
 import { db } from '../db/db';
-import { TransactionStatus, TransactionType } from '../db/types';
+import {
+  TransactionStatus,
+  TransactionType,
+  MultisigWallet,
+} from '../db/types';
 import { isFinalApprove } from '../utils/transactions';
 import { formatAddress, getAddressFromWallet } from '../utils/account';
 import { useMatrix } from './Providers/MatrixProvider';
@@ -125,12 +129,9 @@ const ScanCode: React.FC = () => {
         },
       });
 
-      if (
-        signBy &&
-        'matrixRoomId' in transaction.wallet &&
-        transaction.wallet.matrixRoomId
-      ) {
-        matrix.setRoom(transaction.wallet.matrixRoomId);
+      const multisigWallet = transaction.wallet as MultisigWallet;
+      if (signBy && multisigWallet.matrixRoomId) {
+        matrix.setRoom(multisigWallet.matrixRoomId);
 
         if (transactionStatus === TransactionStatus.CONFIRMED) {
           matrix.mstFinalApprove({
