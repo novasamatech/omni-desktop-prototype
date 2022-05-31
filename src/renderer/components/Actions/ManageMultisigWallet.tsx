@@ -51,6 +51,7 @@ const ManageMultisigWallet: React.FC = () => {
     handleSubmit,
     control,
     reset,
+    trigger,
     formState: { isValid },
   } = useForm<MultisigWalletForm>({
     mode: 'onChange',
@@ -66,6 +67,11 @@ const ManageMultisigWallet: React.FC = () => {
       threshold: wallet?.threshold || DEFAULT_THRESHOLD,
     });
   }, [wallet, reset]);
+
+  useEffect(() => {
+    trigger('threshold');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedContacts.length]);
 
   const updateMultisigWallet = (
     multisigWallet: MultisigWallet,
@@ -120,14 +126,7 @@ const ManageMultisigWallet: React.FC = () => {
     );
   };
 
-  const handleMultisigSubmit: SubmitHandler<MultisigWalletForm> = ({
-    walletName,
-    threshold,
-  }) => {
-    if (wallet) {
-      updateMultisigWallet(wallet, walletName);
-      return;
-    }
+  const createMultisigWallet = (walletName: string, threshold: string) => {
     // TODO: won't be needed after Parity Signer
     const addresses = selectedContacts.map((c) => c.mainAccounts[0].accountId);
     if (addresses.length === 0) return;
@@ -155,6 +154,17 @@ const ManageMultisigWallet: React.FC = () => {
     createMatrixRoom(mstSs58Address, threshold);
     setSelectedContacts([]);
     reset();
+  };
+
+  const handleMultisigSubmit: SubmitHandler<MultisigWalletForm> = ({
+    walletName,
+    threshold,
+  }) => {
+    if (wallet) {
+      updateMultisigWallet(wallet, walletName);
+    } else {
+      createMultisigWallet(walletName, threshold);
+    }
   };
 
   const updateSelectedContact = (contact: Contact) => {
@@ -208,7 +218,6 @@ const ManageMultisigWallet: React.FC = () => {
               name="walletName"
               control={control}
               rules={{ required: true }}
-              defaultValue={wallet?.name || ''}
               render={({ field: { onChange, onBlur, value } }) => (
                 <InputText
                   onChange={onChange}
@@ -225,8 +234,7 @@ const ManageMultisigWallet: React.FC = () => {
             <Controller
               name="threshold"
               control={control}
-              defaultValue={wallet?.threshold || DEFAULT_THRESHOLD}
-              rules={{ min: 2, max: selectedContacts.length }}
+              rules={wallet ? {} : { min: 2, max: selectedContacts.length }}
               render={({ field: { onChange, onBlur, value } }) => (
                 <InputText
                   type="number"

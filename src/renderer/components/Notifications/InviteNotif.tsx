@@ -119,8 +119,9 @@ const InviteNotif: React.FC<Props> = ({ notif }) => {
     event.preventDefault();
 
     try {
-      createMstAccount();
+      // Will try to join deleted room
       await matrix.joinRoom(notif.roomId);
+      createMstAccount();
     } catch (error) {
       console.warn(error);
     }

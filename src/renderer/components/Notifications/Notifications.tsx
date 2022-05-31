@@ -22,8 +22,8 @@ const Notifications: React.FC = () => {
           <h1 className="h-16 p-4 font-light text-lg">Notifications</h1>
         </header>
 
-        <main className="overflow-y-auto">
-          <ul className="flex flex-col w-1/3 mx-auto gap-5">
+        <main className="w-1/2 mx-auto overflow-y-auto">
+          <ul className="flex flex-col gap-5">
             {myNotifications.map((notif) =>
               notif.type === EventType.RoomMember ? (
                 <InviteNotif key={notif.id} notif={notif} />

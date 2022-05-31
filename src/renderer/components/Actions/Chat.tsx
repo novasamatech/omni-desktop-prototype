@@ -77,7 +77,7 @@ const Chat: React.FC = () => {
       callData: '0x12',
       callHash:
         '0x584b7834414111ce6eb8aa15e441b28db3c8bc9a9e36fcb42e8a28917dc1e05e',
-      accountId: '5GmedEVixRJoE8TjMePLqz7DnnQG1d5517sXdiAvAF2t7EYW',
+      senderAddress: '5GmedEVixRJoE8TjMePLqz7DnnQG1d5517sXdiAvAF2t7EYW',
       chainId: '0xdsfsf',
       description: 'maaan',
     });
@@ -87,7 +87,7 @@ const Chat: React.FC = () => {
     matrix.mstApprove({
       callHash:
         '0x584b7834414111ce6eb8aa15e441b28db3c8bc9a9e36fcb42e8a28917dc1e05e',
-      accountId: '5GmedEVixRJoE8TjMePLqz7DnnQG1d5517sXdiAvAF2t7EYW',
+      senderAddress: '5GmedEVixRJoE8TjMePLqz7DnnQG1d5517sXdiAvAF2t7EYW',
       chainId: '0xdsfsf',
     });
   };
@@ -97,7 +97,7 @@ const Chat: React.FC = () => {
       chainId: '0xdfd',
       callHash:
         '0x584b7834414111ce6eb8aa15e441b28db3c8bc9a9e36fcb42e8a28917dc1e05e',
-      accountId: '5GmedEVixRJoE8TjMePLqz7DnnQG1d5517sXdiAvAF2t7EYW',
+      senderAddress: '5GmedEVixRJoE8TjMePLqz7DnnQG1d5517sXdiAvAF2t7EYW',
     });
   };
 
@@ -105,7 +105,7 @@ const Chat: React.FC = () => {
     matrix.mstCancel({
       callHash:
         '0x584b7834414111ce6eb8aa15e441b28db3c8bc9a9e36fcb42e8a28917dc1e05e',
-      accountId: '5GmedEVixRJoE8TjMePLqz7DnnQG1d5517sXdiAvAF2t7EYW',
+      senderAddress: '5GmedEVixRJoE8TjMePLqz7DnnQG1d5517sXdiAvAF2t7EYW',
       chainId: '0xdsfsf',
       description: 'CANCEL',
     });
