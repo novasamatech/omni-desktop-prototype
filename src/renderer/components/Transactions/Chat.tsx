@@ -71,8 +71,8 @@ const Chat: React.FC<ChatProps> = ({ callHash, network, transaction }) => {
     );
 
   const notificationMessage = (notif: Notification) => {
-    const { accountId, description } = notif.content as MstParams;
-    const signerName = contacts?.[accountId] || toShortText(accountId);
+    const { senderAddress, description } = notif.content as MstParams;
+    const signerName = contacts?.[senderAddress] || toShortText(senderAddress);
 
     const messages = {
       [OmniMstEvents.INIT]: (

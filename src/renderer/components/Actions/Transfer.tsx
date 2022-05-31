@@ -193,7 +193,7 @@ const Transfer: React.FC = () => {
         ) {
           matrix.setRoom(wallet.matrixRoomId);
           matrix.mstInitiate({
-            accountId: addressFrom,
+            senderAddress: addressFrom,
             chainId: currentNetwork.network.chainId,
             callHash,
             callData,

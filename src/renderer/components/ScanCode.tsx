@@ -135,7 +135,7 @@ const ScanCode: React.FC = () => {
 
         if (transactionStatus === TransactionStatus.CONFIRMED) {
           matrix.mstFinalApprove({
-            accountId: getAddressFromWallet(signBy, network.network),
+            senderAddress: getAddressFromWallet(signBy, network.network),
             chainId: network.network.chainId,
             callHash: transaction.data.callHash,
           });
@@ -143,7 +143,7 @@ const ScanCode: React.FC = () => {
 
         if (transactionStatus === TransactionStatus.PENDING) {
           matrix.mstApprove({
-            accountId: getAddressFromWallet(signBy, network.network),
+            senderAddress: getAddressFromWallet(signBy, network.network),
             chainId: network.network.chainId,
             callHash: transaction.data.callHash,
           });

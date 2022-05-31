@@ -67,7 +67,7 @@ const MstNotif: React.FC<Props> = ({ notif }) => {
     } else {
       const transactionStatus = Statuses[type];
       const wallet = wallets?.find(
-        (w) => w.mainAccounts[0].accountId === content.accountId,
+        (w) => w.mainAccounts[0].accountId === content.senderAddress,
       );
 
       if (!wallet?.id) return;
@@ -76,7 +76,7 @@ const MstNotif: React.FC<Props> = ({ notif }) => {
         wallet,
         status: transactionStatus,
         createdAt: notif.date,
-        address: content.accountId,
+        address: content.senderAddress,
         chainId: content.chainId,
         data: {
           callHash: content.callHash,
