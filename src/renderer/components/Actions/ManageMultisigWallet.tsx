@@ -177,7 +177,8 @@ const ManageMultisigWallet: React.FC = () => {
 
   const updateSelectedContact = (contact: Contact) => {
     const isSameAccount = (first: Contact, second: Contact) =>
-      first.mainAccounts[0].accountId === second.mainAccounts[0].accountId;
+      first.mainAccounts[0].accountId === second.mainAccounts[0].accountId &&
+      first.id === second.id;
 
     const isSelected = selectedContacts.some((c) => isSameAccount(c, contact));
     const newContacts = isSelected
