@@ -167,11 +167,15 @@ const ManageMultisigWallet: React.FC = () => {
   };
 
   const updateSelectedContact = (contact: Contact) => {
-    if (selectedContacts.includes(contact)) {
-      setSelectedContacts(selectedContacts.filter((c) => c.id !== contact.id));
-    } else {
-      setSelectedContacts(selectedContacts.concat(contact));
-    }
+    const isSameAccount = (first: Contact, second: Contact) =>
+      first.mainAccounts[0].accountId === second.mainAccounts[0].accountId;
+
+    const isSelected = selectedContacts.some((c) => isSameAccount(c, contact));
+    const newContacts = isSelected
+      ? selectedContacts.filter((c) => !isSameAccount(c, contact))
+      : selectedContacts.concat(contact);
+
+    setSelectedContacts(newContacts);
   };
 
   const forgetMultisigWallet = () => {
@@ -181,10 +185,18 @@ const ManageMultisigWallet: React.FC = () => {
     }
   };
 
-  const isContactSelected = (contactId?: number) => {
+  const isContactSelected = (contact: Contact) => {
     const collection = wallet ? wallet.originContacts : selectedContacts;
 
-    return collection.some((c) => c.id === contactId);
+    return collection.some((c) => {
+      if (contact.id) {
+        return c.id === contact.id;
+      }
+      return (
+        !c.id &&
+        c.mainAccounts[0].accountId === contact.mainAccounts[0].accountId
+      );
+    });
   };
 
   const getAvailableContacts = (): Contact[] => {
@@ -273,7 +285,7 @@ const ManageMultisigWallet: React.FC = () => {
               >
                 <Checkbox
                   disabled={!!wallet}
-                  checked={isContactSelected(contact.id)}
+                  checked={isContactSelected(contact)}
                   onChange={() => updateSelectedContact(contact)}
                 />
                 <div>
