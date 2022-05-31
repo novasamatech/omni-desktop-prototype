@@ -3,7 +3,6 @@ import { useHistory, useParams } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { Dialog } from '@headlessui/react';
-
 import Button from '../../ui/Button';
 import InputText from '../../ui/Input';
 import { Contact, MultisigWallet } from '../../db/types';
@@ -34,7 +33,7 @@ const ManageMultisigWallet: React.FC = () => {
   const [selectedContacts, setSelectedContacts] = useState<Contact[]>([]);
   const [isDialogOpen, toggleDialogOpen] = useToggle(false);
 
-  const contacts = useLiveQuery(() => db.contacts.toArray());
+  const contacts = useLiveQuery(() => db.contacts.toArray()) || [];
   const wallets = useLiveQuery(() => db.wallets.toArray());
 
   useEffect(() => {
@@ -93,7 +92,12 @@ const ManageMultisigWallet: React.FC = () => {
         !isMultisig(w) && w.mainAccounts.some((a) => addressesMap[a.accountId]),
     )?.mainAccounts[0];
 
-    if (!myAddress) return;
+    if (!myAddress) {
+      console.warn(
+        "Room won't be created - MST account doesn't include one of YOUR wallets",
+      );
+      return;
+    }
 
     const signatories = selectedContacts.map((s) => ({
       matrixAddress: s.secureProtocolId,
@@ -122,37 +126,35 @@ const ManageMultisigWallet: React.FC = () => {
   }) => {
     if (wallet) {
       updateMultisigWallet(wallet, walletName);
-    } else {
-      // TODO: won't be needed after Parity Signer
-      const addresses = selectedContacts.map(
-        (c) => c.mainAccounts[0].accountId,
-      );
-      if (addresses.length === 0) return;
-
-      const { mstSs58Address, payload } = createMultisigWalletPayload({
-        walletName,
-        threshold,
-        addresses,
-        contacts: selectedContacts,
-      });
-
-      const sameMstAccount = wallets?.find((w) =>
-        w.mainAccounts.some((main) => main.accountId === mstSs58Address),
-      );
-      if (sameMstAccount) {
-        console.warn('MST account already exist');
-        return;
-      }
-
-      db.wallets.add(payload);
-
-      // TODO: show some kind of loader | handle async error
-      // TODO: if user forgets MST acc and creates a new one
-      // duplicate room will be created (user should wait for invite from MST acc members)
-      createMatrixRoom(mstSs58Address, threshold);
-      setSelectedContacts([]);
-      reset();
+      return;
     }
+    // TODO: won't be needed after Parity Signer
+    const addresses = selectedContacts.map((c) => c.mainAccounts[0].accountId);
+    if (addresses.length === 0) return;
+
+    const { mstSs58Address, payload } = createMultisigWalletPayload({
+      walletName,
+      threshold,
+      addresses,
+      contacts: selectedContacts,
+    });
+
+    const sameMstAccount = wallets?.find((w) =>
+      w.mainAccounts.some((main) => main.accountId === mstSs58Address),
+    );
+    if (sameMstAccount) {
+      console.warn('MST account already exist');
+      return;
+    }
+
+    db.wallets.add(payload);
+
+    // TODO: show some kind of loader | handle async error
+    // TODO: if user forgets MST acc and creates a new one
+    // duplicate room will be created (user should wait for invite from MST acc members)
+    createMatrixRoom(mstSs58Address, threshold);
+    setSelectedContacts([]);
+    reset();
   };
 
   const updateSelectedContact = (contact: Contact) => {
@@ -176,7 +178,22 @@ const ManageMultisigWallet: React.FC = () => {
     return collection.some((c) => c.id === contactId);
   };
 
-  const availableContacts = wallet ? wallet.originContacts : contacts;
+  const getAvailableContacts = (): Contact[] => {
+    if (wallet) {
+      return wallet.originContacts;
+    }
+
+    const myWallets: Contact[] | undefined = wallets
+      ?.filter((w) => !isMultisig(w) && w.mainAccounts[0])
+      .map((w) => ({
+        name: w.name,
+        mainAccounts: w.mainAccounts,
+        chainAccounts: [],
+        secureProtocolId: matrix.userId,
+      }));
+
+    return myWallets?.concat(contacts) || contacts;
+  };
 
   return (
     <>
@@ -240,7 +257,7 @@ const ManageMultisigWallet: React.FC = () => {
           <Card className={`m-0 ${wallet && 'bg-gray-100'}`}>
             <div className="text-gray-500 text-sm mb-2">Signatures</div>
 
-            {availableContacts?.map((contact) => (
+            {getAvailableContacts().map((contact) => (
               <div
                 key={contact.id || contact.mainAccounts[0].accountId}
                 className="flex items-center gap-3 p-2"
