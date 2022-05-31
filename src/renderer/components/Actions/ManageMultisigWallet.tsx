@@ -129,7 +129,7 @@ const ManageMultisigWallet: React.FC = () => {
     });
   };
 
-  const handleMultisigSubmit: SubmitHandler<MultisigWalletForm> = async ({
+  const handleMultisigSubmit: SubmitHandler<MultisigWalletForm> = ({
     walletName,
     threshold,
   }) => {
