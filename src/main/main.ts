@@ -59,7 +59,7 @@ const installExtensions = async () => {
   return installer
     .default(
       extensions.map((name) => installer[name]),
-      forceDownload
+      forceDownload,
     )
     .catch(console.log);
 };
@@ -78,6 +78,7 @@ const createWindow = async () => {
   };
 
   mainWindow = new BrowserWindow({
+    autoHideMenuBar: true,
     show: false,
     width: 1024,
     height: 728,
