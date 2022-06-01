@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useHistory, useParams } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
@@ -15,7 +15,10 @@ import DialogContent from '../../ui/DialogContent';
 import useToggle from '../../hooks/toggle';
 import { Routes } from '../../../common/constants';
 import { useMatrix } from '../Providers/MatrixProvider';
-import { createMultisigWalletPayload } from '../../utils/account';
+import {
+  createMultisigWalletPayload,
+  isSameAccount,
+} from '../../utils/account';
 import { isMultisig } from '../../utils/validation';
 
 const DEFAULT_THRESHOLD = '2';
@@ -176,11 +179,12 @@ const ManageMultisigWallet: React.FC = () => {
   };
 
   const updateSelectedContact = (contact: Contact) => {
-    if (selectedContacts.includes(contact)) {
-      setSelectedContacts(selectedContacts.filter((c) => c.id !== contact.id));
-    } else {
-      setSelectedContacts(selectedContacts.concat(contact));
-    }
+    const isSelected = selectedContacts.some((c) => isSameAccount(c, contact));
+    const newContacts = isSelected
+      ? selectedContacts.filter((c) => !isSameAccount(c, contact))
+      : selectedContacts.concat(contact);
+
+    setSelectedContacts(newContacts);
   };
 
   const forgetMultisigWallet = () => {
@@ -190,13 +194,21 @@ const ManageMultisigWallet: React.FC = () => {
     }
   };
 
-  const isContactSelected = (contactId?: number) => {
+  const isContactSelected = (contact: Contact) => {
     const collection = wallet ? wallet.originContacts : selectedContacts;
 
-    return collection.some((c) => c.id === contactId);
+    return collection.some((c) => {
+      if (contact.id) {
+        return c.id === contact.id;
+      }
+      return (
+        !c.id &&
+        c.mainAccounts[0].accountId === contact.mainAccounts[0].accountId
+      );
+    });
   };
 
-  const getAvailableContacts = (): Contact[] => {
+  const availableContacts = useMemo(() => {
     if (wallet) {
       return wallet.originContacts;
     }
@@ -211,7 +223,8 @@ const ManageMultisigWallet: React.FC = () => {
       }));
 
     return myWallets?.concat(contacts) || contacts;
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wallets?.length, contacts.length]);
 
   return (
     <>
@@ -273,14 +286,14 @@ const ManageMultisigWallet: React.FC = () => {
           <Card className={`m-0 ${wallet && 'bg-gray-100'}`}>
             <div className="text-gray-500 text-sm mb-2">Signatures</div>
 
-            {getAvailableContacts().map((contact) => (
+            {availableContacts.map((contact) => (
               <div
                 key={contact.id || contact.mainAccounts[0].accountId}
                 className="flex items-center gap-3 p-2"
               >
                 <Checkbox
                   disabled={!!wallet}
-                  checked={isContactSelected(contact.id)}
+                  checked={isContactSelected(contact)}
                   onChange={() => updateSelectedContact(contact)}
                 />
                 <div>
