@@ -1,18 +1,14 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useRecoilState } from 'recoil';
-import { ApiPromise, WsProvider } from '@polkadot/api';
-import { ProviderInterface } from '@polkadot/rpc-provider/types';
-import { ScProvider } from '@polkadot/rpc-provider/substrate-connect';
 
 import { ActiveType, Chain } from '../../db/types';
 import { db } from '../../db/db';
 import List from '../../ui/List';
 import ListItem from '../../ui/ListItem';
-import { loadChainsList } from '../../api/chains';
 import Dropdown from '../../ui/Dropdown';
 import { connectionState } from '../../store/connections';
-import { getChainSpec, getKnownChainId } from '../../../common/networks';
+import { createConnection } from '../../utils/networks';
 
 const NETWORK_OPTIONS = [
   {
@@ -34,18 +30,6 @@ const NetworkList: React.FC = () => {
 
   const networks = useLiveQuery(() => db.chains.toArray());
 
-  useEffect(() => {
-    const loadChains = async () => {
-      // TODO: Add possibility to update chains list
-      if (networks && networks.length === 0) {
-        const chains = await loadChainsList();
-        db.chains.bulkAdd(chains);
-      }
-    };
-
-    loadChains();
-  }, [networks]);
-
   const disableNetwork = async (network: Chain) => {
     const connection = connections[network.chainId];
 
@@ -61,40 +45,28 @@ const NetworkList: React.FC = () => {
     }
   };
 
-  const handleNetworkTypeChange = async (value: string, network: Chain) => {
+  const handleNetworkTypeChange = async (
+    value: string,
+    id: number | undefined,
+  ) => {
+    if (!id) return;
+
+    await db.chains.update(id, {
+      activeType: value,
+    });
+
+    const network = await db.chains.get(id);
+    if (!network) return;
+
     disableNetwork(network);
-    let provider: ProviderInterface | undefined;
 
-    if (value === ActiveType.LOCAL_NODE) {
-      const chainId = getKnownChainId(network.name);
+    const api = await createConnection(network);
+    if (!api) return;
 
-      if (chainId) {
-        provider = new ScProvider(chainId);
-        await provider.connect();
-      } else {
-        const chainSpec = getChainSpec(network.chainId);
-        if (chainSpec) {
-          provider = new ScProvider(chainSpec);
-          await provider.connect();
-        }
-      }
-    } else if (value === ActiveType.EXTERNAL_NODE) {
-      // TODO: Add possibility to select best node
-      provider = new WsProvider(network.nodes[0].url);
-    }
-
-    if (provider) {
-      ApiPromise.create({ provider })
-        .then((api) => {
-          setConnections((prev) => ({
-            ...prev,
-            [network.chainId]: { network, api, provider },
-          }));
-
-          return true;
-        })
-        .catch((e) => console.error(e));
-    }
+    setConnections((prev) => ({
+      ...prev,
+      [network.chainId]: { network, api },
+    }));
   };
 
   return (
@@ -115,13 +87,7 @@ const NetworkList: React.FC = () => {
                 options={NETWORK_OPTIONS}
                 value={network.activeType || ActiveType.DISABLED}
                 onChange={(event) => {
-                  if (network.id) {
-                    db.chains.update(network.id, {
-                      activeType: event.target.value,
-                    });
-                  }
-
-                  handleNetworkTypeChange(event.target.value, network);
+                  handleNetworkTypeChange(event.target.value, network.id);
                 }}
               />
             </ListItem>
