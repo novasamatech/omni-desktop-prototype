@@ -27,7 +27,7 @@ const FirstColumn: React.FC = () => {
   return (
     <div className="flex flex-col w-60 border-r border-gray-200">
       <h2 className="font-light text-xl p-4">Wallets</h2>
-      <div className="flex flex-col flex-1 justify-between">
+      <div className="flex flex-col flex-1 justify-between overflow-auto">
         <SelectWallets />
         {matrix.isLoggedIn && (
           <Button

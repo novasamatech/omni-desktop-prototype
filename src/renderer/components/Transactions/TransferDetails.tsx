@@ -64,7 +64,10 @@ const TransferDetails: React.FC = () => {
     !isConfirmed;
 
   const isSignable =
-    (isTransfer || (isMultisigTransfer && transaction.data.callData)) &&
+    (isTransfer ||
+      (isMultisigTransfer &&
+        transaction.data.callData &&
+        availableWallets.length > 0)) &&
     !isConfirmed;
 
   useEffect(() => {
