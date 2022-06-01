@@ -62,7 +62,7 @@ const MatrixProvider: React.FC<Props> = ({
   }, [isLoggedIn]);
 
   const wallets = useLiveQuery(() => db.wallets.toArray());
-  const transactions = useLiveQuery(() => db.transactions.toArray());
+  // const transactions = useLiveQuery(() => db.transactions.toArray());
 
   useEffect(() => {
     const initMatrix = async () => {
@@ -133,11 +133,10 @@ const MatrixProvider: React.FC<Props> = ({
     });
   };
 
-  const updateTransactionData = (rest: Omit<MSTPayload, 'eventId'>) => {
+  const updateTransactionData = async (rest: Omit<MSTPayload, 'eventId'>) => {
     const content = rest.content as MstParams;
     const transactionStatus = Statuses[rest.type];
 
-    console.log(rest);
     if (rest.type === OmniMstEvents.INIT) {
       const wallet = wallets?.find(
         (w) => w.mainAccounts[0].accountId === content.senderAddress,
@@ -154,25 +153,36 @@ const MatrixProvider: React.FC<Props> = ({
         data: {
           callHash: content.callHash,
           callData: content.callData,
+          approvals: [],
         },
         type: TransactionType.MULTISIG_TRANSFER,
       });
     }
+
     if (
       [OmniMstEvents.APPROVE, OmniMstEvents.FINAL_APPROVE].includes(rest.type)
     ) {
-      const tx = transactions?.find(
-        (t) => t.data.callHash === content.callHash,
-      );
+      // console.log(transactions);
+      console.log(content, content.callHash);
 
-      if (tx?.id) {
-        db.transactions.update(tx.id, {
-          status: transactionStatus,
-          data: {
-            approvals: [...tx.data.approvals, content.senderAddress],
-          },
-        });
-      }
+      // const tx = transactions?.find(
+      //   (t) => t.data.callHash === content.callHash,
+      // );
+      const tx = await db.transactions
+        .where('data.callHash')
+        .equals(content.callHash)
+        .first();
+
+      console.log(tx, content.senderAddress);
+      if (!tx?.id) return;
+
+      db.transactions.update(tx.id, {
+        status: transactionStatus,
+        data: {
+          ...tx.data,
+          approvals: [...tx.data.approvals, content.senderAddress],
+        },
+      });
     }
   };
 

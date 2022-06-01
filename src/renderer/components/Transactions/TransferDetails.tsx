@@ -50,6 +50,7 @@ const TransferDetails: React.FC = () => {
   const [connection, setConnection] = useState<Connection>();
 
   const wallets = useLiveQuery(() => db.wallets.toArray());
+  const transactions = useLiveQuery(() => db.transactions.toArray());
 
   const isTransfer = transaction?.type === TransactionType.TRANSFER;
   const isMultisigTransfer =
@@ -135,8 +136,14 @@ const TransferDetails: React.FC = () => {
   }, [id]);
 
   useEffect(() => {
-    setupTransaction();
-  }, [setupTransaction]);
+    if (!transactions) return;
+
+    const tx = transactions.find((t) => t.id === Number(id));
+
+    if (!tx) return;
+
+    setTransaction(tx);
+  }, [transactions, id]);
 
   useEffect(() => {
     if (!transaction?.chainId) return;
