@@ -31,6 +31,8 @@ export const getAddressFromWallet = <T extends WalletAccounts>(
   );
   const account = chainAccount || wallet.mainAccounts[0];
 
+  if (!account) return '';
+
   return formatAddress(account.accountId, network.addressPrefix);
 };
 
