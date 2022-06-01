@@ -30,15 +30,15 @@ const DIALOG_CONTENT: Record<
   {
     title: string;
     subtitle: string;
-    buttons: (...actions: Array<() => void>) => ReactNode;
+    buttons: (onToggle: () => void, onForget: () => void) => ReactNode;
   }
 > = {
   mst: {
     title: 'MST account',
     subtitle: 'This account already exists',
-    buttons: (...actions) => (
+    buttons: (onToggle) => (
       <div className="mt-2 flex justify-center">
-        <Button className="max-w-min" onClick={actions[0]}>
+        <Button className="max-w-min" onClick={onToggle}>
           OK
         </Button>
       </div>
@@ -47,9 +47,9 @@ const DIALOG_CONTENT: Record<
   room: {
     title: 'Room is not created',
     subtitle: "MST account doesn't include your wallet",
-    buttons: (...actions) => (
+    buttons: (onToggle) => (
       <div className="mt-2 flex justify-center">
-        <Button className="max-w-min" onClick={actions[0]}>
+        <Button className="max-w-min" onClick={onToggle}>
           OK
         </Button>
       </div>
@@ -58,12 +58,12 @@ const DIALOG_CONTENT: Record<
   forget: {
     title: 'Forget wallet',
     subtitle: 'Are you sure you want to forget this wallet?',
-    buttons: (...actions) => (
+    buttons: (onToggle, onForget) => (
       <div className="mt-2 flex justify-between">
-        <Button className="max-w-min" onClick={actions[0]}>
+        <Button className="max-w-min" onClick={onToggle}>
           Cancel
         </Button>
-        <Button className="max-w-min" onClick={actions[1]}>
+        <Button className="max-w-min" onClick={onForget}>
           Forget
         </Button>
       </div>
