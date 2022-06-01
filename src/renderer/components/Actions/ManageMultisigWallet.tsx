@@ -20,6 +20,7 @@ import {
   isSameAccount,
 } from '../../utils/account';
 import { isMultisig } from '../../utils/validation';
+import SignRoom from './SignRoom';
 
 type DialogTypes = 'forget' | 'room' | 'mst';
 
@@ -84,6 +85,7 @@ const ManageMultisigWallet: React.FC = () => {
   const [wallet, setWallet] = useState<MultisigWallet>();
   const [selectedContacts, setSelectedContacts] = useState<Contact[]>([]);
   const [dialogType, setDialogType] = useState<DialogTypes>('mst');
+  const [isRoomCreation, setIsRoomSigning] = useState(false);
 
   const [isDialogOpen, toggleDialogOpen] = useToggle(false);
 
@@ -144,8 +146,8 @@ const ManageMultisigWallet: React.FC = () => {
     threshold: string,
     walletId: IndexableType,
   ) => {
-    if (!matrix.isLoggedIn) return;
-    if (!wallets) return; // FIXME: need wallets to identify MY contact
+    // Create room only if I'm a signatory
+    if (!matrix.isLoggedIn || !wallets) return;
 
     const addressesMap = selectedContacts.reduce((acc, contact) => {
       acc[contact.mainAccounts[0].accountId] = true;
@@ -162,6 +164,8 @@ const ManageMultisigWallet: React.FC = () => {
       openDialogWithType('room');
       return;
     }
+
+    setIsRoomSigning(true);
 
     const signatories = selectedContacts.map((s) => ({
       matrixAddress: s.secureProtocolId,
@@ -183,23 +187,18 @@ const ManageMultisigWallet: React.FC = () => {
       },
     );
 
-    db.wallets.update(walletId, {
-      matrixRoomId: roomId,
-    });
+    db.wallets.update(walletId, { matrixRoomId: roomId });
+    setIsRoomSigning(false);
   };
 
   const createMultisigWallet = async (
     walletName: string,
     threshold: string,
   ) => {
-    // TODO: won't be needed after Parity Signer
-    const addresses = selectedContacts.map((c) => c.mainAccounts[0].accountId);
-    if (addresses.length === 0) return;
-
     const { mstSs58Address, payload } = createMultisigWalletPayload({
       walletName,
       threshold,
-      addresses,
+      addresses: selectedContacts.map((c) => c.mainAccounts[0].accountId),
       contacts: selectedContacts,
     });
 
@@ -212,9 +211,6 @@ const ManageMultisigWallet: React.FC = () => {
     }
 
     const walletId = await db.wallets.add(payload);
-    // TODO: show some kind of loader | handle async error
-    // TODO: if user forgets MST acc and creates a new one
-    // duplicate room will be created (user should wait for invite from MST acc members)
     createMatrixRoom(mstSs58Address, threshold, walletId);
     setSelectedContacts([]);
     reset();
@@ -390,6 +386,12 @@ const ManageMultisigWallet: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      <SignRoom
+        visible={isRoomCreation}
+        onSigned={(signature) => console.warn(signature)}
+        onClose={() => setIsRoomSigning(false)}
+      />
     </>
   );
 };

@@ -5,7 +5,7 @@ import { useParams } from 'react-router-dom';
 import { useHistory } from 'react-router';
 import { decodeAddress, encodeAddress } from '@polkadot/keyring';
 import { u8aToHex } from '@polkadot/util';
-import { useForm, Controller, SubmitHandler } from 'react-hook-form';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { Dialog } from '@headlessui/react';
 
 import InputText from '../../ui/Input';
@@ -28,9 +28,10 @@ const MatrixIdRegex =
   /@[\w\d\-_]*:(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]/i;
 
 const ManageContact: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const [contact, setContact] = useState<Contact>();
   const history = useHistory();
+  const { id } = useParams<{ id: string }>();
+
+  const [contact, setContact] = useState<Contact>();
   const [isDialogOpen, toggleDialogOpen] = useToggle(false);
 
   const {

@@ -14,10 +14,11 @@ export interface ISecureMessenger {
   logout: () => Promise<void | never>;
 
   // Actions
-  createRoom: (
-    params: RoomCreation,
-    signWithParity: (value: string) => Promise<string>,
-  ) => Promise<string | never>;
+  startRoomCreation: (
+    mstAccountAddress: string,
+  ) => Promise<Record<'roomId' | 'sign', string> | never>;
+  finishRoomCreation: (params: RoomCreation) => Promise<void | never>;
+  cancelRoomCreation: (roomId: string) => Promise<void | never>;
   joinRoom: (roomId: string) => Promise<void | never>;
   invite: (roomId: string, signatoryId: string) => Promise<void | never>;
   listOfOmniRooms: (type: Membership.INVITE | Membership.JOIN) => Room[];
@@ -57,6 +58,8 @@ export type Signatory = {
 };
 
 export type RoomCreation = {
+  roomId: string;
+  signature: string;
   mstAccountAddress: string;
   inviterPublicKey: string;
   threshold: number;

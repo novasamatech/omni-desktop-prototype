@@ -188,37 +188,62 @@ class Matrix implements ISecureMessenger {
   }
 
   /**
-   * Create a room for new MST account
-   * @param params room configuration
-   * @param signWithColdWallet create signature with cold wallet
+   * Start room creation process for new MST account
+   * @param mstAccountAddress room configuration
    * @return {Promise}
    * @throws {Error}
    */
-  async createRoom(
-    params: RoomCreation,
-    signWithColdWallet: (value: string) => Promise<string>,
-  ): Promise<string | never> {
+  async startRoomCreation(
+    mstAccountAddress: string,
+  ): Promise<Record<'roomId' | 'sign', string> | never> {
     this.checkClientLoggedIn();
 
     try {
       const { room_id: roomId } = await this.matrixClient.createRoom({
-        name: `OMNI MST | ${params.mstAccountAddress}`,
+        name: `OMNI MST | ${mstAccountAddress}`,
         visibility: Visibility.Private,
         preset: Preset.TrustedPrivateChat,
       });
 
-      const signature = await signWithColdWallet(
-        `${params.mstAccountAddress}${roomId}`,
-      );
-      await this.initialStateEvents(roomId, params, signature);
-      await this.inviteSignatories(roomId, params.signatories);
+      return { roomId, sign: `${mstAccountAddress}${roomId}` };
+    } catch (error) {
+      throw this.createError((error as Error).message, error);
+    }
+  }
+
+  /**
+   * Finish room creation process for new MST account
+   * @param params room configuration
+   * @return {Promise}
+   * @throws {Error}
+   */
+  async finishRoomCreation(params: RoomCreation): Promise<void | never> {
+    this.checkClientLoggedIn();
+
+    try {
+      await this.initialStateEvents(params);
+      await this.inviteSignatories(params.roomId, params.signatories);
 
       const members = params.signatories.map(
         (signatory) => signatory.matrixAddress,
       );
       await this.verifyDevices(members);
+    } catch (error) {
+      throw this.createError((error as Error).message, error);
+    }
+  }
 
-      return roomId;
+  /**
+   * Cancel room creation and leave the room
+   * @param roomId room's identifier
+   * @return {Promise}
+   * @throws {Error}
+   */
+  async cancelRoomCreation(roomId: string): Promise<void | never> {
+    this.checkClientLoggedIn();
+
+    try {
+      await this.matrixClient.leave(roomId);
     } catch (error) {
       throw this.createError((error as Error).message, error);
     }
@@ -468,11 +493,7 @@ class Matrix implements ISecureMessenger {
   // ================= Private methods ===================
   // =====================================================
 
-  private async initialStateEvents(
-    roomId: string,
-    params: RoomCreation,
-    signature: string,
-  ): Promise<void> {
+  private async initialStateEvents(params: RoomCreation): Promise<void> {
     // TODO: temporary disabled
     // await this.matrixClient.sendStateEvent(
     //   roomId,
@@ -487,7 +508,7 @@ class Matrix implements ISecureMessenger {
         address: params.mstAccountAddress,
       },
       invite: {
-        signature,
+        signature: params.signature,
         public_key: params.inviterPublicKey,
       },
     };
@@ -498,7 +519,7 @@ class Matrix implements ISecureMessenger {
     };
 
     await this.matrixClient.sendStateEvent(
-      roomId,
+      params.roomId,
       'm.room.topic',
       topicContent,
     );
