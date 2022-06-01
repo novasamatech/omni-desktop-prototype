@@ -19,7 +19,7 @@ const FirstColumn: React.FC = () => {
       setIsLoggedIn(false);
       history.push(Routes.LOGIN);
     } catch (error) {
-      console.log(error);
+      console.warn(error);
       setIsShutdownInProgress(false);
     }
   };

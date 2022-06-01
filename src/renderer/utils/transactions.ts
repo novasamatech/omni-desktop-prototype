@@ -84,11 +84,11 @@ export const createTransactionPayload = (
 ): Transaction => {
   const {
     callHash,
-    opt: { depositor, when, approvals, deposit },
+    opt: { when, approvals, deposit },
   } = pendingTransaction;
 
   return {
-    address: depositor.toString(),
+    address: wallet.mainAccounts[0].accountId.toString(),
     createdAt: new Date(),
     type: TransactionType.MULTISIG_TRANSFER,
     blockHeight: when.height.toNumber(),
