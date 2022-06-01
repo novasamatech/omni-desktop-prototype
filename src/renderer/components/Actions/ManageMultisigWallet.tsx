@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { ReactNode, useEffect, useMemo, useState } from 'react';
 import { useHistory, useParams } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
@@ -21,7 +21,55 @@ import {
 } from '../../utils/account';
 import { isMultisig } from '../../utils/validation';
 
+type DialogTypes = 'forget' | 'room' | 'mst';
+
 const DEFAULT_THRESHOLD = '2';
+
+const DIALOG_CONTENT: Record<
+  DialogTypes,
+  {
+    title: string;
+    subtitle: string;
+    buttons: (onToggle: () => void, onForget: () => void) => ReactNode;
+  }
+> = {
+  mst: {
+    title: 'MST account',
+    subtitle: 'This account already exists',
+    buttons: (onToggle) => (
+      <div className="mt-2 flex justify-center">
+        <Button className="max-w-min" onClick={onToggle}>
+          OK
+        </Button>
+      </div>
+    ),
+  },
+  room: {
+    title: 'Room is not created',
+    subtitle: "MST account doesn't include your wallet",
+    buttons: (onToggle) => (
+      <div className="mt-2 flex justify-center">
+        <Button className="max-w-min" onClick={onToggle}>
+          OK
+        </Button>
+      </div>
+    ),
+  },
+  forget: {
+    title: 'Forget wallet',
+    subtitle: 'Are you sure you want to forget this wallet?',
+    buttons: (onToggle, onForget) => (
+      <div className="mt-2 flex justify-between">
+        <Button className="max-w-min" onClick={onToggle}>
+          Cancel
+        </Button>
+        <Button className="max-w-min" onClick={onForget}>
+          Forget
+        </Button>
+      </div>
+    ),
+  },
+};
 
 type MultisigWalletForm = {
   walletName: string;
@@ -35,6 +83,8 @@ const ManageMultisigWallet: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [wallet, setWallet] = useState<MultisigWallet>();
   const [selectedContacts, setSelectedContacts] = useState<Contact[]>([]);
+  const [dialogType, setDialogType] = useState<DialogTypes>('mst');
+
   const [isDialogOpen, toggleDialogOpen] = useToggle(false);
 
   const contacts = useLiveQuery(() => db.contacts.toArray()) || [];
@@ -84,6 +134,11 @@ const ManageMultisigWallet: React.FC = () => {
     db.wallets.put({ ...multisigWallet, name: name.trim() });
   };
 
+  const openDialogWithType = (type: DialogTypes) => {
+    setDialogType(type);
+    toggleDialogOpen();
+  };
+
   const createMatrixRoom = async (
     mstAccountAddress: string,
     threshold: string,
@@ -104,9 +159,7 @@ const ManageMultisigWallet: React.FC = () => {
     )?.mainAccounts[0];
 
     if (!myAddress) {
-      console.warn(
-        "Room won't be created - MST account doesn't include one of YOUR wallets",
-      );
+      openDialogWithType('room');
       return;
     }
 
@@ -154,7 +207,7 @@ const ManageMultisigWallet: React.FC = () => {
       w.mainAccounts.some((main) => main.accountId === mstSs58Address),
     );
     if (sameMstAccount) {
-      console.warn('MST account already exist');
+      openDialogWithType('mst');
       return;
     }
 
@@ -309,7 +362,11 @@ const ManageMultisigWallet: React.FC = () => {
             {wallet ? 'Update' : 'Create'}
           </Button>
           {wallet && (
-            <Button className="ml-3" onClick={toggleDialogOpen} size="lg">
+            <Button
+              className="ml-3"
+              onClick={() => openDialogWithType('forget')}
+              size="lg"
+            >
               Forget
             </Button>
           )}
@@ -324,20 +381,13 @@ const ManageMultisigWallet: React.FC = () => {
       >
         <DialogContent>
           <Dialog.Title as="h3" className="font-light text-xl">
-            Forget wallet
+            {DIALOG_CONTENT[dialogType].title}
           </Dialog.Title>
-          <div className="mt-2">
-            Are you sure you want to forget this wallet?
-          </div>
-
-          <div className=" mt-2 flex justify-between">
-            <Button className="max-w-min" onClick={toggleDialogOpen}>
-              Cancel
-            </Button>
-            <Button className="max-w-min" onClick={forgetMultisigWallet}>
-              Forget
-            </Button>
-          </div>
+          <div className="mt-2">{DIALOG_CONTENT[dialogType].subtitle}</div>
+          {DIALOG_CONTENT[dialogType].buttons(
+            toggleDialogOpen,
+            forgetMultisigWallet,
+          )}
         </DialogContent>
       </Dialog>
     </>
