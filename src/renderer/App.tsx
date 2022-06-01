@@ -7,44 +7,63 @@ import MatrixProvider from './components/Providers/MatrixProvider';
 import createRouter from '../common/utils/routing';
 import SplashScreen from './components/SplashScreen';
 import { Routes } from '../common/constants';
-import './App.css';
 import { loadChainsList } from './api/chains';
 import { db } from './db/db';
 import { ActiveType, Chain } from './db/types';
 import { createConnection } from './utils/networks';
-import { connectionState } from './store/connections';
+import { Connection, connectionState } from './store/connections';
+import { HexString } from '../common/types';
+import './App.css';
+
+const getNetworkMap = (networks: Chain[]): Record<HexString, Chain> =>
+  networks.reduce((acc, network) => {
+    acc[network.chainId] = network;
+
+    return acc;
+  }, {} as Record<HexString, Chain>);
 
 const App: React.FC = () => {
   const history = useHistory();
   const router = createRouter();
-  const networks = useLiveQuery(() => db.chains.toArray());
+
   const [isLoaded, setIsLoaded] = useState(false);
   const setConnections = useSetRecoilState(connectionState);
 
+  const networks = useLiveQuery(() => db.chains.toArray());
+
   const loadChains = useCallback(async () => {
     // TODO: Add possibility to update chains list
-    if (networks === undefined || isLoaded) return;
+    if (!networks || isLoaded) return;
 
-    const chains = await loadChainsList();
-    chains.forEach(async (chain: Chain) => {
-      const network = networks.find((n) => n.chainId === chain.chainId);
+    const chains: Chain[] = await loadChainsList();
+    const networkMap = getNetworkMap(networks);
 
-      if (network?.id) {
-        if (network.activeType !== ActiveType.DISABLED) {
-          const api = await createConnection(network);
-          if (!api) return;
+    const requests = chains.reduce((acc, chain) => {
+      const network = networkMap[chain.chainId];
 
-          setConnections((prev) => ({
-            ...prev,
-            [network.chainId]: { network, api },
-          }));
-        }
-        // db.chains.update(existedChain?.id, chain);
-      } else {
+      if (!network?.id) {
         db.chains.add(chain);
+        return acc;
       }
-    });
 
+      if (network.activeType === ActiveType.DISABLED) return acc;
+
+      const connection = (async () => {
+        const api = await createConnection(network);
+        return api && { network, api };
+      })();
+
+      acc.push(connection);
+      return acc;
+    }, [] as Promise<Connection | undefined>[]);
+
+    const newConnections = (await Promise.all(requests)).reduce(
+      (acc, connection) =>
+        connection ? { ...acc, [connection.network.chainId]: connection } : acc,
+      {} as Record<HexString, Connection>,
+    );
+
+    setConnections(newConnections);
     setIsLoaded(true);
   }, [networks, isLoaded, setConnections]);
 

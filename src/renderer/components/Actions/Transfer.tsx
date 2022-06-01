@@ -156,7 +156,9 @@ const Transfer: React.FC = () => {
     );
 
     if (!currentNetwork) {
-      setNetwork(networks[Object.keys(networks)[0]]?.network.chainId);
+      setNetwork(
+        networks[Object.keys(networks)[0] as HexString]?.network.chainId,
+      );
     }
   }, [networks, currentNetwork, setNetwork]);
 
