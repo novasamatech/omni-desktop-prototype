@@ -373,6 +373,7 @@ const Wallet: React.FC = () => {
               </div>
               <Button
                 className="ml-auto max-w-min"
+                disabled={!(account as ChainAccount)?.chainId}
                 onClick={() => removeAccount(network.chainId || '')}
               >
                 Remove
