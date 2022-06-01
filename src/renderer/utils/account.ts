@@ -75,3 +75,7 @@ export const createMultisigWalletPayload = ({
     },
   };
 };
+
+export const isSameAccount = (first: Contact, second: Contact): boolean =>
+  first.mainAccounts[0].accountId === second.mainAccounts[0].accountId &&
+  first.id === second.id;
