@@ -11,10 +11,24 @@ import Matrix from '../../modules/matrix';
 import {
   InvitePayload,
   ISecureMessenger,
+  MstParams,
   MSTPayload,
+  OmniMstEvents,
 } from '../../modules/types';
 import { db } from '../../db/db';
-import { BooleanValue, Notification } from '../../db/types';
+import {
+  BooleanValue,
+  Notification,
+  TransactionStatus,
+  TransactionType,
+} from '../../db/types';
+
+const Statuses = {
+  [OmniMstEvents.INIT]: TransactionStatus.CREATED,
+  [OmniMstEvents.APPROVE]: TransactionStatus.PENDING,
+  [OmniMstEvents.FINAL_APPROVE]: TransactionStatus.CONFIRMED,
+  [OmniMstEvents.CANCEL]: TransactionStatus.CANCELLED,
+};
 
 type MatrixContextProps = {
   matrix: ISecureMessenger;
@@ -46,6 +60,9 @@ const MatrixProvider: React.FC<Props> = ({
 
     return db.mxNotifications.where({ client: matrix.userId }).sortBy('date');
   }, [isLoggedIn]);
+
+  const wallets = useLiveQuery(() => db.wallets.toArray());
+  const transactions = useLiveQuery(() => db.transactions.toArray());
 
   useEffect(() => {
     const initMatrix = async () => {
@@ -116,12 +133,57 @@ const MatrixProvider: React.FC<Props> = ({
     });
   };
 
+  const updateTransactionData = (rest: Omit<MSTPayload, 'eventId'>) => {
+    const content = rest.content as MstParams;
+    const transactionStatus = Statuses[rest.type];
+
+    console.log(rest);
+    if (rest.type === OmniMstEvents.INIT) {
+      const wallet = wallets?.find(
+        (w) => w.mainAccounts[0].accountId === content.senderAddress,
+      );
+
+      if (!wallet?.id) return;
+
+      db.transactions.add({
+        wallet,
+        status: transactionStatus,
+        createdAt: rest.date,
+        address: content.senderAddress,
+        chainId: content.chainId,
+        data: {
+          callHash: content.callHash,
+          callData: content.callData,
+        },
+        type: TransactionType.MULTISIG_TRANSFER,
+      });
+    }
+    if (
+      [OmniMstEvents.APPROVE, OmniMstEvents.FINAL_APPROVE].includes(rest.type)
+    ) {
+      const tx = transactions?.find(
+        (t) => t.data.callHash === content.callHash,
+      );
+
+      if (tx?.id) {
+        db.transactions.update(tx.id, {
+          status: transactionStatus,
+          data: {
+            approvals: [...tx.data.approvals, content.senderAddress],
+          },
+        });
+      }
+    }
+  };
+
   const onMstEvent = ({ eventId, ...rest }: MSTPayload) => {
     db.mxNotifications.add({
       ...rest,
       id: eventId,
       isRead: BooleanValue.FALSE,
     });
+
+    updateTransactionData(rest);
   };
 
   useEffect(() => {

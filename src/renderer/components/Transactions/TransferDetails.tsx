@@ -187,7 +187,7 @@ const TransferDetails: React.FC = () => {
     );
   };
 
-  const updateCallData = () => {
+  const updateCallData = useCallback(() => {
     if (!transaction || !callData || !connection) return;
 
     const decodedData = decodeCallData(
@@ -207,7 +207,15 @@ const TransferDetails: React.FC = () => {
 
     setupTransaction();
     setCallData('');
-  };
+  }, [transaction, callData, connection, setupTransaction]);
+
+  // Check this case
+  useEffect(() => {
+    if (transaction?.data.callData && !transaction?.data.amount) {
+      setCallData(transaction.data.callData);
+      updateCallData();
+    }
+  }, [transaction, updateCallData]);
 
   return (
     <>

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRecoilValue } from 'recoil';
 import { useHistory } from 'react-router-dom';
 import { QrScanSignature } from '@polkadot/react-qr';
 import { GenericExtrinsic } from '@polkadot/types';
+import { systemPreferences } from 'electron';
 import {
   getRegistry,
   GetRegistryOpts,
@@ -60,6 +61,10 @@ function createSignedTx(
 }
 
 const ScanCode: React.FC = () => {
+  useEffect(() => {
+    systemPreferences.askForMediaAccess('camera');
+  }, []);
+
   const networks = useRecoilValue(connectionState);
   const history = useHistory();
   const { matrix } = useMatrix();
