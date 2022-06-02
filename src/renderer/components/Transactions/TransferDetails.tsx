@@ -50,6 +50,7 @@ const TransferDetails: React.FC = () => {
   const [connection, setConnection] = useState<Connection>();
 
   const wallets = useLiveQuery(() => db.wallets.toArray());
+  const transactions = useLiveQuery(() => db.transactions.toArray());
 
   const isTransfer = transaction?.type === TransactionType.TRANSFER;
   const isMultisigTransfer =
@@ -135,8 +136,14 @@ const TransferDetails: React.FC = () => {
   }, [id]);
 
   useEffect(() => {
-    setupTransaction();
-  }, [setupTransaction]);
+    if (!transactions) return;
+
+    const tx = transactions.find((t) => t.id === Number(id));
+
+    if (!tx) return;
+
+    setTransaction(tx);
+  }, [transactions, id]);
 
   useEffect(() => {
     if (!transaction?.chainId) return;
@@ -187,7 +194,7 @@ const TransferDetails: React.FC = () => {
     );
   };
 
-  const updateCallData = () => {
+  const updateCallData = useCallback(() => {
     if (!transaction || !callData || !connection) return;
 
     const decodedData = decodeCallData(
@@ -207,7 +214,15 @@ const TransferDetails: React.FC = () => {
 
     setupTransaction();
     setCallData('');
-  };
+  }, [transaction, callData, connection, setupTransaction]);
+
+  // Check this case
+  useEffect(() => {
+    if (transaction?.data.callData && !transaction?.data.amount) {
+      setCallData(transaction.data.callData);
+      updateCallData();
+    }
+  }, [transaction, updateCallData]);
 
   return (
     <>

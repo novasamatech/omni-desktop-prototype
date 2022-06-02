@@ -342,6 +342,7 @@ class Matrix implements ISecureMessenger {
    * @param handlers aggregated callback handlers
    */
   setupSubscribers(handlers: Callbacks): void {
+    // TODO: add possibility to add more than one handler for one event
     this.subscribeHandlers = handlers;
   }
 
