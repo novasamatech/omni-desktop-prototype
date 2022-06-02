@@ -133,7 +133,10 @@ const MatrixProvider: React.FC<Props> = ({
     });
   };
 
+  // TODO: Move this function outside of Matrix Provider
   const updateTransactionData = async (rest: Omit<MSTPayload, 'eventId'>) => {
+    if (rest.client === rest.sender) return;
+
     const content = rest.content as MstParams;
     const transactionStatus = Statuses[rest.type];
 
