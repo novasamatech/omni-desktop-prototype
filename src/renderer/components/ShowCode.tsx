@@ -44,14 +44,14 @@ const ShowCode: React.FC = () => {
 
       if (!network) return;
 
-      let wallet;
-      if (transaction.type === TransactionType.MULTISIG_TRANSFER && signBy) {
-        wallet = signBy;
-      } else {
-        wallet = transaction.wallet;
-      }
-
-      setAddress(getAddressFromWallet(wallet, network.network));
+      setAddress(
+        getAddressFromWallet(
+          transaction.type === TransactionType.MULTISIG_TRANSFER && signBy
+            ? signBy
+            : transaction.wallet,
+          network.network,
+        ),
+      );
       setConnection(network);
     }
   }, [transaction, networks, signBy]);
