@@ -237,7 +237,7 @@ const Transfer: React.FC = () => {
           label="Network"
           className="w-full"
           placeholder="Network"
-          value={currentNetwork?.network.name}
+          value={currentNetwork?.network.chainId}
           options={networkOptions}
           onChange={(event) => setNetwork(event.target.value)}
         />

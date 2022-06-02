@@ -17,17 +17,19 @@ const App: React.FC = () => {
   };
 
   return (
-    <MatrixProvider
-      loader={<SplashScreen />}
-      onAutoLoginFail={handleAutoLoginFail}
-    >
-      <div className="ribbon">
-        This is internal build of Omni Enterprise application proof of concept
-        demo. User Interface is not final
-      </div>
-      {renderRoutes(router)}
+    <>
       <NetworkRefresh />
-    </MatrixProvider>
+      <MatrixProvider
+        loader={<SplashScreen />}
+        onAutoLoginFail={handleAutoLoginFail}
+      >
+        <div className="ribbon">
+          This is internal build of Omni Enterprise application proof of concept
+          demo. User Interface is not final
+        </div>
+        {renderRoutes(router)}
+      </MatrixProvider>
+    </>
   );
 };
 

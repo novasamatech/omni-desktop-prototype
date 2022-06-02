@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+/* eslint-disable promise/catch-or-return,promise/always-return */
+import React, { useEffect } from 'react';
 import { useSetRecoilState } from 'recoil';
-import { useLiveQuery } from 'dexie-react-hooks';
 import { Connection, connectionState } from '../store/connections';
 import { createConnection } from '../utils/networks';
 import { HexString } from '../../common/types';
@@ -28,7 +28,9 @@ function getNetworkMap(networks: Chain[]): ChainMap {
 
 function getConnectionMap(
   connections: (Connection | undefined)[],
-): ConnectionMap {
+): ConnectionMap | undefined {
+  if (!connections.length) return undefined;
+
   return connections.reduce(
     (acc, connection) =>
       connection ? { ...acc, [connection.network.chainId]: connection } : acc,
@@ -38,7 +40,7 @@ function getConnectionMap(
 
 async function getChainConnections(
   networks: Chain[] = [],
-): Promise<ConnectionMap> {
+): Promise<ConnectionMap | undefined> {
   const chains = await getChains();
   const networkMap = getNetworkMap(networks);
 
@@ -65,26 +67,19 @@ async function getChainConnections(
 }
 
 const NetworkRefresh: React.FC = () => {
-  const [isLoaded, setIsLoaded] = useState(false);
   const setConnections = useSetRecoilState(connectionState);
 
-  const networks = useLiveQuery(() => db.chains.toArray()) || [];
-
   useEffect(() => {
-    if (!networks.length || isLoaded) return;
+    const setupConnections = async () => {
+      const networks = await db.chains.toArray();
+      const connections = await getChainConnections(networks);
+      if (!connections) return;
+      setConnections(connections);
+    };
 
-    getChainConnections(networks)
-      .then((connections) => {
-        // eslint-disable-next-line promise/always-return
-        if (!connections) return;
-
-        setConnections(connections);
-        setIsLoaded(true);
-      })
-      .catch(console.warn);
-
+    setupConnections();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [networks.length, isLoaded]);
+  }, []);
 
   return null;
 };
