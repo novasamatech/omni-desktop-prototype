@@ -32,7 +32,7 @@ import {
   MSTPayload,
   OmniExtras,
   OmniMstEvents,
-  RoomCreation,
+  RoomParams,
   Signatory,
 } from './types';
 import { BASE_MATRIX_URL } from './constants';
@@ -217,7 +217,7 @@ class Matrix implements ISecureMessenger {
    * @return {Promise}
    * @throws {Error}
    */
-  async finishRoomCreation(params: RoomCreation): Promise<void | never> {
+  async finishRoomCreation(params: RoomParams): Promise<void | never> {
     this.checkClientLoggedIn();
 
     try {
@@ -493,7 +493,7 @@ class Matrix implements ISecureMessenger {
   // ================= Private methods ===================
   // =====================================================
 
-  private async initialStateEvents(params: RoomCreation): Promise<void> {
+  private async initialStateEvents(params: RoomParams): Promise<void> {
     // TODO: temporary disabled
     // await this.matrixClient.sendStateEvent(
     //   roomId,

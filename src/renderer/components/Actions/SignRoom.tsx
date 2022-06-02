@@ -8,22 +8,31 @@ import ShowCode from '../ShowCode';
 type Steps = 'wallet' | 'scan' | 'show';
 
 type Props = {
+  sign: string;
   visible: boolean;
   onSigned: (signature: string) => void;
-  onClose: () => void;
+  onCancel: () => void;
 };
 
-const SignRoom: React.FC<Props> = ({ visible, onSigned, onClose }) => {
+const SignRoom: React.FC<Props> = ({ sign, visible, onSigned, onCancel }) => {
   const [roomState, setRoomState] = useState<Steps>('wallet');
 
-  onSigned('123');
+  const handleSign = () => {
+    console.log(sign);
+    onSigned('123');
+  };
 
   if (!visible) {
     return null;
   }
 
   return (
-    <Dialog as="div" className="relative z-10" open={visible} onClose={onClose}>
+    <Dialog
+      as="div"
+      className="relative z-10"
+      open={visible}
+      onClose={onCancel}
+    >
       <DialogContent>
         <Dialog.Title as="h3" className="font-light text-xl">
           Room creation
@@ -33,8 +42,9 @@ const SignRoom: React.FC<Props> = ({ visible, onSigned, onClose }) => {
           <>
             <div className="mt-2">Sign room with one of your wallets?</div>
             {/* Select */}
+            <button onClick={handleSign}>test</button>
             <div className=" mt-2 flex justify-between">
-              <Button className="max-w-min" onClick={onClose}>
+              <Button className="max-w-min" onClick={onCancel}>
                 Cancel
               </Button>
               <Button

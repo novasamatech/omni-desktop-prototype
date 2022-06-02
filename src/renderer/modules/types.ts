@@ -16,8 +16,8 @@ export interface ISecureMessenger {
   // Actions
   startRoomCreation: (
     mstAccountAddress: string,
-  ) => Promise<Record<'roomId' | 'sign', string> | never>;
-  finishRoomCreation: (params: RoomCreation) => Promise<void | never>;
+  ) => Promise<RoomSignature | never>;
+  finishRoomCreation: (params: RoomParams) => Promise<void | never>;
   cancelRoomCreation: (roomId: string) => Promise<void | never>;
   joinRoom: (roomId: string) => Promise<void | never>;
   invite: (roomId: string, signatoryId: string) => Promise<void | never>;
@@ -57,7 +57,9 @@ export type Signatory = {
   isInviter?: boolean;
 };
 
-export type RoomCreation = {
+export type RoomSignature = Record<'roomId' | 'sign', string>;
+
+export type RoomParams = {
   roomId: string;
   signature: string;
   mstAccountAddress: string;
