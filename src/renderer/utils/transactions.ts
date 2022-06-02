@@ -65,6 +65,7 @@ export const updateTransactionPayload = (
     blockHeight: pendingTransaction.opt.when.height.toNumber(),
     blockHash: pendingTransaction.opt.when.hash.toHex(),
     extrinsicIndex: pendingTransaction.opt.when.index.toNumber(),
+    status: TransactionStatus.PENDING,
     data: {
       ...transaction.data,
       deposit: pendingTransaction.opt.deposit.toString(),
