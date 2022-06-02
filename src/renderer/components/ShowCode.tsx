@@ -58,8 +58,7 @@ const ShowCode: React.FC = () => {
 
   const setupTransaction = useCallback(async () => {
     // TODO: Refactor setup transaction flow
-    if (!connection?.api || !transaction || !address || !signBy) return;
-    console.log(connection, transaction, address, signBy);
+    if (!connection?.api || !transaction || !address) return;
 
     const { block } = await connection.api.rpc.chain.getBlock();
     const blockHash = await connection.api.rpc.chain.getBlockHash();
