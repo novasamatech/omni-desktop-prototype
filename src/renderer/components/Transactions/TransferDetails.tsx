@@ -1,5 +1,5 @@
 /* eslint-disable promise/always-return */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 import { useHistory, useParams } from 'react-router';
 import { format } from 'date-fns';
@@ -33,12 +33,13 @@ import InputText from '../../ui/Input';
 import { Connection, connectionState } from '../../store/connections';
 import Signatories from './Signatories';
 import Chat from './Chat';
-import { decodeCallData } from '../../utils/transactions';
+import { decodeCallData, updateTransaction } from '../../utils/transactions';
 
 const TransferDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const history = useHistory();
 
+  const intervalId = useRef<NodeJS.Timer>();
   const [, setSignBy] = useRecoilState(signByState);
   const networks = useRecoilValue(connectionState);
   const setCurrentTransaction = useSetRecoilState(currentTransactionState);
@@ -224,6 +225,20 @@ const TransferDetails: React.FC = () => {
     }
   }, [transaction, updateCallData]);
 
+  useEffect(() => {
+    if (transaction && connection && !intervalId?.current) {
+      intervalId.current = setInterval(() => {
+        updateTransaction(transaction, connection);
+      }, 1000);
+    }
+
+    return () => {
+      if (intervalId.current) {
+        clearInterval(intervalId.current);
+      }
+    };
+  }, [connection, transaction]);
+
   return (
     <>
       <div className="flex justify-center items-center mb-8">
@@ -341,11 +356,7 @@ const TransferDetails: React.FC = () => {
         {isMultisigTransfer && (
           <>
             <Signatories network={network} transaction={transaction} />
-            <Chat
-              network={network}
-              transaction={transaction}
-              callHash={transaction?.data.callHash}
-            />
+            <Chat network={network} transaction={transaction} />
           </>
         )}
       </div>

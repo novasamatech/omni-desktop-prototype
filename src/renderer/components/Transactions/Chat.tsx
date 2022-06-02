@@ -5,7 +5,6 @@ import { useMatrix } from '../Providers/MatrixProvider';
 import { Routes } from '../../../common/constants';
 import LinkButton from '../../ui/LinkButton';
 import arrowUp from '../../../../assets/arrow-up.svg';
-import { HexString } from '../../../common/types';
 import { MstParams, OmniMstEvents } from '../../modules/types';
 import { getAddressFromWallet } from '../../utils/account';
 import {
@@ -48,14 +47,14 @@ const ChatMessage: React.FC<MessageProps> = ({
 type ChatProps = {
   network?: Chain;
   transaction?: Transaction;
-  callHash: HexString;
 };
 
-const Chat: React.FC<ChatProps> = ({ callHash, network, transaction }) => {
+const Chat: React.FC<ChatProps> = ({ network, transaction }) => {
   const { matrix, notifications } = useMatrix();
 
   const txNotifs = notifications.filter(
-    (notif) => (notif.content as MstParams).callHash === callHash,
+    (notif) =>
+      (notif.content as MstParams).callHash === transaction?.data.callHash,
   );
 
   const contacts =
