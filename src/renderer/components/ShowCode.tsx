@@ -20,7 +20,7 @@ import {
   signByState,
 } from '../store/currentTransaction';
 import LinkButton from '../ui/LinkButton';
-import { Routes, DEFAULT } from '../../common/constants';
+import { Routes, DEFAULT, withId } from '../../common/constants';
 import { getAddressFromWallet } from '../utils/account';
 import { formatAmount, getAssetById } from '../utils/assets';
 import Shimmer from '../ui/Shimmer';
@@ -42,175 +42,181 @@ const ShowCode: React.FC = () => {
         (n) => n.network.chainId === transaction.chainId,
       );
 
-      if (network) {
-        setAddress(getAddressFromWallet(transaction.wallet, network.network));
-        setConnection(network);
+      if (!network) return;
+
+      let wallet;
+      if (transaction.type === TransactionType.MULTISIG_TRANSFER && signBy) {
+        wallet = signBy;
+      } else {
+        wallet = transaction.wallet;
       }
+
+      setAddress(getAddressFromWallet(wallet, network.network));
+      setConnection(network);
     }
-  }, [transaction, networks]);
+  }, [transaction, networks, signBy]);
 
   const setupTransaction = useCallback(async () => {
     // TODO: Refactor setup transaction flow
-    if (connection?.api && transaction && address) {
-      const { block } = await connection.api.rpc.chain.getBlock();
-      const blockHash = await connection.api.rpc.chain.getBlockHash();
-      const genesisHash = await connection.api.rpc.chain.getBlockHash(0);
-      const metadataRpc = await connection.api.rpc.state.getMetadata();
-      const { specVersion, transactionVersion, specName } =
-        await connection.api.rpc.state.getRuntimeVersion();
+    if (!connection?.api || !transaction || !address || !signBy) return;
+    console.log(connection, transaction, address, signBy);
 
-      const registry = getRegistry({
-        chainName: connection.network.name || '',
-        specName: specName.toString() as GetRegistryOpts['specName'],
-        specVersion: specVersion.toNumber(),
-        metadataRpc: metadataRpc.toHex(),
-      });
+    const { block } = await connection.api.rpc.chain.getBlock();
+    const blockHash = await connection.api.rpc.chain.getBlockHash();
+    const genesisHash = await connection.api.rpc.chain.getBlockHash(0);
+    const metadataRpc = await connection.api.rpc.state.getMetadata();
+    const { specVersion, transactionVersion, specName } =
+      await connection.api.rpc.state.getRuntimeVersion();
 
-      const { nonce } = await connection.api.query.system.account(address);
-      const info = {
-        address,
-        blockHash: blockHash.toString(),
-        blockNumber: block.header.number.toNumber(),
-        eraPeriod: 64,
-        genesisHash: genesisHash.toString(),
-        metadataRpc: metadataRpc.toHex(),
-        nonce: nonce.toNumber(),
-        specVersion: specVersion.toNumber(),
-        tip: 0,
-        transactionVersion: transactionVersion.toNumber(),
-      };
+    const registry = getRegistry({
+      chainName: connection.network.name || '',
+      specName: specName.toString() as GetRegistryOpts['specName'],
+      specVersion: specVersion.toNumber(),
+      metadataRpc: metadataRpc.toHex(),
+    });
 
-      const options = {
-        metadataRpc: metadataRpc.toHex(),
-        registry,
-      };
+    const { nonce } = await connection.api.query.system.account(address);
+    const info = {
+      address,
+      blockHash: blockHash.toString(),
+      blockNumber: block.header.number.toNumber(),
+      eraPeriod: 64,
+      genesisHash: genesisHash.toString(),
+      metadataRpc: metadataRpc.toHex(),
+      nonce: nonce.toNumber(),
+      specVersion: specVersion.toNumber(),
+      tip: 0,
+      transactionVersion: transactionVersion.toNumber(),
+    };
 
-      const asset = getAssetById(
-        connection.network.assets,
-        transaction.data.assetId,
-      );
+    const options = {
+      metadataRpc: metadataRpc.toHex(),
+      registry,
+    };
 
-      const transfers = {
-        [AssetType.ORML]: () =>
-          ORMLMethods.currencies.transfer(
-            {
-              currencyId: transaction.data.assetId,
-              amount: formatAmount(
-                transaction.data.amount.toString(),
-                transaction.data.precision,
-              ),
-              dest: transaction.data.address,
-            },
-            info,
-            options,
-          ),
-        [AssetType.STATEMINE]: () =>
-          methods.assets.transfer(
-            {
-              id: transaction.data.assetId,
-              amount: formatAmount(
-                transaction.data.amount.toString(),
-                transaction.data.precision,
-              ),
-              target: transaction.data.address,
-            },
-            info,
-            options,
-          ),
-        [DEFAULT]: () =>
-          methods.balances.transfer(
-            {
-              value: formatAmount(
-                transaction.data.amount.toString(),
-                transaction.data.precision,
-              ),
-              dest: transaction.data.address,
-            },
-            info,
-            options,
-          ),
-      };
+    const asset = getAssetById(
+      connection.network.assets,
+      transaction.data.assetId,
+    );
 
-      const MAX_WEIGHT = 640000000;
-      const when =
-        transaction.blockHeight && transaction.extrinsicIndex
-          ? {
-              height: transaction.blockHeight,
-              index: transaction.extrinsicIndex,
-            }
-          : null;
-      const otherSignatories = transaction.wallet.isMultisig
-        ? (transaction.wallet as MultisigWallet).originContacts
-            .map((c) => getAddressFromWallet(c, connection.network))
-            .filter((c) => c !== address)
-            .sort()
-        : [];
-      const { threshold } = transaction.wallet as MultisigWallet;
+    const transfers = {
+      [AssetType.ORML]: () =>
+        ORMLMethods.currencies.transfer(
+          {
+            currencyId: transaction.data.assetId,
+            amount: formatAmount(
+              transaction.data.amount.toString(),
+              transaction.data.precision,
+            ),
+            dest: transaction.data.address,
+          },
+          info,
+          options,
+        ),
+      [AssetType.STATEMINE]: () =>
+        methods.assets.transfer(
+          {
+            id: transaction.data.assetId,
+            amount: formatAmount(
+              transaction.data.amount.toString(),
+              transaction.data.precision,
+            ),
+            target: transaction.data.address,
+          },
+          info,
+          options,
+        ),
+      [DEFAULT]: () =>
+        methods.balances.transfer(
+          {
+            value: formatAmount(
+              transaction.data.amount.toString(),
+              transaction.data.precision,
+            ),
+            dest: transaction.data.address,
+          },
+          info,
+          options,
+        ),
+    };
 
-      const multisig = {
-        approve: () => {
-          return methods.multisig.approveAsMulti(
-            {
-              threshold,
-              otherSignatories,
-              maybeTimepoint: when,
-              callHash: transaction.data.callHash,
-              maxWeight: MAX_WEIGHT,
-            },
-            info,
-            options,
-          );
-        },
-        finalApprove: () => {
-          return methods.multisig.asMulti(
-            {
-              threshold,
-              otherSignatories,
-              maybeTimepoint: when,
-              callHash: transaction.data.callHash,
-              maxWeight: MAX_WEIGHT,
-              call: transaction.data.callData,
-              storeCall: true,
-            },
-            info,
-            options,
-          );
-        },
-        // TODO: Use it for cancel transaction
-        // cancel: () => {
-        //   return (
-        //     when &&
-        //     methods.multisig.cancelAsMulti(
-        //       {
-        //         threshold,
-        //         otherSignatories,
-        //         timepoint: when,
-        //         callHash: transaction.data.callHash,
-        //       },
-        //       info,
-        //       options,
-        //     )
-        //   );
-        // },
-      };
-      let unsignedAction = transfers[asset?.type || DEFAULT];
+    const MAX_WEIGHT = 640000000;
+    const when =
+      transaction.blockHeight && transaction.extrinsicIndex
+        ? {
+            height: transaction.blockHeight,
+            index: transaction.extrinsicIndex,
+          }
+        : null;
+    const otherSignatories = transaction.wallet.isMultisig
+      ? (transaction.wallet as MultisigWallet).originContacts
+          .map((c) => getAddressFromWallet(c, connection.network))
+          .filter((c) => c !== address)
+          .sort()
+      : [];
+    const { threshold } = transaction.wallet as MultisigWallet;
 
-      if (transaction.type === TransactionType.MULTISIG_TRANSFER && signBy) {
-        setAddress(getAddressFromWallet(signBy, connection.network));
+    const multisig = {
+      approve: () => {
+        return methods.multisig.approveAsMulti(
+          {
+            threshold,
+            otherSignatories,
+            maybeTimepoint: when,
+            callHash: transaction.data.callHash,
+            maxWeight: MAX_WEIGHT,
+          },
+          info,
+          options,
+        );
+      },
+      finalApprove: () => {
+        return methods.multisig.asMulti(
+          {
+            threshold,
+            otherSignatories,
+            maybeTimepoint: when,
+            callHash: transaction.data.callHash,
+            maxWeight: MAX_WEIGHT,
+            call: transaction.data.callData,
+            storeCall: true,
+          },
+          info,
+          options,
+        );
+      },
+      // TODO: Use it for cancel transaction
+      // cancel: () => {
+      //   return (
+      //     when &&
+      //     methods.multisig.cancelAsMulti(
+      //       {
+      //         threshold,
+      //         otherSignatories,
+      //         timepoint: when,
+      //         callHash: transaction.data.callHash,
+      //       },
+      //       info,
+      //       options,
+      //     )
+      //   );
+      // },
+    };
+    let unsignedAction = transfers[asset?.type || DEFAULT];
 
-        unsignedAction = isFinalApprove(transaction)
-          ? multisig.finalApprove
-          : multisig.approve;
-      }
-
-      const unsigned = unsignedAction();
-      const signingPayloadHex = construct.signingPayload(unsigned, {
-        registry,
-      });
-
-      setPayload(hexToU8a(signingPayloadHex));
-      setUnsigned(unsigned);
+    if (transaction.type === TransactionType.MULTISIG_TRANSFER && signBy) {
+      unsignedAction = isFinalApprove(transaction)
+        ? multisig.finalApprove
+        : multisig.approve;
     }
+
+    const unsigned = unsignedAction();
+    const signingPayloadHex = construct.signingPayload(unsigned, {
+      registry,
+    });
+
+    setPayload(hexToU8a(signingPayloadHex));
+    setUnsigned(unsigned);
   }, [connection, transaction, setUnsigned, address, signBy]);
 
   useEffect(() => {
@@ -220,7 +226,14 @@ const ShowCode: React.FC = () => {
   return (
     <div className="h-ribbon flex flex-col">
       <div className="flex justify-center items-center">
-        <LinkButton className="ml-2 absolute left-0" to={Routes.BASKET}>
+        <LinkButton
+          className="ml-2 absolute left-0"
+          to={
+            transaction?.id
+              ? withId(Routes.TRANSFER_DETAILS, transaction?.id)
+              : Routes.BASKET
+          }
+        >
           Back
         </LinkButton>
         <h2 className="h-16 p-4 font-light text-lg">
