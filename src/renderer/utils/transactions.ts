@@ -14,7 +14,7 @@ import {
   TransactionType,
   Wallet,
 } from '../db/types';
-import { getAddressFromWallet } from './account';
+import { formatAddress, getAddressFromWallet } from './account';
 import { db } from '../db/db';
 import { formatBalance, getAssetById } from './assets';
 
@@ -46,18 +46,14 @@ export const getPendingTransactionsFromChain = async (
     }, [] as MultisigTransaction[]);
 };
 
-export const isSameTransactions = (
+export const isSameTransaction = (
   transaction: Transaction,
   multisigTransaction: MultisigTransaction,
 ) => {
-  // const isSameBlockHeight =
-  //   multisigTransaction.opt.when.height.toString() ===
-  //   transaction.blockHeight?.toString();
-  const isSameCallHash =
+  return (
     multisigTransaction.callHash.toString() ===
-    transaction.data.callHash?.toString();
-
-  return isSameCallHash;
+    transaction.data.callHash?.toString()
+  );
 };
 
 export const updateTransactionPayload = (
@@ -69,6 +65,7 @@ export const updateTransactionPayload = (
     blockHeight: pendingTransaction.opt.when.height.toNumber(),
     blockHash: pendingTransaction.opt.when.hash.toHex(),
     extrinsicIndex: pendingTransaction.opt.when.index.toNumber(),
+    status: TransactionStatus.PENDING,
     data: {
       ...transaction.data,
       deposit: pendingTransaction.opt.deposit.toString(),
@@ -105,7 +102,7 @@ export const createTransactionPayload = (
 };
 
 export const updateTransactions = async (
-  savedTransactions: Transaction[] = [],
+  transactions: Transaction[] = [],
   wallet: Wallet,
   connection: Connection,
 ) => {
@@ -114,9 +111,7 @@ export const updateTransactions = async (
     getAddressFromWallet(wallet, connection.network),
   );
   pendingTransactions.forEach((p) => {
-    const savedTransaction = savedTransactions.find((s) =>
-      isSameTransactions(s, p),
-    );
+    const savedTransaction = transactions.find((s) => isSameTransaction(s, p));
 
     if (savedTransaction) {
       db.transactions.put(updateTransactionPayload(savedTransaction, p));
@@ -126,6 +121,25 @@ export const updateTransactions = async (
       );
     }
   });
+};
+
+export const updateTransaction = async (
+  transaction: Transaction,
+  connection: Connection,
+) => {
+  const pendingTransactions = await getPendingTransactionsFromChain(
+    connection.api,
+    formatAddress(transaction.address),
+  );
+  const pendingTransaction = pendingTransactions.find((p) =>
+    isSameTransaction(transaction, p),
+  );
+
+  if (!pendingTransaction) return;
+
+  db.transactions.put(
+    updateTransactionPayload(transaction, pendingTransaction),
+  );
 };
 
 export const isFinalApprove = (transaction: Transaction) =>

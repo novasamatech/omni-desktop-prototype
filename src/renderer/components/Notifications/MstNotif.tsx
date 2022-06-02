@@ -3,12 +3,7 @@ import { format } from 'date-fns';
 import { useHistory } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
-import {
-  BooleanValue,
-  Notification,
-  TransactionStatus,
-  TransactionType,
-} from '../../db/types';
+import { BooleanValue, Notification } from '../../db/types';
 import { OmniMstEvents, MstParams } from '../../modules/types';
 import NotifyItem from './NotifyItem';
 import { Routes, withId } from '../../../common/constants';
@@ -31,13 +26,6 @@ const DESCRIPTIONS = {
     `The transaction was cancelled by ${sender}`,
 };
 
-const Statuses = {
-  [OmniMstEvents.INIT]: TransactionStatus.CREATED,
-  [OmniMstEvents.APPROVE]: TransactionStatus.PENDING,
-  [OmniMstEvents.FINAL_APPROVE]: TransactionStatus.CONFIRMED,
-  [OmniMstEvents.CANCEL]: TransactionStatus.CANCELLED,
-};
-
 type Props = {
   notif: Notification;
 };
@@ -47,7 +35,6 @@ const MstNotif: React.FC<Props> = ({ notif }) => {
   const type = notif.type as OmniMstEvents;
 
   const transactions = useLiveQuery(() => db.transactions.toArray());
-  const wallets = useLiveQuery(() => db.wallets.toArray());
 
   const onDetailsClick = async () => {
     if (!notif.isRead) {
@@ -64,28 +51,6 @@ const MstNotif: React.FC<Props> = ({ notif }) => {
 
     if (transaction?.id) {
       history.push(withId(Routes.TRANSFER_DETAILS, transaction.id));
-    } else {
-      const transactionStatus = Statuses[type];
-      const wallet = wallets?.find(
-        (w) => w.mainAccounts[0].accountId === content.senderAddress,
-      );
-
-      if (!wallet?.id) return;
-
-      const id = db.transactions.add({
-        wallet,
-        status: transactionStatus,
-        createdAt: notif.date,
-        address: content.senderAddress,
-        chainId: content.chainId,
-        data: {
-          callHash: content.callHash,
-          callData: content.callData,
-        },
-        type: TransactionType.MULTISIG_TRANSFER,
-      });
-
-      history.push(withId(Routes.TRANSFER_DETAILS, id));
     }
   };
 

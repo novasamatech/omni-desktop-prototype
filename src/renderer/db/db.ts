@@ -27,12 +27,12 @@ export class OmniDexie extends Dexie {
 
   constructor() {
     super('omniDatabase');
-    this.version(58).stores({
+    this.version(59).stores({
       wallets: '++id,name,isMultisig',
       chains: '++id,&chainId,parentId,name,activeType',
       connections: '++id,&chainId,activeType',
       contacts: '++id,name,secureProtocolId',
-      transactions: '++id,chainId,address,type,status',
+      transactions: '++id,chainId,address,type,status,data.callHash',
       mxCredentials: '++id,userId,isLoggedIn',
       mxNotifications: '++id,sender,client',
     });

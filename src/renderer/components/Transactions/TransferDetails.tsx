@@ -1,5 +1,5 @@
 /* eslint-disable promise/always-return */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 import { useHistory, useParams } from 'react-router';
 import { format } from 'date-fns';
@@ -33,12 +33,13 @@ import InputText from '../../ui/Input';
 import { Connection, connectionState } from '../../store/connections';
 import Signatories from './Signatories';
 import Chat from './Chat';
-import { decodeCallData } from '../../utils/transactions';
+import { decodeCallData, updateTransaction } from '../../utils/transactions';
 
 const TransferDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const history = useHistory();
 
+  const intervalId = useRef<NodeJS.Timer>();
   const [, setSignBy] = useRecoilState(signByState);
   const networks = useRecoilValue(connectionState);
   const setCurrentTransaction = useSetRecoilState(currentTransactionState);
@@ -50,6 +51,7 @@ const TransferDetails: React.FC = () => {
   const [connection, setConnection] = useState<Connection>();
 
   const wallets = useLiveQuery(() => db.wallets.toArray());
+  const transactions = useLiveQuery(() => db.transactions.toArray());
 
   const isTransfer = transaction?.type === TransactionType.TRANSFER;
   const isMultisigTransfer =
@@ -135,8 +137,14 @@ const TransferDetails: React.FC = () => {
   }, [id]);
 
   useEffect(() => {
-    setupTransaction();
-  }, [setupTransaction]);
+    if (!transactions) return;
+
+    const tx = transactions.find((t) => t.id === Number(id));
+
+    if (!tx) return;
+
+    setTransaction(tx);
+  }, [transactions, id]);
 
   useEffect(() => {
     if (!transaction?.chainId) return;
@@ -187,7 +195,7 @@ const TransferDetails: React.FC = () => {
     );
   };
 
-  const updateCallData = () => {
+  const updateCallData = useCallback(() => {
     if (!transaction || !callData || !connection) return;
 
     const decodedData = decodeCallData(
@@ -207,7 +215,29 @@ const TransferDetails: React.FC = () => {
 
     setupTransaction();
     setCallData('');
-  };
+  }, [transaction, callData, connection, setupTransaction]);
+
+  // Check this case
+  useEffect(() => {
+    if (transaction?.data.callData && !transaction?.data.amount) {
+      setCallData(transaction.data.callData);
+      updateCallData();
+    }
+  }, [transaction, updateCallData]);
+
+  useEffect(() => {
+    if (transaction && connection && !intervalId?.current) {
+      intervalId.current = setInterval(() => {
+        updateTransaction(transaction, connection);
+      }, 1000);
+    }
+
+    return () => {
+      if (intervalId.current) {
+        clearInterval(intervalId.current);
+      }
+    };
+  }, [connection, transaction]);
 
   return (
     <>
@@ -326,11 +356,7 @@ const TransferDetails: React.FC = () => {
         {isMultisigTransfer && (
           <>
             <Signatories network={network} transaction={transaction} />
-            <Chat
-              network={network}
-              transaction={transaction}
-              callHash={transaction?.data.callHash}
-            />
+            <Chat network={network} transaction={transaction} />
           </>
         )}
       </div>
