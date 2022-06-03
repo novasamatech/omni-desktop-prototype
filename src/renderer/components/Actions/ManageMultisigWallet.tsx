@@ -197,9 +197,7 @@ const ManageMultisigWallet: React.FC = () => {
     )?.mainAccounts[0];
 
     // Create room only if I'm a signatory
-    if (!myAddress) {
-      return '';
-    }
+    if (!myAddress) return '';
 
     const roomData = await matrix.startRoomCreation(mstAccountAddress);
     mstRoom.current = {
