@@ -3,8 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useHistory } from 'react-router';
-import { decodeAddress, encodeAddress } from '@polkadot/keyring';
-import { u8aToHex } from '@polkadot/util';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { Dialog } from '@headlessui/react';
 
@@ -17,6 +15,7 @@ import DialogContent from '../../ui/DialogContent';
 import { validateAddress } from '../../utils/validation';
 import { ErrorTypes, Routes } from '../../../common/constants';
 import ErrorMessage from '../../ui/ErrorMessage';
+import { formatAddress, toPublicKey } from '../../utils/account';
 
 type ContactForm = {
   name: string;
@@ -83,8 +82,8 @@ const ManageContact: React.FC = () => {
       chainAccounts: [],
       mainAccounts: [
         {
-          accountId: encodeAddress(decodeAddress(address), 42) || '',
-          publicKey: u8aToHex(decodeAddress(address)),
+          accountId: formatAddress(address),
+          publicKey: toPublicKey(address),
           cryptoType: CryptoType.ED25519,
         },
       ],

@@ -92,7 +92,7 @@ const TransferDetails: React.FC = () => {
 
       const contacts = (
         transaction?.wallet as MultisigWallet
-      ).originContacts?.map((c) => c.mainAccounts[0].accountId);
+      ).originContacts?.map((c) => getAddressFromWallet(c, network));
 
       if (
         address &&
@@ -109,7 +109,7 @@ const TransferDetails: React.FC = () => {
       setSignBy(walletsToSign[0]);
       setAvailableWallets(
         walletsToSign.map((w) => ({
-          value: w.mainAccounts[0].accountId,
+          value: w.mainAccounts[0].publicKey,
           label: w.name,
         })),
       );
@@ -156,7 +156,7 @@ const TransferDetails: React.FC = () => {
           setNetwork(chain);
         }
       })
-      .catch((e) => console.warn(e));
+      .catch(console.warn);
   }, [transaction?.chainId]);
 
   const currentAsset = getAssetById(
@@ -186,11 +186,9 @@ const TransferDetails: React.FC = () => {
   };
 
   const selectSignWallet = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const walletAddress = e.target.value;
-
     setSignBy(
       wallets?.find(
-        (w) => w.mainAccounts[0].accountId === walletAddress,
+        (w) => w.mainAccounts[0].publicKey === e.target.value,
       ) as Wallet,
     );
   };

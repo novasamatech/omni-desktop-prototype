@@ -186,14 +186,14 @@ const ManageMultisigWallet: React.FC = () => {
     mstAccountAddress: string,
   ): Promise<string> => {
     const addressesMap = selectedContacts.reduce((acc, contact) => {
-      acc[contact.mainAccounts[0].accountId] = true;
+      acc[contact.mainAccounts[0].publicKey] = true;
 
       return acc;
     }, {} as Record<string, boolean>);
 
     const myAddress = wallets?.find(
       (w) =>
-        !isMultisig(w) && w.mainAccounts.some((a) => addressesMap[a.accountId]),
+        !isMultisig(w) && w.mainAccounts.some((a) => addressesMap[a.publicKey]),
     )?.mainAccounts[0];
 
     // Create room only if I'm a signatory
@@ -314,26 +314,50 @@ const ManageMultisigWallet: React.FC = () => {
       }
       return (
         !c.id &&
-        c.mainAccounts[0].accountId === contact.mainAccounts[0].accountId
+        c.mainAccounts[0].publicKey === contact.mainAccounts[0].publicKey
       );
     });
   };
 
   const availableContacts = useMemo(() => {
-    if (wallet) {
-      return wallet.originContacts;
-    }
+    if (wallet) return wallet.originContacts;
+    if (!wallets) return contacts;
 
-    const myWallets: Contact[] | undefined = wallets
-      ?.filter((w) => !isMultisig(w) && w.mainAccounts[0])
-      .map((w) => ({
-        name: w.name,
-        mainAccounts: w.mainAccounts,
-        chainAccounts: [],
-        secureProtocolId: matrix.userId,
-      }));
+    const walletsMap = wallets.reduce((acc, w, index) => {
+      if (isMultisig(w) || !w.mainAccounts[0]) return acc;
+      if (acc[w.mainAccounts[0].publicKey] !== undefined) return acc;
 
-    return myWallets?.concat(contacts) || contacts;
+      acc[w.mainAccounts[0].publicKey] = index;
+      return acc;
+    }, {} as Record<string, number>);
+
+    if (!Object.keys(walletsMap).length) return contacts;
+
+    const contactsMap = contacts.reduce((acc, c) => {
+      acc[c.mainAccounts[0].publicKey] = c;
+      return acc;
+    }, {} as Record<string, Contact>);
+
+    const myWallets = wallets.reduce((acc, w, index) => {
+      const publicKey = w.mainAccounts[0]?.publicKey;
+
+      if (
+        !contactsMap[publicKey] &&
+        publicKey &&
+        index === walletsMap[publicKey]
+      ) {
+        acc.push({
+          name: w.name,
+          mainAccounts: w.mainAccounts,
+          chainAccounts: [],
+          secureProtocolId: matrix.userId,
+        });
+      }
+      // }
+      return acc;
+    }, [] as Contact[]);
+
+    return myWallets.concat(contacts);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wallets?.length, contacts.length]);
 

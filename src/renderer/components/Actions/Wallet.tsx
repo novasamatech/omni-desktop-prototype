@@ -2,7 +2,7 @@ import React, { ChangeEvent, useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useParams } from 'react-router-dom';
 import { useHistory } from 'react-router';
-import { decodeAddress, encodeAddress } from '@polkadot/keyring';
+import { decodeAddress } from '@polkadot/keyring';
 import { u8aToHex } from '@polkadot/util';
 import { Dialog } from '@headlessui/react';
 import { useSetRecoilState } from 'recoil';
@@ -21,6 +21,7 @@ import { Routes, ErrorTypes } from '../../../common/constants';
 import { selectedWalletsState } from '../../store/selectedWallets';
 import { validateAddress } from '../../utils/validation';
 import ErrorMessage from '../../ui/ErrorMessage';
+import { formatAddress } from '../../utils/account';
 
 const enum AccountTypes {
   MAIN = 'MAIN',
@@ -151,8 +152,8 @@ const Wallet: React.FC = () => {
         const mainAccount = wallet?.mainAccounts[0];
 
         if (mainAccount) {
-          const updatedAccountId = encodeAddress(
-            decodeAddress(mainAccount.accountId),
+          const updatedAccountId = formatAddress(
+            mainAccount.accountId,
             n.addressPrefix,
           );
           const updatedMainAccount = {
@@ -196,7 +197,7 @@ const Wallet: React.FC = () => {
           chainAccounts: [
             ...wallet.chainAccounts,
             {
-              accountId: address,
+              accountId: formatAddress(address),
               chainId: accountNetwork,
               publicKey: publicKeyHex,
             },

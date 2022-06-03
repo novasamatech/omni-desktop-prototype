@@ -1,8 +1,6 @@
 import React, { FormEvent, useState } from 'react';
 import { format } from 'date-fns';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { u8aToHex } from '@polkadot/util';
-import { decodeAddress } from '@polkadot/keyring';
 import { Dialog } from '@headlessui/react';
 import { useHistory } from 'react-router';
 import { useMatrix } from '../Providers/MatrixProvider';
@@ -11,7 +9,11 @@ import useToggle from '../../hooks/toggle';
 import { db } from '../../db/db';
 import { BooleanValue, CryptoType, Notification } from '../../db/types';
 import { OmniExtras } from '../../modules/types';
-import { createMultisigWalletPayload } from '../../utils/account';
+import {
+  createMultisigWalletPayload,
+  formatAddress,
+  toPublicKey,
+} from '../../utils/account';
 import DialogContent from '../../ui/DialogContent';
 import InputText from '../../ui/Input';
 import Button from '../../ui/Button';
@@ -92,8 +94,9 @@ const InviteNotif: React.FC<Props> = ({ notif }) => {
 
   const createMstAccount = () => {
     const walletContacts = account.signatories.map((signatory) => {
+      const address = formatAddress(signatory);
       const match = contacts?.find((contact) =>
-        contact.mainAccounts.some((main) => signatory === main.accountId),
+        contact.mainAccounts.some((main) => address === main.accountId),
       );
 
       if (match) return match;
@@ -103,8 +106,8 @@ const InviteNotif: React.FC<Props> = ({ notif }) => {
         chainAccounts: [],
         mainAccounts: [
           {
-            accountId: signatory,
-            publicKey: u8aToHex(decodeAddress(signatory)),
+            accountId: address,
+            publicKey: toPublicKey(address),
             cryptoType: CryptoType.ED25519,
           },
         ],
