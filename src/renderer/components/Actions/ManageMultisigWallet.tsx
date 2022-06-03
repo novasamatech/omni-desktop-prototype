@@ -1,9 +1,8 @@
-import React, { ReactNode, useEffect, useMemo, useState } from 'react';
+import React, { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { useHistory, useParams } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { Dialog } from '@headlessui/react';
-import { IndexableType } from 'dexie';
 import Button from '../../ui/Button';
 import InputText from '../../ui/Input';
 import { Contact, MultisigWallet } from '../../db/types';
@@ -20,10 +19,9 @@ import {
   isSameAccount,
 } from '../../utils/account';
 import { isMultisig } from '../../utils/validation';
-import SignRoom from './SignRoom';
 import { RoomParams } from '../../modules/types';
 
-type DialogTypes = 'forget' | 'room' | 'mst';
+type DialogTypes = 'forget' | 'room' | 'mst' | 'create';
 
 const DEFAULT_THRESHOLD = '2';
 
@@ -71,6 +69,18 @@ const DIALOG_CONTENT: Record<
       </div>
     ),
   },
+  create: {
+    title: 'Room error',
+    subtitle:
+      'There was an error creating your room, check your connection and try again.',
+    buttons: (onToggle) => (
+      <div className="mt-2 flex justify-between">
+        <Button className="max-w-min" onClick={onToggle}>
+          OK
+        </Button>
+      </div>
+    ),
+  },
 };
 
 type MultisigWalletForm = {
@@ -78,18 +88,19 @@ type MultisigWalletForm = {
   threshold: string;
 };
 
-type MstRoom = Partial<RoomParams & { walletId: IndexableType; sign: string }>;
+type MstRoom = Partial<RoomParams & { sign: string }>;
 
 const ManageMultisigWallet: React.FC = () => {
   const history = useHistory();
   const { matrix } = useMatrix();
 
+  const mstRoom = useRef<MstRoom>();
+  const mstWallet = useRef<MultisigWallet>();
+
   const { id } = useParams<{ id: string }>();
   const [wallet, setWallet] = useState<MultisigWallet>();
   const [selectedContacts, setSelectedContacts] = useState<Contact[]>([]);
   const [dialogType, setDialogType] = useState<DialogTypes>('mst');
-  const [isRoomCreation, setIsRoomSigning] = useState(false);
-  const [mstRoom, setMstRoom] = useState<MstRoom>();
 
   const [isDialogOpen, toggleDialogOpen] = useToggle(false);
 
@@ -145,9 +156,35 @@ const ManageMultisigWallet: React.FC = () => {
     toggleDialogOpen();
   };
 
-  const startRoomCreation = async (mstAccountAddress: string) => {
-    if (!matrix.isLoggedIn) return;
+  const cancelRoomCreation = () => {
+    if (!mstRoom.current?.roomId) return;
 
+    matrix.cancelRoomCreation(mstRoom.current?.roomId);
+  };
+
+  const finishRoomCreation = async (
+    signature: string,
+    inviterAddress?: string,
+  ) => {
+    const signatories = selectedContacts.map((s) => ({
+      matrixAddress: s.secureProtocolId,
+      accountId: s.mainAccounts[0].accountId,
+      isInviter: inviterAddress === s.mainAccounts[0].accountId,
+    }));
+
+    await matrix.finishRoomCreation({
+      roomId: mstRoom.current?.roomId || '',
+      inviterPublicKey: mstRoom.current?.inviterPublicKey || '',
+      mstAccountAddress: mstRoom.current?.mstAccountAddress || '',
+      signatories,
+      signature,
+      threshold: mstRoom.current?.threshold || 0,
+    });
+  };
+
+  const startRoomCreation = async (
+    mstAccountAddress: string,
+  ): Promise<string> => {
     const addressesMap = selectedContacts.reduce((acc, contact) => {
       acc[contact.mainAccounts[0].accountId] = true;
 
@@ -161,57 +198,20 @@ const ManageMultisigWallet: React.FC = () => {
 
     // Create room only if I'm a signatory
     if (!myAddress) {
-      openDialogWithType('room');
-      return;
+      return '';
     }
 
-    const roomSignature = await matrix.startRoomCreation(mstAccountAddress);
-    setIsRoomSigning(true);
-    setMstRoom((prev) => ({
-      ...prev,
-      roomId: roomSignature.roomId,
-      sign: roomSignature.sign,
+    const roomData = await matrix.startRoomCreation(mstAccountAddress);
+    mstRoom.current = {
+      ...mstRoom.current,
+      roomId: roomData.roomId,
+      sign: roomData.sign,
       inviterPublicKey: myAddress.publicKey,
-    }));
+    };
+    return myAddress.accountId;
   };
 
-  const finishRoomCreation = async (signature: string) => {
-    console.log(signature);
-    const signatories = selectedContacts.map((s) => ({
-      matrixAddress: s.secureProtocolId,
-      accountId: s.mainAccounts[0].accountId,
-      isInviter: mstRoom?.mstAccountAddress === s.mainAccounts[0].accountId,
-    }));
-
-    await matrix.finishRoomCreation({
-      roomId: mstRoom?.roomId || '',
-      inviterPublicKey: mstRoom?.inviterPublicKey || '',
-      mstAccountAddress: mstRoom?.mstAccountAddress || '',
-      signatories,
-      signature,
-      threshold: mstRoom?.threshold || 0,
-    });
-    if (mstRoom?.walletId && mstRoom?.roomId) {
-      db.wallets.update(mstRoom.walletId, {
-        matrixRoomId: mstRoom.roomId,
-      });
-    }
-    setIsRoomSigning(false);
-  };
-
-  const cancelRoomCreation = () => {
-    if (isRoomCreation) {
-      setIsRoomSigning(false);
-    }
-    if (!mstRoom?.roomId) return;
-
-    matrix.cancelRoomCreation(mstRoom?.roomId);
-  };
-
-  const createMultisigWallet = async (
-    walletName: string,
-    threshold: string,
-  ) => {
+  const createWallet = (walletName: string, threshold: string): string => {
     const { mstSs58Address, payload } = createMultisigWalletPayload({
       walletName,
       threshold,
@@ -222,31 +222,70 @@ const ManageMultisigWallet: React.FC = () => {
     const sameMstAccount = wallets?.find((w) =>
       w.mainAccounts.some((main) => main.accountId === mstSs58Address),
     );
-    if (sameMstAccount) {
+    if (sameMstAccount) return '';
+
+    mstWallet.current = payload;
+    mstRoom.current = {
+      ...mstRoom.current,
+      threshold: Number(threshold),
+      mstAccountAddress: mstSs58Address,
+    };
+    return mstSs58Address;
+  };
+
+  const createMultisigWallet = async (
+    walletName: string,
+    threshold: string,
+  ) => {
+    const mstAddress = createWallet(walletName, threshold);
+    if (!mstAddress) {
       openDialogWithType('mst');
       return;
     }
 
-    const walletId = await db.wallets.add(payload);
-    await startRoomCreation(mstSs58Address);
-    setMstRoom((prev) => ({
-      ...prev,
-      walletId,
-      threshold: Number(threshold),
-      mstAccountAddress: mstSs58Address,
-    }));
-    setSelectedContacts([]);
-    reset();
+    if (!matrix.isLoggedIn) {
+      if (mstWallet.current) {
+        db.wallets.add(mstWallet.current);
+      }
+      return;
+    }
+
+    console.log(mstWallet);
+    const inviterAddress = await startRoomCreation(mstAddress);
+    if (!inviterAddress) {
+      openDialogWithType('room');
+
+      if (mstWallet.current) {
+        db.wallets.add(mstWallet.current);
+      }
+      return;
+    }
+
+    await finishRoomCreation('fake_signature', inviterAddress);
+    if (mstRoom.current?.roomId && mstWallet.current) {
+      db.wallets.add({
+        ...mstWallet.current,
+        matrixRoomId: mstRoom.current.roomId,
+      });
+    }
   };
 
-  const handleMultisigSubmit: SubmitHandler<MultisigWalletForm> = ({
+  const handleMultisigSubmit: SubmitHandler<MultisigWalletForm> = async ({
     walletName,
     threshold,
   }) => {
     if (wallet) {
       updateMultisigWallet(wallet, walletName);
     } else {
-      createMultisigWallet(walletName, threshold);
+      try {
+        await createMultisigWallet(walletName, threshold);
+      } catch (error) {
+        openDialogWithType('create');
+      }
+      mstRoom.current = undefined;
+      mstWallet.current = undefined;
+      setSelectedContacts([]);
+      reset();
     }
   };
 
@@ -413,13 +452,6 @@ const ManageMultisigWallet: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
-
-      <SignRoom
-        sign={mstRoom?.sign || ''}
-        visible={isRoomCreation}
-        onSigned={finishRoomCreation}
-        onCancel={cancelRoomCreation}
-      />
     </>
   );
 };
