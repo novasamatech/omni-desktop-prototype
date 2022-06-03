@@ -211,7 +211,10 @@ const ManageMultisigWallet: React.FC = () => {
     return myAddress.accountId;
   };
 
-  const createWallet = (walletName: string, threshold: string): string => {
+  const deriveMultisigWallet = (
+    walletName: string,
+    threshold: string,
+  ): string => {
     const { mstSs58Address, payload } = createMultisigWalletPayload({
       walletName,
       threshold,
@@ -237,7 +240,7 @@ const ManageMultisigWallet: React.FC = () => {
     walletName: string,
     threshold: string,
   ) => {
-    const mstAddress = createWallet(walletName, threshold);
+    const mstAddress = deriveMultisigWallet(walletName, threshold);
     if (!mstAddress) {
       openDialogWithType('mst');
       return;
@@ -250,7 +253,6 @@ const ManageMultisigWallet: React.FC = () => {
       return;
     }
 
-    console.log(mstWallet);
     const inviterAddress = await startRoomCreation(mstAddress);
     if (!inviterAddress) {
       openDialogWithType('room');
