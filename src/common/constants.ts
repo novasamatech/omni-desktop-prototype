@@ -17,7 +17,6 @@ export const Routes = {
   CREATE_WALLET: '/wallet/create',
   CREATE_MULTISIG_WALLET: '/multisig-wallet/create',
   EDIT_MULTISIG_WALLET: '/multisig-wallet/edit/:id',
-  CHAT: '/chat',
   NETWORK_LIST: '/network-list',
   BALANCES: '/balances',
   CONTACTS: '/contacts',
