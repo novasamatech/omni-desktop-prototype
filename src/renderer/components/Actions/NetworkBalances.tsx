@@ -44,8 +44,8 @@ const NetworkBalances: React.FC<Props> = ({ wallet, connection }: Props) => {
 
   return (
     <>
-      <div className="flex justify-between">
-        <div className="mb-2 text-xs font-light flex items-center">
+      <div className="mb-2 flex justify-between">
+        <div className="text-xs font-light flex items-center">
           <img
             className="w-5 mr-2 invert"
             src={network.icon}
@@ -60,7 +60,7 @@ const NetworkBalances: React.FC<Props> = ({ wallet, connection }: Props) => {
         />
       </div>
 
-      <Card>
+      <Card className="m-0 mb-4">
         {account
           ? network.assets.map((asset: Asset) => (
               <AssetBalance

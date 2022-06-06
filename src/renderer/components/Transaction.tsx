@@ -58,26 +58,31 @@ const Transaction: React.FC<Props> = ({ transaction }) => {
             <div className="text-xs text-gray-500 mt-2">Call Hash</div>
           </div>
         </div>
-        <div className="flex justify-end items-center">
-          {transaction.type === TransactionType.MULTISIG_TRANSFER && (
-            <span className="text-xs text-gray-500 mr-2">
-              {transaction.data.approvals?.length || 0}/
-              {(transaction.wallet as MultisigWallet).threshold} Signatures
-            </span>
-          )}
+        <div className="flex justify-between items-center">
           {transaction.type === TransactionType.TRANSFER &&
-            network &&
-            transaction.transactionHash && (
-              <Explorer
-                param={transaction.transactionHash}
-                type="extrinsic"
-                network={network}
-              />
+          network &&
+          transaction.transactionHash ? (
+            <Explorer
+              param={transaction.transactionHash}
+              type="extrinsic"
+              network={network}
+            />
+          ) : (
+            <div />
+          )}
+
+          <div className="flex">
+            {transaction.type === TransactionType.MULTISIG_TRANSFER && (
+              <span className="text-xs text-gray-500 mr-2">
+                {transaction.data.approvals?.length || 0}/
+                {(transaction.wallet as MultisigWallet).threshold} Signatures
+              </span>
             )}
-          <Status
-            status={isTxConfirmed ? StatusType.SUCCESS : StatusType.WAITING}
-            alt={isTxConfirmed ? 'success' : 'pending'}
-          />
+            <Status
+              status={isTxConfirmed ? StatusType.SUCCESS : StatusType.WAITING}
+              alt={isTxConfirmed ? 'success' : 'pending'}
+            />
+          </div>
         </div>
       </div>
     </div>
