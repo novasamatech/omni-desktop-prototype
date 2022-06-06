@@ -226,7 +226,7 @@ const TransferDetails: React.FC = () => {
   useEffect(() => {
     if (isConfirmed) {
       if (!intervalId?.current) return;
-      console.warn('==== isConfirmed ====');
+
       clearInterval(intervalId.current);
       intervalId.current = undefined;
       return;
@@ -235,7 +235,6 @@ const TransferDetails: React.FC = () => {
     if (!transaction || !connection || intervalId?.current) return;
 
     intervalId.current = setInterval(() => {
-      console.warn('==== Start update ====');
       updateTransaction(transaction, connection);
     }, 1000);
   }, [connection, isConfirmed, transaction]);
@@ -243,7 +242,6 @@ const TransferDetails: React.FC = () => {
   useEffect(() => {
     return () => {
       if (!intervalId?.current) return;
-      console.warn('==== Final clean up ====');
       clearInterval(intervalId.current);
     };
   }, []);
