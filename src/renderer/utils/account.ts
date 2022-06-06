@@ -12,10 +12,21 @@ import {
   MultisigWallet,
 } from '../db/types';
 
-export const formatAddress = (address: string, prefix = 42): string => {
+const SS58_DEFAULT_PREFIX = 42;
+
+export const formatAddress = (
+  address: string,
+  prefix = SS58_DEFAULT_PREFIX,
+): string => {
   if (!address) return '';
 
   return encodeAddress(decodeAddress(address), prefix) || address;
+};
+
+export const toPublicKey = (address: string): string => {
+  if (!address) return '';
+
+  return u8aToHex(decodeAddress(address));
 };
 
 type WalletAccounts = {
@@ -53,10 +64,8 @@ export const createMultisigWalletPayload = ({
   mstSs58Address: string;
   payload: MultisigWallet;
 } => {
-  const SS58_PREFIX = 42;
-
   const multiAddress = createKeyMulti(addresses, Number(threshold));
-  const Ss58Address = encodeAddress(multiAddress, SS58_PREFIX);
+  const Ss58Address = encodeAddress(multiAddress, SS58_DEFAULT_PREFIX);
 
   return {
     mstSs58Address: Ss58Address,
@@ -79,5 +88,5 @@ export const createMultisigWalletPayload = ({
 };
 
 export const isSameAccount = (first: Contact, second: Contact): boolean =>
-  first.mainAccounts[0].accountId === second.mainAccounts[0].accountId &&
+  first.mainAccounts[0].publicKey === second.mainAccounts[0].publicKey &&
   first.id === second.id;

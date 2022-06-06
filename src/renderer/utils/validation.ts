@@ -1,5 +1,4 @@
 import { ApiPromise } from '@polkadot/api';
-import { decodeAddress, encodeAddress } from '@polkadot/keyring';
 import { BlockNumber, Header } from '@polkadot/types/interfaces';
 import {
   checkRootExists,
@@ -10,6 +9,7 @@ import {
 } from './merkle';
 import { MatrixIdRegex } from '../../common/constants';
 import { MultisigWallet, Wallet } from '../db/types';
+import { formatAddress } from './account';
 
 export const validateWithBlockNumber = async (
   relaychainApi: ApiPromise,
@@ -67,7 +67,7 @@ export const validate = async (
 
 export const validateAddress = (address: string): boolean => {
   try {
-    const result = encodeAddress(decodeAddress(address));
+    const result = formatAddress(address);
 
     return Boolean(result);
   } catch (error) {

@@ -62,7 +62,6 @@ const MatrixProvider: React.FC<Props> = ({
   }, [isLoggedIn]);
 
   const wallets = useLiveQuery(() => db.wallets.toArray());
-  // const transactions = useLiveQuery(() => db.transactions.toArray());
 
   useEffect(() => {
     const initMatrix = async () => {
@@ -142,7 +141,7 @@ const MatrixProvider: React.FC<Props> = ({
 
     if (rest.type === OmniMstEvents.INIT) {
       const wallet = wallets?.find(
-        (w) => w.mainAccounts[0].accountId === content.senderAddress,
+        (w) => w.mainAccounts[0].publicKey === content.senderAddress,
       );
 
       if (!wallet?.id) return;
@@ -165,18 +164,11 @@ const MatrixProvider: React.FC<Props> = ({
     if (
       [OmniMstEvents.APPROVE, OmniMstEvents.FINAL_APPROVE].includes(rest.type)
     ) {
-      // console.log(transactions);
-      console.log(content, content.callHash);
-
-      // const tx = transactions?.find(
-      //   (t) => t.data.callHash === content.callHash,
-      // );
       const tx = await db.transactions
         .where('data.callHash')
         .equals(content.callHash)
         .first();
 
-      console.log(tx, content.senderAddress);
       if (!tx?.id) return;
 
       db.transactions.update(tx.id, {
