@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { Routes, StatusType, withId } from '../../common/constants';
 import {
   MultisigWallet,
@@ -11,6 +12,8 @@ import {
 import { toShortText } from '../utils/strings';
 import right from '../../../assets/right.svg';
 import Status from '../ui/Status';
+import Explorer from '../ui/Explorer';
+import { db } from '../db/db';
 
 type Props = {
   transaction: TransactionData;
@@ -18,6 +21,11 @@ type Props = {
 
 const Transaction: React.FC<Props> = ({ transaction }) => {
   const isTxConfirmed = transaction.status === TransactionStatus.CONFIRMED;
+
+  const network = useLiveQuery(
+    () => db.chains.get({ chainId: transaction.chainId }),
+    [transaction.chainId],
+  );
 
   return (
     <div className="bg-gray-100 px-4 py-3 m-2 rounded-2xl">
@@ -57,6 +65,15 @@ const Transaction: React.FC<Props> = ({ transaction }) => {
               {(transaction.wallet as MultisigWallet).threshold} Signatures
             </span>
           )}
+          {transaction.type === TransactionType.TRANSFER &&
+            network &&
+            transaction.transactionHash && (
+              <Explorer
+                param={transaction.transactionHash}
+                type="extrinsic"
+                network={network}
+              />
+            )}
           <Status
             status={isTxConfirmed ? StatusType.SUCCESS : StatusType.WAITING}
             alt={isTxConfirmed ? 'success' : 'pending'}
