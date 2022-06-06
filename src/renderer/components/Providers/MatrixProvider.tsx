@@ -22,6 +22,7 @@ import {
   TransactionStatus,
   TransactionType,
 } from '../../db/types';
+import { toPublicKey } from '../../utils/account';
 
 const Statuses = {
   [OmniMstEvents.INIT]: TransactionStatus.CREATED,
@@ -141,7 +142,8 @@ const MatrixProvider: React.FC<Props> = ({
 
     if (rest.type === OmniMstEvents.INIT) {
       const wallet = wallets?.find(
-        (w) => w.mainAccounts[0].publicKey === content.senderAddress,
+        (w) =>
+          w.mainAccounts[0].publicKey === toPublicKey(content.senderAddress),
       );
 
       if (!wallet?.id) return;
