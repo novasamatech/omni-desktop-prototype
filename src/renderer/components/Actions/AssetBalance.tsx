@@ -9,6 +9,7 @@ import {
   OrmlExtras,
   Account,
   AssetType,
+  ActiveType,
 } from '../../db/types';
 import { validate } from '../../utils/validation';
 import Shimmer from '../../ui/Shimmer';
@@ -63,9 +64,10 @@ const AssetBalance: React.FC<Props> = ({
         setBalance((b) => {
           return {
             ...b,
-            validationStatus: isValid
-              ? ValidationStatus.VALID
-              : ValidationStatus.INVALID,
+            validationStatus:
+              isValid || network.activeType === ActiveType.LOCAL_NODE
+                ? ValidationStatus.VALID
+                : ValidationStatus.INVALID,
           };
         });
       } else {
@@ -78,7 +80,7 @@ const AssetBalance: React.FC<Props> = ({
         });
       }
     },
-    [relayChain, api],
+    [relayChain, api, network.activeType],
   );
 
   const subscribeBalanceChange = useCallback(
