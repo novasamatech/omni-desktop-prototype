@@ -224,25 +224,29 @@ const TransferDetails: React.FC = () => {
   }, [transaction, updateCallData]);
 
   useEffect(() => {
-    const stopInterval = () => {
+    if (isConfirmed) {
       if (!intervalId?.current) return;
+      console.warn('==== isConfirmed ====');
+      clearInterval(intervalId.current);
+      intervalId.current = undefined;
+      return;
+    }
+
+    if (!transaction || !connection || intervalId?.current) return;
+
+    intervalId.current = setInterval(() => {
+      console.warn('==== Start update ====');
+      updateTransaction(transaction, connection);
+    }, 1000);
+  }, [connection, isConfirmed, transaction]);
+
+  useEffect(() => {
+    return () => {
+      if (!intervalId?.current) return;
+      console.warn('==== Final clean up ====');
       clearInterval(intervalId.current);
     };
-
-    if (isConfirmed) {
-      console.warn('==== isConfirmed ====');
-      stopInterval();
-    } else if (transaction && connection && !intervalId?.current) {
-      console.warn('==== Start update ====');
-      intervalId.current = setInterval(() => {
-        updateTransaction(transaction, connection);
-      }, 1000);
-    }
-    return () => {
-      console.warn('==== Clean up ====');
-      stopInterval();
-    };
-  }, [connection, isConfirmed, transaction]);
+  }, []);
 
   return (
     <>
