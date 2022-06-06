@@ -64,10 +64,9 @@ const AssetBalance: React.FC<Props> = ({
         setBalance((b) => {
           return {
             ...b,
-            validationStatus:
-              isValid || network.activeType === ActiveType.LOCAL_NODE
-                ? ValidationStatus.VALID
-                : ValidationStatus.INVALID,
+            validationStatus: isValid
+              ? ValidationStatus.VALID
+              : ValidationStatus.INVALID,
           };
         });
       } else {
@@ -75,7 +74,10 @@ const AssetBalance: React.FC<Props> = ({
         setBalance((b) => {
           return {
             ...b,
-            validationStatus: ValidationStatus.INVALID,
+            validationStatus:
+              network.activeType === ActiveType.LOCAL_NODE
+                ? ValidationStatus.VALID
+                : ValidationStatus.INVALID,
           };
         });
       }
