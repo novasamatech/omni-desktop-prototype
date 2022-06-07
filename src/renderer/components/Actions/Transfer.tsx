@@ -324,8 +324,8 @@ const Transfer: React.FC = () => {
               </span>
             </div>
             <div className="text-gray-400 text-sm italic">
-              The deposit stays locked until the transaction is executed or
-              cancelled
+              The deposit stays locked on the first signatory account until the
+              transaction is executed or cancelled
             </div>
           </>
         )}
