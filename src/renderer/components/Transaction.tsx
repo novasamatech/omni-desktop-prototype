@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { Routes, StatusType, withId } from '../../common/constants';
 import {
   MultisigWallet,
@@ -11,6 +12,8 @@ import {
 import { toShortText } from '../utils/strings';
 import right from '../../../assets/right.svg';
 import Status from '../ui/Status';
+import Explorer from '../ui/Explorer';
+import { db } from '../db/db';
 
 type Props = {
   transaction: TransactionData;
@@ -18,6 +21,11 @@ type Props = {
 
 const Transaction: React.FC<Props> = ({ transaction }) => {
   const isTxConfirmed = transaction.status === TransactionStatus.CONFIRMED;
+
+  const network = useLiveQuery(
+    () => db.chains.get({ chainId: transaction.chainId }),
+    [transaction.chainId],
+  );
 
   return (
     <div className="bg-gray-100 px-4 py-3 m-2 rounded-2xl">
@@ -50,17 +58,31 @@ const Transaction: React.FC<Props> = ({ transaction }) => {
             <div className="text-xs text-gray-500 mt-2">Call Hash</div>
           </div>
         </div>
-        <div className="flex justify-end items-center">
-          {transaction.type === TransactionType.MULTISIG_TRANSFER && (
-            <span className="text-xs text-gray-500 mr-2">
-              {transaction.data.approvals?.length || 0}/
-              {(transaction.wallet as MultisigWallet).threshold} Signatures
-            </span>
+        <div className="flex justify-between items-center">
+          {transaction.type === TransactionType.TRANSFER &&
+          network &&
+          transaction.transactionHash ? (
+            <Explorer
+              param={transaction.transactionHash}
+              type="extrinsic"
+              network={network}
+            />
+          ) : (
+            <div />
           )}
-          <Status
-            status={isTxConfirmed ? StatusType.SUCCESS : StatusType.WAITING}
-            alt={isTxConfirmed ? 'success' : 'pending'}
-          />
+
+          <div className="flex">
+            {transaction.type === TransactionType.MULTISIG_TRANSFER && (
+              <span className="text-xs text-gray-500 mr-2">
+                {transaction.data.approvals?.length || 0}/
+                {(transaction.wallet as MultisigWallet).threshold} Signatures
+              </span>
+            )}
+            <Status
+              status={isTxConfirmed ? StatusType.SUCCESS : StatusType.WAITING}
+              alt={isTxConfirmed ? 'success' : 'pending'}
+            />
+          </div>
         </div>
       </div>
     </div>
