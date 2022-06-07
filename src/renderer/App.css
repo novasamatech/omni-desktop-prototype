@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 .shimmer {
-  background: linear-gradient(90deg, rgba(196, 196, 196, 0) 0%, #C4C4C4 16.67%, rgba(196, 196, 196, 0) 100%), #FFFFFF;
+  background: linear-gradient(90deg, rgba(196, 196, 196, 0) 0%, #C4C4C4 16.67%, rgba(196, 196, 196, 0) 100%), #efefef;
   background-size: 1000px 100%;
   animation: shimmer 2.2s linear infinite forwards;
 }

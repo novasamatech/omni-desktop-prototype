@@ -1,9 +1,16 @@
 /* eslint-disable promise/always-return */
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 import { useHistory, useParams } from 'react-router';
 import { format } from 'date-fns';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { BN } from '@polkadot/util';
 import Button from '../../ui/Button';
 import {
   currentTransactionState,
@@ -13,8 +20,11 @@ import Address from '../../ui/Address';
 import { Routes } from '../../../common/constants';
 import { db } from '../../db/db';
 import {
+  AssetType,
   Chain,
   MultisigWallet,
+  OrmlExtras,
+  StatemineExtras,
   Transaction,
   TransactionStatus,
   TransactionType,
@@ -22,6 +32,7 @@ import {
 } from '../../db/types';
 import { formatAddress, getAddressFromWallet } from '../../utils/account';
 import {
+  formatAmount,
   formatBalance,
   formatBalanceFromAmount,
   getAssetById,
@@ -34,6 +45,7 @@ import { Connection, connectionState } from '../../store/connections';
 import Quorum from './Quorum';
 import Chat from './Chat';
 import { decodeCallData, updateTransaction } from '../../utils/transactions';
+import Shimmer from '../../ui/Shimmer';
 
 const TransferDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -46,6 +58,7 @@ const TransferDetails: React.FC = () => {
 
   const [transaction, setTransaction] = useState<Transaction>();
   const [network, setNetwork] = useState<Chain>();
+  const [commission, setCommission] = useState<string>('');
   const [callData, setCallData] = useState<string>();
   const [availableWallets, setAvailableWallets] = useState<OptionType[]>([]);
   const [connection, setConnection] = useState<Connection>();
@@ -246,6 +259,58 @@ const TransferDetails: React.FC = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (!connection || !network || !transaction || !currentAsset) return;
+
+    let transferExtrinsic;
+    if (currentAsset.type === AssetType.STATEMINE) {
+      transferExtrinsic = connection.api.tx.assets.transfer(
+        (currentAsset.typeExtras as StatemineExtras).assetId,
+        transaction.address,
+        formatAmount(transaction.data.amount, currentAsset.precision),
+      );
+    } else if (currentAsset.type === AssetType.ORML) {
+      transferExtrinsic = connection.api.tx.currencies.transfer(
+        transaction.address,
+        (currentAsset.typeExtras as OrmlExtras).currencyIdScale,
+        formatAmount(transaction.data.amount, currentAsset.precision),
+      );
+    } else {
+      transferExtrinsic = connection.api.tx.balances.transfer(
+        transaction.address,
+        formatAmount(transaction.data.amount, currentAsset.precision),
+      );
+    }
+    transferExtrinsic
+      .paymentInfo(transaction.address)
+      .then(({ partialFee }) => {
+        const formattedValue = formatBalance(
+          partialFee.toString(),
+          network.assets[0].precision,
+        );
+        setCommission(`${formattedValue} ${network.assets[0].symbol}`);
+      })
+      .catch((error) => {
+        console.warn(error);
+        setCommission('0');
+      });
+  }, [connection, currentAsset, network, transaction]);
+
+  const depositValue = (): string | ReactNode => {
+    if (!connection || !network || !transaction) {
+      return <Shimmer width="80px" height="20px" />;
+    }
+
+    const { depositFactor, depositBase } = connection.api.consts.multisig;
+    const balance = depositBase.add(
+      depositFactor.mul(
+        new BN((transaction.wallet as MultisigWallet).threshold),
+      ),
+    );
+    const deposit = formatBalance(balance.toString(), currentAsset?.precision);
+    return `${deposit} ${network.assets[0].symbol}`;
+  };
+
   return (
     <>
       <div className="flex justify-center items-center mb-8">
@@ -350,14 +415,19 @@ const TransferDetails: React.FC = () => {
               {transaction?.status !== TransactionStatus.CONFIRMED && (
                 <div className="flex justify-between mt-2 pt-2 border-t">
                   <div className="text-gray-500 text-sm">Commission</div>
-                  <div className="text-gray-500 text-sm">0.1 DOT ($5)</div>
+                  {/* <div className="text-gray-500 text-sm">0.1 DOT ($5)</div> */}
+                  <div className="text-gray-500 text-sm">
+                    {commission || <Shimmer width="80px" height="20px" />}
+                  </div>
                 </div>
               )}
               {transaction?.data?.approvals?.length === 0 && (
                 <>
                   <div className="flex justify-between mt-1">
                     <div className="text-gray-500 text-sm">Deposit</div>
-                    <div className="text-gray-500 text-sm">10 DOT ($50)</div>
+                    <div className="text-gray-500 text-sm">
+                      {depositValue()}
+                    </div>
                   </div>
                   <div className="text-xs text-gray-400 italic mt-2">
                     The deposit stays locked until the transaction is executed
