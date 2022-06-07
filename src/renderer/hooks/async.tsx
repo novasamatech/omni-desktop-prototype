@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 const useAsync = <T, E = string>(
   asyncFunction: () => Promise<T>,
-  immediate = true
+  immediate = true,
 ) => {
   const [status, setStatus] = useState<
     'idle' | 'pending' | 'success' | 'error'

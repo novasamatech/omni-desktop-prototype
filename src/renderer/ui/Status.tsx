@@ -1,7 +1,14 @@
 import React from 'react';
 import success from '../../../assets/success.svg';
-import pending from '../../../assets/pending.svg';
+import waiting from '../../../assets/waiting.svg';
+import abstained from '../../../assets/abstained.svg';
 import { StatusType } from '../../common/constants';
+
+const IMG: Record<StatusType, string | undefined> = {
+  success,
+  waiting,
+  abstained,
+};
 
 type Props = {
   status: StatusType;
@@ -10,11 +17,7 @@ type Props = {
 };
 
 const Status: React.FC<Props> = ({ status, alt, className }) => {
-  if (status === StatusType.SUCCESS) {
-    return <img className={className} src={success} alt={alt} />;
-  }
-
-  return <img className={className} src={pending} alt={alt} />;
+  return <img className={className} src={IMG[status]} alt={alt} />;
 };
 
 export default Status;

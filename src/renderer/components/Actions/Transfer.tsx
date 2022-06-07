@@ -1,10 +1,8 @@
 /* eslint-disable promise/always-return */
 import React, { useCallback, useEffect, useState } from 'react';
 import { useRecoilValue } from 'recoil';
-// import { decodeAddress, encodeAddress } from '@polkadot/keyring';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { BN } from '@polkadot/util';
-
 import { Connection, connectionState } from '../../store/connections';
 import { selectedWalletsState } from '../../store/selectedWallets';
 import Button from '../../ui/Button';

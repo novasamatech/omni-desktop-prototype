@@ -54,4 +54,5 @@ export const enum Decimal {
 export const enum StatusType {
   WAITING = 'waiting',
   SUCCESS = 'success',
+  ABSTAINED = 'abstained',
 }

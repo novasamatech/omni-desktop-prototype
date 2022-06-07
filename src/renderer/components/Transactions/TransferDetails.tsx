@@ -31,7 +31,7 @@ import copy from '../../../../assets/copy.svg';
 import Select, { OptionType } from '../../ui/Select';
 import InputText from '../../ui/Input';
 import { Connection, connectionState } from '../../store/connections';
-import Signatories from './Signatories';
+import Quorum from './Quorum';
 import Chat from './Chat';
 import { decodeCallData, updateTransaction } from '../../utils/transactions';
 
@@ -347,6 +347,24 @@ const TransferDetails: React.FC = () => {
                   <div className="break-words">{transaction.data.callData}</div>
                 </div>
               )}
+              {transaction?.status !== TransactionStatus.CONFIRMED && (
+                <div className="flex justify-between mt-2 pt-2 border-t">
+                  <div className="text-gray-500 text-sm">Commission</div>
+                  <div className="text-gray-500 text-sm">0.1 DOT ($5)</div>
+                </div>
+              )}
+              {transaction?.data?.approvals?.length === 0 && (
+                <>
+                  <div className="flex justify-between mt-1">
+                    <div className="text-gray-500 text-sm">Deposit</div>
+                    <div className="text-gray-500 text-sm">10 DOT ($50)</div>
+                  </div>
+                  <div className="text-xs text-gray-400 italic mt-2">
+                    The deposit stays locked until the transaction is executed
+                    or cancelled
+                  </div>
+                </>
+              )}
               {isMultisigTransfer && !transaction.data.callData && (
                 <div className="flex mt-3">
                   <InputText
@@ -362,7 +380,7 @@ const TransferDetails: React.FC = () => {
         </div>
         {isMultisigTransfer && (
           <>
-            <Signatories network={network} transaction={transaction} />
+            <Quorum network={network} transaction={transaction} />
             <Chat network={network} transaction={transaction} />
           </>
         )}
