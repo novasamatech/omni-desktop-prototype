@@ -1,10 +1,8 @@
 /* eslint-disable promise/always-return */
 import React, { useCallback, useEffect, useState } from 'react';
 import { useRecoilValue } from 'recoil';
-// import { decodeAddress, encodeAddress } from '@polkadot/keyring';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { BN } from '@polkadot/util';
-
 import { Connection, connectionState } from '../../store/connections';
 import { selectedWalletsState } from '../../store/selectedWallets';
 import Button from '../../ui/Button';
@@ -300,32 +298,38 @@ const Transfer: React.FC = () => {
           The amount is not valid, please type it again
         </ErrorMessage>
       </div>
-      <div className="p-2 text-gray-500 flex justify-between">
-        <div>Transaction fee:</div>
-        <div>
-          {transactionFee} {defaultAsset?.symbol}
+      <div className="p-2 flex flex-col gap-1">
+        <div className="text-gray-500 flex justify-between">
+          <span>Transaction fee:</span>
+          <span>
+            {transactionFee} {defaultAsset?.symbol}
+          </span>
         </div>
-      </div>
-      {multisigWallet && currentNetwork && (
-        <>
-          <div className="p-2 text-gray-500 flex justify-between">
-            <div>Deposit:</div>
-            <div>
-              {formatBalance(
-                currentNetwork.api.consts.multisig.depositBase
-                  .add(
-                    currentNetwork.api.consts.multisig.depositFactor.mul(
-                      new BN(multisigWallet.threshold),
-                    ),
-                  )
-                  .toString(),
-                currentAsset?.precision,
-              )}{' '}
-              {defaultAsset?.symbol}
+        {multisigWallet && currentNetwork && (
+          <>
+            <div className="text-gray-500 flex justify-between">
+              <span>Deposit:</span>
+              <span>
+                {formatBalance(
+                  currentNetwork.api.consts.multisig.depositBase
+                    .add(
+                      currentNetwork.api.consts.multisig.depositFactor.mul(
+                        new BN(multisigWallet.threshold),
+                      ),
+                    )
+                    .toString(),
+                  currentAsset?.precision,
+                )}{' '}
+                {defaultAsset?.symbol}
+              </span>
             </div>
-          </div>
-        </>
-      )}
+            <div className="text-gray-400 text-sm italic">
+              The deposit stays locked until the transaction is executed or
+              cancelled
+            </div>
+          </>
+        )}
+      </div>
       <div className="p-2">
         <Button type="submit" size="lg" disabled={!isValid}>
           Add transaction
