@@ -162,14 +162,11 @@ const ManageMultisigWallet: React.FC = () => {
     matrix.cancelRoomCreation(mstRoom.current?.roomId);
   };
 
-  const finishRoomCreation = async (
-    signature: string,
-    inviterAddress?: string,
-  ) => {
+  const finishRoomCreation = async (signature: string, publicKey: string) => {
     const signatories = selectedContacts.map((s) => ({
       matrixAddress: s.secureProtocolId,
       accountId: s.mainAccounts[0].accountId,
-      isInviter: inviterAddress === s.mainAccounts[0].accountId,
+      isInviter: publicKey === s.mainAccounts[0].publicKey,
     }));
 
     await matrix.finishRoomCreation({
@@ -206,7 +203,7 @@ const ManageMultisigWallet: React.FC = () => {
       sign: roomData.sign,
       inviterPublicKey: myAddress.publicKey,
     };
-    return myAddress.accountId;
+    return myAddress.publicKey;
   };
 
   const deriveMultisigWallet = (
@@ -251,8 +248,8 @@ const ManageMultisigWallet: React.FC = () => {
       return;
     }
 
-    const inviterAddress = await startRoomCreation(mstAddress);
-    if (!inviterAddress) {
+    const inviterPublicKey = await startRoomCreation(mstAddress);
+    if (!inviterPublicKey) {
       openDialogWithType('room');
 
       if (mstWallet.current) {
@@ -261,7 +258,7 @@ const ManageMultisigWallet: React.FC = () => {
       return;
     }
 
-    await finishRoomCreation('fake_signature', inviterAddress);
+    await finishRoomCreation('fake_signature', inviterPublicKey);
     if (mstRoom.current?.roomId && mstWallet.current) {
       db.wallets.add({
         ...mstWallet.current,
