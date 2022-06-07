@@ -20,7 +20,10 @@ import {
   MultisigWallet,
 } from '../../db/types';
 import { isMultisig, validateAddress } from '../../utils/validation';
-import { getAddressFromWallet } from '../../utils/account';
+import {
+  getAddressFromWallet,
+  getApprovalsFromWallet,
+} from '../../utils/account';
 import { ErrorTypes } from '../../../common/constants';
 import { formatAmount, formatBalance, getAssetId } from '../../utils/assets';
 import { useMatrix } from '../Providers/MatrixProvider';
@@ -206,7 +209,7 @@ const Transfer: React.FC = () => {
           type,
           chainId: currentNetwork.network.chainId,
           address: addressFrom,
-          wallet: w,
+          wallet,
           data: {
             callHash,
             callData,
@@ -214,7 +217,7 @@ const Transfer: React.FC = () => {
             precision: currentAsset.precision,
             address,
             amount,
-            approvals: [],
+            approvals: getApprovalsFromWallet(wallet, currentNetwork.network),
           },
         };
       });

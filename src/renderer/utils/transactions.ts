@@ -14,9 +14,15 @@ import {
   TransactionType,
   Wallet,
 } from '../db/types';
-import { formatAddress, getAddressFromWallet } from './account';
+import {
+  formatAddress,
+  getAddressFromWallet,
+  getApprovalsFromWallet,
+  toPublicKey,
+} from './account';
 import { db } from '../db/db';
 import { formatBalance, getAssetById } from './assets';
+import { Approvals } from '../../common/types';
 
 type MultisigTransaction = {
   callHash: U8aFixed;
@@ -60,6 +66,11 @@ export const updateTransactionPayload = (
   transaction: Transaction,
   pendingTransaction: MultisigTransaction,
 ): Transaction => {
+  const { approvals } = transaction.data;
+  pendingTransaction.opt.approvals.forEach((approval) => {
+    approvals[toPublicKey(approval.toString())].fromBlockChain = true;
+  });
+
   return {
     ...transaction,
     blockHeight: pendingTransaction.opt.when.height.toNumber(),
@@ -69,7 +80,7 @@ export const updateTransactionPayload = (
     data: {
       ...transaction.data,
       deposit: pendingTransaction.opt.deposit.toString(),
-      approvals: pendingTransaction.opt.approvals.map((a) => a.toString()),
+      approvals,
     },
   };
 };
@@ -84,6 +95,15 @@ export const createTransactionPayload = (
     opt: { when, approvals, deposit },
   } = pendingTransaction;
 
+  const approvalsPayload = getApprovalsFromWallet(
+    wallet as MultisigWallet,
+    network,
+  );
+
+  approvals.forEach((approval) => {
+    approvalsPayload[approval.toString()].fromBlockChain = true;
+  });
+
   return {
     address: wallet.mainAccounts[0].accountId.toString(),
     createdAt: new Date(),
@@ -96,7 +116,7 @@ export const createTransactionPayload = (
     data: {
       callHash: callHash.toHex(),
       deposit: deposit.toString(),
-      approvals: approvals.map((a) => a.toString()),
+      approvals: approvalsPayload,
     },
   };
 };
@@ -142,9 +162,23 @@ export const updateTransaction = async (
   );
 };
 
+export const isApproved = (
+  publicKey: string,
+  approvals: Approvals,
+): boolean => {
+  const approval = approvals[publicKey];
+  return approval.fromBlockChain || approval.fromMatrix;
+};
+
+export const getApprovals = (transaction: Transaction) =>
+  Object.keys(transaction.data.approvals).filter((a: string) =>
+    isApproved(a, transaction.data.approvals),
+  );
+
 export const isFinalApprove = (transaction: Transaction) =>
-  transaction.data.approvals?.length >=
-  Number((transaction.wallet as MultisigWallet).threshold) - 1;
+  Number((transaction.wallet as MultisigWallet).threshold) -
+    getApprovals(transaction).length ===
+  1;
 
 export const decodeCallData = (
   api: ApiPromise,
