@@ -106,6 +106,7 @@ const ScanCode: React.FC = () => {
     if (transaction.type === TransactionType.TRANSFER) {
       db.transactions.update(transaction.id, {
         ...transaction,
+        transactionHash: actualTxHash.toHex(),
         status: TransactionStatus.CONFIRMED,
       });
     } else if (transaction.type === TransactionType.MULTISIG_TRANSFER) {

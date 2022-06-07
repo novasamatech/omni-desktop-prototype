@@ -5,6 +5,8 @@ import { Connection, connectionState } from '../../store/connections';
 import { Asset, Chain, Wallet, Account } from '../../db/types';
 import Card from '../../ui/Card';
 import AssetBalance from './AssetBalance';
+import Explorer from '../../ui/Explorer';
+import { getAddressFromWallet } from '../../utils/account';
 
 type Props = {
   wallet: Wallet;
@@ -42,16 +44,23 @@ const NetworkBalances: React.FC<Props> = ({ wallet, connection }: Props) => {
 
   return (
     <>
-      <div className="mb-2 text-xs font-light flex items-center">
-        <img
-          className="w-5 mr-2 invert"
-          src={network.icon}
-          alt={network.name}
+      <div className="mb-2 flex justify-between">
+        <div className="text-xs font-light flex items-center">
+          <img
+            className="w-5 mr-2 invert"
+            src={network.icon}
+            alt={network.name}
+          />
+          {network.name}
+        </div>
+        <Explorer
+          param={getAddressFromWallet(wallet, network)}
+          type="account"
+          network={network}
         />
-        {network.name}
       </div>
 
-      <Card>
+      <Card className="m-0 mb-4">
         {account
           ? network.assets.map((asset: Asset) => (
               <AssetBalance
