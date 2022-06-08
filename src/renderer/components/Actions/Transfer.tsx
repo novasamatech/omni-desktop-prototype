@@ -20,10 +20,7 @@ import {
   MultisigWallet,
 } from '../../db/types';
 import { isMultisig, validateAddress } from '../../utils/validation';
-import {
-  getAddressFromWallet,
-  getApprovalsFromWallet,
-} from '../../utils/account';
+import { getAddressFromWallet, createApprovals } from '../../utils/account';
 import { ErrorTypes } from '../../../common/constants';
 import { formatAmount, formatBalance, getAssetId } from '../../utils/assets';
 import { useMatrix } from '../Providers/MatrixProvider';
@@ -217,7 +214,9 @@ const Transfer: React.FC = () => {
             precision: currentAsset.precision,
             address,
             amount,
-            approvals: getApprovalsFromWallet(wallet, currentNetwork.network),
+            approvals: isMultisig(w)
+              ? createApprovals(wallet, currentNetwork.network)
+              : null,
           },
         };
       });

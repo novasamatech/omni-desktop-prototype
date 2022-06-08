@@ -42,11 +42,8 @@ const NotifyItem: React.FC<Props> = ({
         <div className="text-2xl font-medium">{title}</div>
         <div className="text-gray-500 mt-1">{description}</div>
       </div>
-      {address && (
-        <div className="mt-3">
-          <Address full address={address} />
-        </div>
-      )}
+      <hr className="mt-2 mb-2" />
+      {address && <Address full address={address} />}
       {callHash && (
         <div className="text-xs text-gray-500 mt-3">
           <div className="flex justify-between items-center">

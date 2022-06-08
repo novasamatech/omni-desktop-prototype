@@ -17,7 +17,7 @@ import {
 import {
   formatAddress,
   getAddressFromWallet,
-  getApprovalsFromWallet,
+  createApprovals,
   toPublicKey,
 } from './account';
 import { db } from '../db/db';
@@ -95,10 +95,7 @@ export const createTransactionPayload = (
     opt: { when, approvals, deposit },
   } = pendingTransaction;
 
-  const approvalsPayload = getApprovalsFromWallet(
-    wallet as MultisigWallet,
-    network,
-  );
+  const approvalsPayload = createApprovals(wallet as MultisigWallet, network);
 
   approvals.forEach((approval) => {
     approvalsPayload[approval.toString()].fromBlockChain = true;
@@ -167,7 +164,7 @@ export const isApproved = (
   approvals: Approvals,
 ): boolean => {
   const approval = approvals[publicKey];
-  return approval.fromBlockChain || approval.fromMatrix;
+  return approval?.fromBlockChain || approval?.fromMatrix;
 };
 
 export const getApprovals = (transaction: Transaction) =>
