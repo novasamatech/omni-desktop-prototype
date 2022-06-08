@@ -98,7 +98,7 @@ export const createTransactionPayload = (
   const approvalsPayload = createApprovals(wallet as MultisigWallet, network);
 
   approvals.forEach((approval) => {
-    approvalsPayload[approval.toString()].fromBlockChain = true;
+    approvalsPayload[toPublicKey(approval.toString())].fromBlockChain = true;
   });
 
   return {
