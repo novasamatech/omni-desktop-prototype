@@ -9,8 +9,8 @@ import NotifyItem from './NotifyItem';
 import { Routes, withId } from '../../../common/constants';
 
 const TITLES = {
-  [OmniMstEvents.INIT]: 'MST initiated',
-  [OmniMstEvents.APPROVE]: 'MST approved',
+  [OmniMstEvents.INIT]: 'MST ready for singing',
+  [OmniMstEvents.APPROVE]: 'MST signed',
   [OmniMstEvents.FINAL_APPROVE]: 'MST executed',
   [OmniMstEvents.CANCEL]: 'MST cancelled',
 };
@@ -19,7 +19,7 @@ const DESCRIPTIONS = {
   [OmniMstEvents.INIT]: (sender: string) =>
     `The transaction was initiated by ${sender}`,
   [OmniMstEvents.APPROVE]: (sender: string) =>
-    `The transaction was approved by ${sender}`,
+    `The transaction was signed by ${sender}`,
   [OmniMstEvents.FINAL_APPROVE]: (sender: string) =>
     `The transaction was executed by ${sender}`,
   [OmniMstEvents.CANCEL]: (sender: string) =>
@@ -59,6 +59,7 @@ const MstNotif: React.FC<Props> = ({ notif }) => {
       title={TITLES[type]}
       description={DESCRIPTIONS[type](notif.sender)}
       date={format(notif.date, 'HH:mm:ss dd MMM, yyyy')}
+      callHash={(notif.content as MstParams).callHash}
       isRead={Boolean(notif.isRead)}
       onClick={onDetailsClick}
     />

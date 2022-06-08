@@ -143,8 +143,9 @@ const InviteNotif: React.FC<Props> = ({ notif }) => {
     <>
       <NotifyItem
         title="Room invitation"
-        description={`You were invited in room ${notif.sender} by ${notif.roomName}`}
+        description={`You were invited in room by ${notif.sender}`}
         date={format(notif.date, 'HH:mm:ss dd MMM, yyyy')}
+        address={account.address}
         isRead={Boolean(notif.isRead)}
         onClick={onDetailsClick}
       />
