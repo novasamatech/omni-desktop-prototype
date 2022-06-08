@@ -2,11 +2,16 @@ import React from 'react';
 import right from '../../../../assets/right.svg';
 import Status from '../../ui/Status';
 import { StatusType } from '../../../common/constants';
+import { copyToClipboard } from '../../utils/strings';
+import copy from '../../../../assets/copy.svg';
+import Address from '../../ui/Address';
 
 type Props = {
   title: string;
   description: string;
   date: string;
+  callHash?: string;
+  address?: string;
   isRead: boolean;
   onClick: () => void;
 };
@@ -15,6 +20,8 @@ const NotifyItem: React.FC<Props> = ({
   title,
   description,
   date,
+  callHash,
+  address,
   isRead,
   onClick,
 }) => {
@@ -35,6 +42,22 @@ const NotifyItem: React.FC<Props> = ({
         <div className="text-2xl font-medium">{title}</div>
         <div className="text-gray-500 mt-1">{description}</div>
       </div>
+      {address && (
+        <div className="mt-3">
+          <Address full address={address} />
+        </div>
+      )}
+      {callHash && (
+        <div className="text-xs text-gray-500 mt-3">
+          <div className="flex justify-between items-center">
+            <div className="font-bold">Call hash:</div>
+            <button onClick={() => copyToClipboard(callHash)}>
+              <img src={copy} alt="copy" />
+            </button>
+          </div>
+          <div className="break-words">{callHash}</div>
+        </div>
+      )}
       <Status
         className="ml-auto"
         status={isRead ? StatusType.SUCCESS : StatusType.WAITING}

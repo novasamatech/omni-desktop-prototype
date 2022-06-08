@@ -38,6 +38,7 @@ import { Connection, connectionState } from '../../store/connections';
 import Signatories from './Signatories';
 import Chat from './Chat';
 import { decodeCallData, updateTransaction } from '../../utils/transactions';
+import { copyToClipboard } from '../../utils/strings';
 
 const TransferDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -186,10 +187,6 @@ const TransferDetails: React.FC = () => {
 
   const formatRecipientAddress = (address: string) =>
     network ? formatAddress(address, network.addressPrefix) : address;
-
-  const copyToClipboard = (text = '') => {
-    navigator.clipboard.writeText(text);
-  };
 
   const selectSignWallet = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSignBy(
