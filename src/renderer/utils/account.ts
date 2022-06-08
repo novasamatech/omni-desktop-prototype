@@ -92,14 +92,10 @@ export const isSameAccount = (first: Contact, second: Contact): boolean =>
   first.mainAccounts[0].publicKey === second.mainAccounts[0].publicKey &&
   first.id === second.id;
 
-export const getApprovalsFromWallet = (
-  wallet: MultisigWallet,
-  network?: Chain,
-) =>
+export const createApprovals = (wallet: MultisigWallet, network?: Chain) =>
   wallet.originContacts.reduce((acc, contact) => {
-    const contactAddress = toPublicKey(getAddressFromWallet(contact, network));
-    acc[contactAddress] = {
-      address: contactAddress,
+    const publicKey = toPublicKey(getAddressFromWallet(contact, network));
+    acc[publicKey] = {
       fromBlockChain: false,
       fromMatrix: false,
     };

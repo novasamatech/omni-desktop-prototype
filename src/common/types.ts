@@ -15,7 +15,6 @@ export type TransactionData = {
 };
 
 export type Approval = {
-  address: string;
   fromBlockChain: boolean;
   fromMatrix: boolean;
   extrinsicHash?: HexString;
