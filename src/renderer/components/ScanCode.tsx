@@ -10,7 +10,6 @@ import {
   OptionsWithMeta,
   UnsignedTransaction,
 } from '@substrate/txwrapper-polkadot';
-import { uniq } from 'lodash';
 
 import { connectionState } from '../store/connections';
 import {
@@ -28,7 +27,7 @@ import {
   MultisigWallet,
 } from '../db/types';
 import { isFinalApprove } from '../utils/transactions';
-import { formatAddress, getAddressFromWallet } from '../utils/account';
+import { getAddressFromWallet, toPublicKey } from '../utils/account';
 import { useMatrix } from './Providers/MatrixProvider';
 
 // TODO: Move this function to utils
@@ -103,6 +102,8 @@ const ScanCode: React.FC = () => {
 
     if (!actualTxHash || !transaction.id) return;
 
+    const extrinsicHash = actualTxHash.toHex();
+
     if (transaction.type === TransactionType.TRANSFER) {
       db.transactions.update(transaction.id, {
         ...transaction,
@@ -114,19 +115,23 @@ const ScanCode: React.FC = () => {
         ? TransactionStatus.CONFIRMED
         : TransactionStatus.PENDING;
 
-      db.transactions.put({
-        ...transaction,
+      const publicKey = toPublicKey(signBy?.mainAccounts[0].accountId || '');
+
+      const { approvals } = transaction.data;
+      const approvalsPayload = {
+        ...approvals,
+        [publicKey]: {
+          ...approvals[publicKey],
+          fromMatrix: true,
+          extrinsicHash,
+        },
+      };
+
+      db.transactions.update(transaction.id, {
         status: transactionStatus,
-        transactionHash: actualTxHash.toHex(),
         data: {
           ...transaction.data,
-          approvals: uniq([
-            ...transaction.data.approvals,
-            formatAddress(
-              signBy?.mainAccounts[0].accountId || '',
-              network.network.addressPrefix,
-            ),
-          ]),
+          approvals: approvalsPayload,
         },
       });
 
@@ -137,6 +142,7 @@ const ScanCode: React.FC = () => {
         if (transactionStatus === TransactionStatus.CONFIRMED) {
           matrix.mstFinalApprove({
             senderAddress: getAddressFromWallet(signBy, network.network),
+            extrinsicHash,
             chainId: network.network.chainId,
             callHash: transaction.data.callHash,
           });
@@ -145,6 +151,7 @@ const ScanCode: React.FC = () => {
         if (transactionStatus === TransactionStatus.PENDING) {
           matrix.mstApprove({
             senderAddress: getAddressFromWallet(signBy, network.network),
+            extrinsicHash,
             chainId: network.network.chainId,
             callHash: transaction.data.callHash,
           });

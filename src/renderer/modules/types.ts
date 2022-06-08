@@ -96,6 +96,7 @@ export type MstParams = {
   chainId: HexString;
   callHash: HexString;
   callData?: HexString;
+  extrinsicHash?: HexString;
   description?: string;
 };
 

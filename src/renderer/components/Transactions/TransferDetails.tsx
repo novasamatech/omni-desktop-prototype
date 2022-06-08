@@ -30,7 +30,11 @@ import {
   TransactionType,
   Wallet,
 } from '../../db/types';
-import { formatAddress, getAddressFromWallet } from '../../utils/account';
+import {
+  formatAddress,
+  getAddressFromWallet,
+  toPublicKey,
+} from '../../utils/account';
 import {
   formatAmount,
   formatBalance,
@@ -46,6 +50,7 @@ import Quorum from './Quorum';
 import Chat from './Chat';
 import { decodeCallData, updateTransaction } from '../../utils/transactions';
 import Shimmer from '../../ui/Shimmer';
+import { copyToClipboard } from '../../utils/strings';
 
 const TransferDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -107,9 +112,11 @@ const TransferDetails: React.FC = () => {
         transaction?.wallet as MultisigWallet
       ).originContacts?.map((c) => getAddressFromWallet(c, network));
 
+      const approval = transaction?.data?.approvals[toPublicKey(address)];
+
       if (
         address &&
-        !transaction?.data?.approvals?.includes(address) &&
+        !(approval?.fromBlockChain || approval?.fromMatrix) &&
         contacts?.includes(address)
       ) {
         acc.push(w as Wallet);
@@ -193,10 +200,6 @@ const TransferDetails: React.FC = () => {
 
   const formatRecipientAddress = (address: string) =>
     network ? formatAddress(address, network.addressPrefix) : address;
-
-  const copyToClipboard = (text = '') => {
-    navigator.clipboard.writeText(text);
-  };
 
   const selectSignWallet = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSignBy(

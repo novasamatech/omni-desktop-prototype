@@ -18,11 +18,13 @@ import {
 import { db } from '../../db/db';
 import {
   BooleanValue,
+  MultisigWallet,
   Notification,
   TransactionStatus,
   TransactionType,
 } from '../../db/types';
-import { toPublicKey } from '../../utils/account';
+import { getApprovalsFromWallet, toPublicKey } from '../../utils/account';
+import { Approvals } from '../../../common/types';
 
 const Statuses = {
   [OmniMstEvents.INIT]: TransactionStatus.CREATED,
@@ -157,7 +159,7 @@ const MatrixProvider: React.FC<Props> = ({
         data: {
           callHash: content.callHash,
           callData: content.callData,
-          approvals: [],
+          approvals: getApprovalsFromWallet(wallet as MultisigWallet),
         },
         type: TransactionType.MULTISIG_TRANSFER,
       });
@@ -167,17 +169,25 @@ const MatrixProvider: React.FC<Props> = ({
       [OmniMstEvents.APPROVE, OmniMstEvents.FINAL_APPROVE].includes(rest.type)
     ) {
       const tx = await db.transactions
-        .where('data.callHash')
-        .equals(content.callHash)
+        .where({ 'data.callHash': content.callHash })
         .first();
 
       if (!tx?.id) return;
+
+      const approvals: Approvals = {
+        ...tx.data.approvals,
+        [content.senderAddress]: {
+          ...tx.data.approvals[toPublicKey(content.senderAddress)],
+          fromMatrix: true,
+          extrinsicHash: content.extrinsicHash,
+        },
+      };
 
       db.transactions.update(tx.id, {
         status: transactionStatus,
         data: {
           ...tx.data,
-          approvals: [...tx.data.approvals, content.senderAddress],
+          approvals,
         },
       });
     }
