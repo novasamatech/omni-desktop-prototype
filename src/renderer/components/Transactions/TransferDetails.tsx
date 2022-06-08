@@ -20,7 +20,11 @@ import {
   TransactionType,
   Wallet,
 } from '../../db/types';
-import { formatAddress, getAddressFromWallet } from '../../utils/account';
+import {
+  formatAddress,
+  getAddressFromWallet,
+  toPublicKey,
+} from '../../utils/account';
 import {
   formatBalance,
   formatBalanceFromAmount,
@@ -94,9 +98,11 @@ const TransferDetails: React.FC = () => {
         transaction?.wallet as MultisigWallet
       ).originContacts?.map((c) => getAddressFromWallet(c, network));
 
+      const approval = transaction?.data?.approvals[toPublicKey(address)];
+
       if (
         address &&
-        !transaction?.data?.approvals?.includes(address) &&
+        !(approval?.fromBlockChain || approval?.fromMatrix) &&
         contacts?.includes(address)
       ) {
         acc.push(w as Wallet);

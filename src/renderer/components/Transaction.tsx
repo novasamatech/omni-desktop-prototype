@@ -14,6 +14,7 @@ import right from '../../../assets/right.svg';
 import Status from '../ui/Status';
 import Explorer from '../ui/Explorer';
 import { db } from '../db/db';
+import { getApprovals } from '../utils/transactions';
 
 type Props = {
   transaction: TransactionData;
@@ -74,7 +75,7 @@ const Transaction: React.FC<Props> = ({ transaction }) => {
           <div className="flex">
             {transaction.type === TransactionType.MULTISIG_TRANSFER && (
               <span className="text-xs text-gray-500 mr-2">
-                {transaction.data.approvals?.length || 0}/
+                {getApprovals(transaction).length}/
                 {(transaction.wallet as MultisigWallet).threshold} Signatures
               </span>
             )}
