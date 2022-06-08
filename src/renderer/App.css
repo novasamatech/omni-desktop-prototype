@@ -43,3 +43,13 @@ input::-webkit-inner-spin-button {
   font-size: 14px;
   line-height: 25px;
 }
+
+.slide_up {
+  animation: slideUp 0.3s linear forwards;
+  box-shadow: 1px 1px 4px 1px rgb(0 0 0 / 15%);
+}
+
+.slide_down {
+  transform: translateY(64px);
+  transition: transform 0.3s linear;
+}
