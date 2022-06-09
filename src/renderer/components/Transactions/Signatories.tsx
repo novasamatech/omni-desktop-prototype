@@ -128,8 +128,8 @@ const Signatories: React.FC<Props> = ({ network, transaction }) => {
     if (!network || !transaction) return;
 
     const approvesNumber = signatories.filter((s) => s.approved)?.length || 0;
-    // Skip if no new approves arrived
-    if (!isFirstSetup && approvesNumber === approvals.length) return;
+    const noNewApproves = !isFirstSetup && approvesNumber === approvals.length;
+    if (noNewApproves) return;
 
     const getExtrinsicHash = (contact: Contact): string =>
       getApproval(contact)?.extrinsicHash || '';
