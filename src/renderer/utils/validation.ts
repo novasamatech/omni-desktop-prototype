@@ -75,8 +75,8 @@ export const validateAddress = (address: string): boolean => {
   }
 };
 
-export const isMultisig = (wallet: Wallet | MultisigWallet): boolean =>
-  Boolean(wallet.isMultisig);
+export const isMultisig = (wallet?: Wallet | MultisigWallet): boolean =>
+  Boolean(wallet?.isMultisig);
 
 export const validateMatrixLogin = (matrixId: string): boolean => {
   return MatrixIdRegex.test(matrixId);

@@ -17,7 +17,7 @@ import { Connection, connectionState } from '../store/connections';
 import {
   currentTransactionState,
   currentUnsignedState,
-  signByState,
+  signWithState,
 } from '../store/currentTransaction';
 import LinkButton from '../ui/LinkButton';
 import { Routes, DEFAULT, withId } from '../../common/constants';
@@ -25,7 +25,8 @@ import { getAddressFromWallet } from '../utils/account';
 import { formatAmount, getAssetById } from '../utils/assets';
 import Shimmer from '../ui/Shimmer';
 import { AssetType, MultisigWallet, TransactionType } from '../db/types';
-import { isFinalApprove } from '../utils/transactions';
+import { getApprovals, isFinalApprove } from '../utils/transactions';
+import Fee from '../ui/Fee';
 
 const ShowCode: React.FC = () => {
   const [payload, setPayload] = useState<Uint8Array>();
@@ -33,7 +34,7 @@ const ShowCode: React.FC = () => {
   const [connection, setConnection] = useState<Connection>();
   const networks = useRecoilValue(connectionState);
   const transaction = useRecoilValue(currentTransactionState);
-  const signBy = useRecoilValue(signByState);
+  const signWith = useRecoilValue(signWithState);
   const [, setUnsigned] = useRecoilState(currentUnsignedState);
 
   useEffect(() => {
@@ -46,15 +47,20 @@ const ShowCode: React.FC = () => {
 
       setAddress(
         getAddressFromWallet(
-          transaction.type === TransactionType.MULTISIG_TRANSFER && signBy
-            ? signBy
+          transaction.type === TransactionType.MULTISIG_TRANSFER && signWith
+            ? signWith
             : transaction.wallet,
           network.network,
         ),
       );
       setConnection(network);
     }
-  }, [transaction, networks, signBy]);
+  }, [transaction, networks, signWith]);
+
+  const asset =
+    connection &&
+    transaction &&
+    getAssetById(connection.network.assets, transaction.data.assetId);
 
   const setupTransaction = useCallback(async () => {
     // TODO: Refactor setup transaction flow
@@ -92,11 +98,6 @@ const ShowCode: React.FC = () => {
       metadataRpc: metadataRpc.toHex(),
       registry,
     };
-
-    const asset = getAssetById(
-      connection.network.assets,
-      transaction.data.assetId,
-    );
 
     const transfers = {
       [AssetType.ORML]: () =>
@@ -203,7 +204,7 @@ const ShowCode: React.FC = () => {
     };
     let unsignedAction = transfers[asset?.type || DEFAULT];
 
-    if (transaction.type === TransactionType.MULTISIG_TRANSFER && signBy) {
+    if (transaction.type === TransactionType.MULTISIG_TRANSFER && signWith) {
       unsignedAction = isFinalApprove(transaction)
         ? multisig.finalApprove
         : multisig.approve;
@@ -216,7 +217,7 @@ const ShowCode: React.FC = () => {
 
     setPayload(hexToU8a(signingPayloadHex));
     setUnsigned(unsigned);
-  }, [connection, transaction, setUnsigned, address, signBy]);
+  }, [connection, transaction, setUnsigned, address, signWith, asset]);
 
   useEffect(() => {
     setupTransaction();
@@ -255,8 +256,20 @@ const ShowCode: React.FC = () => {
             <Shimmer />
           )}
         </div>
+        {transaction && (
+          <div className="w-[350px] mt-5 mb-10">
+            <Fee
+              wallet={transaction.wallet}
+              asset={asset}
+              connection={connection}
+              address={transaction.data.address}
+              amount={transaction.data.amount}
+              withDeposit={getApprovals(transaction).length === 0}
+            />
+          </div>
+        )}
 
-        <LinkButton to={Routes.SCAN_CODE} size="lg">
+        <LinkButton className="w-[350px]" to={Routes.SCAN_CODE} size="lg">
           Done, upload signed operations
         </LinkButton>
       </div>

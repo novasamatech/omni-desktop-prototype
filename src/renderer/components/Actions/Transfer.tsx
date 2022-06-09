@@ -2,7 +2,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useRecoilValue } from 'recoil';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
-import { BN } from '@polkadot/util';
 import { Connection, connectionState } from '../../store/connections';
 import { selectedWalletsState } from '../../store/selectedWallets';
 import Button from '../../ui/Button';
@@ -19,10 +18,11 @@ import {
 import { isMultisig, validateAddress } from '../../utils/validation';
 import { getAddressFromWallet, createApprovals } from '../../utils/account';
 import { ErrorTypes } from '../../../common/constants';
-import { formatBalance, getAssetId } from '../../utils/assets';
+import { getAssetId } from '../../utils/assets';
 import { useMatrix } from '../Providers/MatrixProvider';
 import { HexString } from '../../../common/types';
 import { getTxExtrinsic } from '../../utils/transactions';
+import Fee from '../../ui/Fee';
 
 type TransferForm = {
   address: string;
@@ -32,7 +32,6 @@ type TransferForm = {
 const Transfer: React.FC = () => {
   const { matrix } = useMatrix();
 
-  const [transactionFee, setTransactionFee] = useState('0');
   const [currentNetwork, setCurrentNetwork] = useState<Connection | undefined>(
     undefined,
   );
@@ -72,11 +71,6 @@ const Transfer: React.FC = () => {
       isValid &&
       firstWallet
     ) {
-      const fromAddress = getAddressFromWallet(
-        firstWallet,
-        currentNetwork.network,
-      );
-
       const transferExtrinsic = getTxExtrinsic(
         currentNetwork,
         currentAsset,
@@ -86,18 +80,6 @@ const Transfer: React.FC = () => {
 
       setCallHash(transferExtrinsic.method.hash.toHex());
       setCallData(transferExtrinsic.method.toHex());
-
-      transferExtrinsic
-        .paymentInfo(fromAddress)
-        .then(({ partialFee }) => {
-          setTransactionFee(
-            formatBalance(partialFee.toString(), defaultAsset?.precision),
-          );
-        })
-        .catch((e) => {
-          console.warn(e);
-          setTransactionFee('0');
-        });
     }
   }, [
     watchAmount,
@@ -211,8 +193,6 @@ const Transfer: React.FC = () => {
     }
   };
 
-  const multisigWallet = wallets?.find(isMultisig) as MultisigWallet;
-
   return (
     <form onSubmit={handleSubmit(addTransaction)}>
       <h2 className="font-light text-xl p-4">Transfer</h2>
@@ -284,37 +264,15 @@ const Transfer: React.FC = () => {
           The amount is not valid, please type it again
         </ErrorMessage>
       </div>
-      <div className="p-2 flex flex-col gap-1">
-        <div className="text-gray-500 flex justify-between">
-          <span>Transaction fee:</span>
-          <span>
-            {transactionFee} {defaultAsset?.symbol}
-          </span>
-        </div>
-        {multisigWallet && currentNetwork && (
-          <>
-            <div className="text-gray-500 flex justify-between">
-              <span>Deposit:</span>
-              <span>
-                {formatBalance(
-                  currentNetwork.api.consts.multisig.depositBase
-                    .add(
-                      currentNetwork.api.consts.multisig.depositFactor.mul(
-                        new BN(multisigWallet.threshold),
-                      ),
-                    )
-                    .toString(),
-                  currentAsset?.precision,
-                )}{' '}
-                {defaultAsset?.symbol}
-              </span>
-            </div>
-            <div className="text-gray-400 text-sm italic">
-              The deposit stays locked on the first signatory account until the
-              transaction is executed or cancelled
-            </div>
-          </>
-        )}
+      <div className="p-2">
+        <Fee
+          wallet={firstWallet}
+          asset={currentAsset}
+          connection={currentNetwork}
+          address={watchAddress}
+          amount={watchAmount}
+          withDeposit
+        />
       </div>
       <div className="p-2">
         <Button type="submit" size="lg" disabled={!isValid}>
