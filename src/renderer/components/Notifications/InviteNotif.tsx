@@ -44,6 +44,7 @@ const InviteNotif: React.FC<Props> = ({ notif }) => {
     if (mstAccountId) {
       history.push(withId(Routes.EDIT_MULTISIG_WALLET, mstAccountId));
     } else {
+      setWalletName(account.accountName);
       toggleDialogOpen();
     }
   };
@@ -61,6 +62,7 @@ const InviteNotif: React.FC<Props> = ({ notif }) => {
     db.mxNotifications.update(notif, {
       isRead: BooleanValue.TRUE,
     });
+    setWalletName(account.accountName);
     toggleDialogOpen();
   };
 

@@ -172,6 +172,7 @@ const ManageMultisigWallet: React.FC = () => {
     await matrix.finishRoomCreation({
       roomId: mstRoom.current?.roomId || '',
       inviterPublicKey: mstRoom.current?.inviterPublicKey || '',
+      accountName: mstRoom.current?.accountName || '',
       mstAccountAddress: mstRoom.current?.mstAccountAddress || '',
       signatories,
       signature,
@@ -225,6 +226,7 @@ const ManageMultisigWallet: React.FC = () => {
     mstWallet.current = payload;
     mstRoom.current = {
       ...mstRoom.current,
+      accountName: walletName,
       threshold: Number(threshold),
       mstAccountAddress: mstSs58Address,
     };
