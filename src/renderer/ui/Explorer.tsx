@@ -1,6 +1,4 @@
-/* eslint-disable react/require-default-props */
-/* eslint-disable jsx-a11y/label-has-associated-control */
-
+import React from 'react';
 import cs from 'classnames';
 import { Chain } from '../db/types';
 import subscan from '../../../assets/explorers/subscan.png';
@@ -30,7 +28,12 @@ const Replacer = {
   event: '{event}',
 };
 
-const Explorer = ({ param, type, network, className = '' }: Props) => {
+const Explorer: React.FC<Props> = ({
+  param,
+  type,
+  network,
+  className = '',
+}) => {
   const links: { name: string; link: string }[] = [];
 
   network.explorers?.forEach((explorer) => {
@@ -45,7 +48,7 @@ const Explorer = ({ param, type, network, className = '' }: Props) => {
   return (
     <div className={cs('flex gap-1 items-center', className)}>
       {links.map((link) => (
-        <a href={link.link} rel="noreferrer" target="_blank">
+        <a key={link.link} href={link.link} rel="noreferrer" target="_blank">
           <img className="w-5 h-5" src={Icons[link.name]} alt={link.name} />
         </a>
       ))}
