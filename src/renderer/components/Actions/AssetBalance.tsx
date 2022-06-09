@@ -187,9 +187,7 @@ const AssetBalance: React.FC<Props> = ({
       </div>
       <div className="font-normal text-xl">
         {balance?.validationStatus === ValidationStatus.VALIDATION ? (
-          <div className="w-12 h-7">
-            <Shimmer />
-          </div>
+          <Shimmer width="80px" height="20px" />
         ) : (
           <>
             {balance?.validationStatus === ValidationStatus.VALID ? (
