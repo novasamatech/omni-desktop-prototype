@@ -22,7 +22,7 @@ const Notifications: React.FC = () => {
           <h1 className="h-16 p-4 font-light text-lg">Notifications</h1>
         </header>
 
-        <main className="w-1/2 mx-auto overflow-y-auto">
+        <main className="w-1/2 mx-auto">
           <ul className="flex flex-col gap-5">
             {myNotifications.map((notif) =>
               notif.type === EventType.RoomMember ? (
