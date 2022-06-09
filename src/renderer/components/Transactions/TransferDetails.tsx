@@ -321,19 +321,18 @@ const TransferDetails: React.FC = () => {
                   <Button onClick={updateCallData}>Save</Button>
                 </div>
               )}
-              {transaction?.status !== TransactionStatus.CONFIRMED &&
+              {transaction &&
+                transaction.status !== TransactionStatus.CONFIRMED &&
                 transaction.data.callData && (
                   <>
                     <hr className="my-5" />
                     <Fee
-                      wallet={transaction?.wallet}
+                      wallet={transaction.wallet}
                       asset={currentAsset}
                       connection={connection}
-                      address={transaction?.data?.address}
-                      amount={transaction?.data?.amount}
-                      withDeposit={
-                        transaction && getApprovals(transaction).length === 0
-                      }
+                      address={transaction.data.address}
+                      amount={transaction.data.amount}
+                      withDeposit={getApprovals(transaction).length === 0}
                     />
                   </>
                 )}

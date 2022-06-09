@@ -256,17 +256,18 @@ const ShowCode: React.FC = () => {
             <Shimmer />
           )}
         </div>
-
-        <div className="w-[350px] mt-5 mb-10">
-          <Fee
-            wallet={transaction?.wallet}
-            asset={asset}
-            connection={connection}
-            address={transaction?.data?.address}
-            amount={transaction?.data?.amount}
-            withDeposit={transaction && getApprovals(transaction).length === 0}
-          />
-        </div>
+        {transaction && (
+          <div className="w-[350px] mt-5 mb-10">
+            <Fee
+              wallet={transaction.wallet}
+              asset={asset}
+              connection={connection}
+              address={transaction.data.address}
+              amount={transaction.data.amount}
+              withDeposit={getApprovals(transaction).length === 0}
+            />
+          </div>
+        )}
 
         <LinkButton className="w-[350px]" to={Routes.SCAN_CODE} size="lg">
           Done, upload signed operations
