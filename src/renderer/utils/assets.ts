@@ -6,6 +6,8 @@ import { Asset, AssetType, OrmlExtras, StatemineExtras } from '../db/types';
 
 export const formatAmount = (amount: string, precision: number): string => {
   // eslint-disable-next-line @typescript-eslint/prefer-regexp-exec
+  if (!amount) return '0';
+
   const isDecimalValue = amount.match(/^(\d+)\.(\d+)$/);
   const bnPrecision = new BN(precision);
   if (isDecimalValue) {

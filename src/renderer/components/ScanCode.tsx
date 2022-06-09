@@ -15,7 +15,7 @@ import { connectionState } from '../store/connections';
 import {
   currentTransactionState,
   currentUnsignedState,
-  signByState,
+  signWithState,
 } from '../store/currentTransaction';
 import { HexString } from '../../common/types';
 import LinkButton from '../ui/LinkButton';
@@ -66,7 +66,7 @@ const ScanCode: React.FC = () => {
   const [isTxSent, setIsTxSent] = useState(false);
 
   const transaction = useRecoilValue(currentTransactionState);
-  const signBy = useRecoilValue(signByState);
+  const signWith = useRecoilValue(signWithState);
   const unsigned = useRecoilValue(currentUnsignedState);
 
   // TODO: Refactor sign and send transaction flow
@@ -115,7 +115,7 @@ const ScanCode: React.FC = () => {
         ? TransactionStatus.CONFIRMED
         : TransactionStatus.PENDING;
 
-      const publicKey = toPublicKey(signBy?.mainAccounts[0].accountId || '');
+      const publicKey = toPublicKey(signWith?.mainAccounts[0].accountId || '');
 
       const { approvals } = transaction.data;
       const approvalsPayload = {
@@ -136,12 +136,12 @@ const ScanCode: React.FC = () => {
       });
 
       const multisigWallet = transaction.wallet as MultisigWallet;
-      if (signBy && multisigWallet.matrixRoomId) {
+      if (signWith && multisigWallet.matrixRoomId) {
         matrix.setRoom(multisigWallet.matrixRoomId);
 
         if (transactionStatus === TransactionStatus.CONFIRMED) {
           matrix.mstFinalApprove({
-            senderAddress: getAddressFromWallet(signBy, network.network),
+            senderAddress: getAddressFromWallet(signWith, network.network),
             extrinsicHash,
             chainId: network.network.chainId,
             callHash: transaction.data.callHash,
@@ -150,7 +150,7 @@ const ScanCode: React.FC = () => {
 
         if (transactionStatus === TransactionStatus.PENDING) {
           matrix.mstApprove({
-            senderAddress: getAddressFromWallet(signBy, network.network),
+            senderAddress: getAddressFromWallet(signWith, network.network),
             extrinsicHash,
             chainId: network.network.chainId,
             callHash: transaction.data.callHash,

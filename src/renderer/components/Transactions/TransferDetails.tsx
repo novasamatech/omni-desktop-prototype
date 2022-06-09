@@ -1,14 +1,13 @@
 /* eslint-disable promise/always-return */
-import React, { ReactNode, useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 import { useHistory, useParams } from 'react-router';
 import { format } from 'date-fns';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { BN } from '@polkadot/util';
 import Button from '../../ui/Button';
 import {
   currentTransactionState,
-  signByState,
+  signWithState,
 } from '../../store/currentTransaction';
 import Address from '../../ui/Address';
 import { Routes } from '../../../common/constants';
@@ -26,11 +25,7 @@ import {
   getAddressFromWallet,
   toPublicKey,
 } from '../../utils/account';
-import {
-  formatBalance,
-  formatBalanceFromAmount,
-  getAssetById,
-} from '../../utils/assets';
+import { formatBalanceFromAmount, getAssetById } from '../../utils/assets';
 import LinkButton from '../../ui/LinkButton';
 import copy from '../../../../assets/copy.svg';
 import Select, { OptionType } from '../../ui/Select';
@@ -38,25 +33,20 @@ import InputText from '../../ui/Input';
 import { Connection, connectionState } from '../../store/connections';
 import Signatories from './Signatories';
 import Chat from './Chat';
-import {
-  decodeCallData,
-  getApprovals,
-  getTxExtrinsic,
-} from '../../utils/transactions';
-import Shimmer from '../../ui/Shimmer';
+import { decodeCallData, getApprovals } from '../../utils/transactions';
 import { copyToClipboard } from '../../utils/strings';
+import Fee from '../../ui/Fee';
 
 const TransferDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const history = useHistory();
 
-  const [, setSignBy] = useRecoilState(signByState);
+  const [, setSignWith] = useRecoilState(signWithState);
   const networks = useRecoilValue(connectionState);
   const setCurrentTransaction = useSetRecoilState(currentTransactionState);
 
   const [transaction, setTransaction] = useState<Transaction>();
   const [network, setNetwork] = useState<Chain>();
-  const [commission, setCommission] = useState<string>('');
   const [callData, setCallData] = useState<string>();
   const [availableWallets, setAvailableWallets] = useState<OptionType[]>([]);
   const [connection, setConnection] = useState<Connection>();
@@ -119,7 +109,7 @@ const TransferDetails: React.FC = () => {
     }, [] as Wallet[]);
 
     if (walletsToSign) {
-      setSignBy(walletsToSign[0]);
+      setSignWith(walletsToSign[0]);
       setAvailableWallets(
         walletsToSign.map((w) => ({
           value: w.mainAccounts[0].publicKey,
@@ -133,7 +123,7 @@ const TransferDetails: React.FC = () => {
     transaction?.wallet,
     isMultisigTransfer,
     network,
-    setSignBy,
+    setSignWith,
   ]);
 
   const setupTransaction = useCallback(() => {
@@ -195,7 +185,7 @@ const TransferDetails: React.FC = () => {
     network ? formatAddress(address, network.addressPrefix) : address;
 
   const selectSignWallet = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSignBy(
+    setSignWith(
       wallets?.find(
         (w) => w.mainAccounts[0].publicKey === e.target.value,
       ) as Wallet,
@@ -231,44 +221,6 @@ const TransferDetails: React.FC = () => {
       updateCallData();
     }
   }, [transaction, updateCallData]);
-
-  useEffect(() => {
-    if (!connection || !network || !transaction || !currentAsset) return;
-
-    getTxExtrinsic(
-      connection,
-      currentAsset,
-      transaction.address,
-      transaction.data.amount,
-    )
-      .paymentInfo(transaction.address)
-      .then(({ partialFee }) => {
-        const formattedValue = formatBalance(
-          partialFee.toString(),
-          network.assets[0].precision,
-        );
-        setCommission(`${formattedValue} ${network.assets[0].symbol}`);
-      })
-      .catch((error) => {
-        console.warn(error);
-        setCommission('0');
-      });
-  }, [connection, currentAsset, network, transaction]);
-
-  const depositValue = (): string | ReactNode => {
-    if (!connection || !network || !transaction) {
-      return <Shimmer width="80px" height="20px" />;
-    }
-
-    const { depositFactor, depositBase } = connection.api.consts.multisig;
-    const balance = depositBase.add(
-      depositFactor.mul(
-        new BN((transaction.wallet as MultisigWallet).threshold),
-      ),
-    );
-    const deposit = formatBalance(balance.toString(), currentAsset?.precision);
-    return `${deposit} ${network.assets[0].symbol}`;
-  };
 
   return (
     <>
@@ -333,18 +285,6 @@ const TransferDetails: React.FC = () => {
                   </>
                 )}
               </div>
-              <div className="flex">
-                {transaction.data.deposit && currentAsset?.precision && (
-                  <>
-                    Deposit:{' '}
-                    {formatBalance(
-                      transaction.data.deposit,
-                      currentAsset.precision,
-                    )}{' '}
-                    {tokenSymbol}
-                  </>
-                )}
-              </div>
               {!!transaction.data.callHash && (
                 <div className="text-xs text-gray-500 mt-3">
                   <div className="flex justify-between items-center">
@@ -371,28 +311,6 @@ const TransferDetails: React.FC = () => {
                   <div className="break-words">{transaction.data.callData}</div>
                 </div>
               )}
-              {transaction?.status !== TransactionStatus.CONFIRMED && (
-                <div className="flex justify-between mt-2 pt-2 border-t">
-                  <div className="text-gray-500 text-sm">Commission</div>
-                  <div className="text-gray-500 text-sm">
-                    {commission || <Shimmer width="80px" height="20px" />}
-                  </div>
-                </div>
-              )}
-              {transaction && getApprovals(transaction).length === 0 && (
-                <>
-                  <div className="flex justify-between mt-1">
-                    <div className="text-gray-500 text-sm">Deposit</div>
-                    <div className="text-gray-500 text-sm">
-                      {depositValue()}
-                    </div>
-                  </div>
-                  <div className="text-xs text-gray-400 italic mt-2">
-                    The deposit stays locked until the transaction is executed
-                    or cancelled
-                  </div>
-                </>
-              )}
               {isMultisigTransfer && !transaction.data.callData && (
                 <div className="flex mt-3">
                   <InputText
@@ -403,6 +321,22 @@ const TransferDetails: React.FC = () => {
                   <Button onClick={updateCallData}>Save</Button>
                 </div>
               )}
+              {transaction?.status !== TransactionStatus.CONFIRMED &&
+                transaction.data.callData && (
+                  <>
+                    <hr className="my-5" />
+                    <Fee
+                      wallet={transaction?.wallet}
+                      asset={currentAsset}
+                      connection={connection}
+                      address={transaction?.data?.address}
+                      amount={transaction?.data?.amount}
+                      withDeposit={
+                        transaction && getApprovals(transaction).length === 0
+                      }
+                    />
+                  </>
+                )}
             </>
           )}
         </div>
