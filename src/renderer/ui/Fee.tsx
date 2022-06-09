@@ -37,7 +37,7 @@ const Fee: React.FC<Props> = ({
       !validateAddress(address) ||
       !amount
     ) {
-      setTransactionFee('0');
+      setTransactionFee('');
       return;
     }
 
@@ -54,7 +54,7 @@ const Fee: React.FC<Props> = ({
       })
       .catch((error) => {
         console.warn(error);
-        setTransactionFee('0');
+        setTransactionFee('');
       });
   }, [connection, amount, address, asset, defaultAsset, wallet]);
 

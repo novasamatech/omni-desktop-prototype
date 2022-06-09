@@ -257,7 +257,7 @@ const ShowCode: React.FC = () => {
           )}
         </div>
 
-        <div className="w-[350px]">
+        <div className="w-[350px] mt-5 mb-10">
           <Fee
             wallet={transaction?.wallet}
             asset={asset}
