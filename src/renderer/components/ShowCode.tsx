@@ -259,7 +259,7 @@ const ShowCode: React.FC = () => {
         {transaction && (
           <div className="w-[350px] mt-5 mb-10">
             <Fee
-              wallet={transaction.wallet}
+              wallet={signWith || transaction.wallet}
               asset={asset}
               connection={connection}
               address={transaction.data.address}
