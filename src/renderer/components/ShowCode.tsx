@@ -253,7 +253,7 @@ const ShowCode: React.FC = () => {
               payload={payload}
             />
           ) : (
-            <Shimmer />
+            <Shimmer width="100%" height="100%" />
           )}
         </div>
         {transaction && (
