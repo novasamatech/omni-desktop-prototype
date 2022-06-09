@@ -504,6 +504,7 @@ class Matrix implements ISecureMessenger {
 
     const omniExtras = {
       mst_account: {
+        accountName: params.accountName,
         threshold: params.threshold,
         signatories: params.signatories.map((signatory) => signatory.accountId),
         address: params.mstAccountAddress,

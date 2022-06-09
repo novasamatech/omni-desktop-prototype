@@ -62,6 +62,7 @@ export type RoomSignature = Record<'roomId' | 'sign', string>;
 export type RoomParams = {
   roomId: string;
   signature: string;
+  accountName: string;
   mstAccountAddress: string;
   inviterPublicKey: string;
   threshold: number;
@@ -70,6 +71,7 @@ export type RoomParams = {
 
 export type OmniExtras = {
   mst_account: {
+    accountName: string;
     threshold: number;
     signatories: string[];
     address: string;
