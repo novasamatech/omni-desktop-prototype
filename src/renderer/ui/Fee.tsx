@@ -84,8 +84,8 @@ const Fee: React.FC<Props> = ({
             <div>{depositValue()}</div>
           </div>
           <div className="text-xs text-gray-400 italic">
-            The deposit stays locked until the transaction is executed or
-            cancelled
+            The deposit stays locked on the first signatory account until the
+            transaction is executed or cancelled
           </div>
         </>
       )}

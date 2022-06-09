@@ -183,7 +183,7 @@ const Signatories: React.FC<Props> = ({ network, transaction }) => {
 
   return (
     <div className="mb-10 w-[350px] bg-gray-100 py-3 rounded-2xl">
-      <h1 className="text-2xl font-normal mb-4 px-4">Signatories</h1>
+      <h1 className="text-2xl font-normal mb-4 px-4">Quorum</h1>
       <div className="text-3xl font-medium mb-7 px-4">
         {transaction ? getApprovals(transaction).length : 0} of{' '}
         {(transaction?.wallet as MultisigWallet).threshold}

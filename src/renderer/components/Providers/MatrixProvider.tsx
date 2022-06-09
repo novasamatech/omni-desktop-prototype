@@ -64,8 +64,6 @@ const MatrixProvider: React.FC<Props> = ({
     return db.mxNotifications.where({ client: matrix.userId }).sortBy('date');
   }, [isLoggedIn]);
 
-  const wallets = useLiveQuery(() => db.wallets.toArray());
-
   useEffect(() => {
     const initMatrix = async () => {
       try {
@@ -143,6 +141,8 @@ const MatrixProvider: React.FC<Props> = ({
     const transactionStatus = Statuses[rest.type];
 
     if (rest.type === OmniMstEvents.INIT) {
+      const wallets = await db.wallets.toArray();
+
       const wallet = wallets?.find(
         (w) =>
           w.mainAccounts[0].publicKey === toPublicKey(content.senderAddress),
