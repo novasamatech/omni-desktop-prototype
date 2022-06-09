@@ -23,7 +23,7 @@ const Balance: React.FC<Props> = ({
   asset,
   wallet,
   connection: { api, network },
-}: Props) => {
+}) => {
   const [balance, setBalance] = useState<string>();
 
   const updateBalance = useCallback(
@@ -87,6 +87,7 @@ const Balance: React.FC<Props> = ({
     if (wallet) {
       const address = getAddressFromWallet(wallet, network);
 
+      // TODO: Unsubscribe from subscriptions
       if (!asset.type) {
         subscribeBalanceChange(address);
       }
@@ -99,8 +100,6 @@ const Balance: React.FC<Props> = ({
         subscribeOrmlAssetChange(address);
       }
     }
-
-    return () => {};
   }, [
     wallet,
     asset,
