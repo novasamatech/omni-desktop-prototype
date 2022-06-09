@@ -144,8 +144,8 @@ const InviteNotif: React.FC<Props> = ({ notif }) => {
   return (
     <>
       <NotifyItem
-        title="MST account invitation"
-        description={`You were invited by ${notif.sender}`}
+        title="Invitation to Multisig account"
+        description={`You were invited to ${account.accountName} by ${notif.sender}`}
         date={format(notif.date, 'HH:mm:ss dd MMM, yyyy')}
         address={account.address}
         isRead={Boolean(notif.isRead)}
@@ -160,7 +160,7 @@ const InviteNotif: React.FC<Props> = ({ notif }) => {
       >
         <DialogContent>
           <Dialog.Title as="h3" className="font-light text-xl">
-            Invite to MST account
+            Invitation to Multisig account
           </Dialog.Title>
           <div className="mt-2">Choose name for your MST account?</div>
 

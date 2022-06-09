@@ -101,6 +101,7 @@ const ManageMultisigWallet: React.FC = () => {
   const [wallet, setWallet] = useState<MultisigWallet>();
   const [selectedContacts, setSelectedContacts] = useState<Contact[]>([]);
   const [dialogType, setDialogType] = useState<DialogTypes>('mst');
+  const [isRoomCreating, setIsRoomCreating] = useState(false);
 
   const [isDialogOpen, toggleDialogOpen] = useToggle(false);
 
@@ -277,12 +278,14 @@ const ManageMultisigWallet: React.FC = () => {
       updateMultisigWallet(wallet, walletName);
     } else {
       try {
+        setIsRoomCreating(true);
         await createMultisigWallet(walletName, threshold);
       } catch (error) {
         openDialogWithType('create');
       }
       mstRoom.current = undefined;
       mstWallet.current = undefined;
+      setIsRoomCreating(false);
       setSelectedContacts([]);
       reset();
     }
@@ -443,7 +446,12 @@ const ManageMultisigWallet: React.FC = () => {
           </Card>
         </div>
         <div className="p-2 flex">
-          <Button size="lg" disabled={!isValid} type="submit">
+          <Button
+            size="lg"
+            disabled={!isValid || isRoomCreating}
+            type="submit"
+            isLoading={isRoomCreating}
+          >
             {wallet ? 'Update' : 'Create'}
           </Button>
           {wallet && (

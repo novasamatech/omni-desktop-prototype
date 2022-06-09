@@ -24,7 +24,6 @@ import {
   TransactionType,
 } from '../../db/types';
 import { createApprovals, toPublicKey } from '../../utils/account';
-import { Approvals } from '../../../common/types';
 
 const Statuses = {
   [OmniMstEvents.INIT]: TransactionStatus.CREATED,
@@ -174,20 +173,17 @@ const MatrixProvider: React.FC<Props> = ({
 
       if (!tx?.id) return;
 
-      const approvals: Approvals = {
-        ...tx.data.approvals,
-        [content.senderAddress]: {
-          ...tx.data.approvals[toPublicKey(content.senderAddress)],
-          fromMatrix: true,
-          extrinsicHash: content.extrinsicHash,
-        },
-      };
-
+      const senderPublicKey = toPublicKey(content.senderAddress);
       db.transactions.update(tx.id, {
         status: transactionStatus,
         data: {
           ...tx.data,
-          approvals,
+          ...tx.data.approvals,
+          [senderPublicKey]: {
+            ...tx.data.approvals[senderPublicKey],
+            fromMatrix: true,
+            extrinsicHash: content.extrinsicHash,
+          },
         },
       });
     }
@@ -214,7 +210,7 @@ const MatrixProvider: React.FC<Props> = ({
       onMstEvent,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoggedIn]);
+  }, [isLoggedIn, notifications]);
 
   if (isMatrixLoading) {
     return <>{loader}</>;
