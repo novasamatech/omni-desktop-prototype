@@ -1,9 +1,10 @@
 /* eslint-disable promise/always-return */
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { ReactNode, useCallback, useEffect, useState } from 'react';
 import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 import { useHistory, useParams } from 'react-router';
 import { format } from 'date-fns';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { BN } from '@polkadot/util';
 import Button from '../../ui/Button';
 import {
   currentTransactionState,
@@ -37,20 +38,25 @@ import InputText from '../../ui/Input';
 import { Connection, connectionState } from '../../store/connections';
 import Signatories from './Signatories';
 import Chat from './Chat';
-import { decodeCallData, updateTransaction } from '../../utils/transactions';
+import {
+  decodeCallData,
+  getApprovals,
+  getTxExtrinsic,
+} from '../../utils/transactions';
+import Shimmer from '../../ui/Shimmer';
 import { copyToClipboard } from '../../utils/strings';
 
 const TransferDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const history = useHistory();
 
-  const intervalId = useRef<NodeJS.Timer>();
   const [, setSignBy] = useRecoilState(signByState);
   const networks = useRecoilValue(connectionState);
   const setCurrentTransaction = useSetRecoilState(currentTransactionState);
 
   const [transaction, setTransaction] = useState<Transaction>();
   const [network, setNetwork] = useState<Chain>();
+  const [commission, setCommission] = useState<string>('');
   const [callData, setCallData] = useState<string>();
   const [availableWallets, setAvailableWallets] = useState<OptionType[]>([]);
   const [connection, setConnection] = useState<Connection>();
@@ -227,27 +233,42 @@ const TransferDetails: React.FC = () => {
   }, [transaction, updateCallData]);
 
   useEffect(() => {
-    if (isConfirmed) {
-      if (!intervalId?.current) return;
+    if (!connection || !network || !transaction || !currentAsset) return;
 
-      clearInterval(intervalId.current);
-      intervalId.current = undefined;
-      return;
+    getTxExtrinsic(
+      connection,
+      currentAsset,
+      transaction.address,
+      transaction.data.amount,
+    )
+      .paymentInfo(transaction.address)
+      .then(({ partialFee }) => {
+        const formattedValue = formatBalance(
+          partialFee.toString(),
+          network.assets[0].precision,
+        );
+        setCommission(`${formattedValue} ${network.assets[0].symbol}`);
+      })
+      .catch((error) => {
+        console.warn(error);
+        setCommission('0');
+      });
+  }, [connection, currentAsset, network, transaction]);
+
+  const depositValue = (): string | ReactNode => {
+    if (!connection || !network || !transaction) {
+      return <Shimmer width="80px" height="20px" />;
     }
 
-    if (!transaction || !connection || intervalId?.current) return;
-
-    intervalId.current = setInterval(() => {
-      updateTransaction(transaction, connection);
-    }, 1000);
-  }, [connection, isConfirmed, transaction]);
-
-  useEffect(() => {
-    return () => {
-      if (!intervalId?.current) return;
-      clearInterval(intervalId.current);
-    };
-  }, []);
+    const { depositFactor, depositBase } = connection.api.consts.multisig;
+    const balance = depositBase.add(
+      depositFactor.mul(
+        new BN((transaction.wallet as MultisigWallet).threshold),
+      ),
+    );
+    const deposit = formatBalance(balance.toString(), currentAsset?.precision);
+    return `${deposit} ${network.assets[0].symbol}`;
+  };
 
   return (
     <>
@@ -350,6 +371,28 @@ const TransferDetails: React.FC = () => {
                   <div className="break-words">{transaction.data.callData}</div>
                 </div>
               )}
+              {transaction?.status !== TransactionStatus.CONFIRMED && (
+                <div className="flex justify-between mt-2 pt-2 border-t">
+                  <div className="text-gray-500 text-sm">Commission</div>
+                  <div className="text-gray-500 text-sm">
+                    {commission || <Shimmer width="80px" height="20px" />}
+                  </div>
+                </div>
+              )}
+              {transaction && getApprovals(transaction).length === 0 && (
+                <>
+                  <div className="flex justify-between mt-1">
+                    <div className="text-gray-500 text-sm">Deposit</div>
+                    <div className="text-gray-500 text-sm">
+                      {depositValue()}
+                    </div>
+                  </div>
+                  <div className="text-xs text-gray-400 italic mt-2">
+                    The deposit stays locked until the transaction is executed
+                    or cancelled
+                  </div>
+                </>
+              )}
               {isMultisigTransfer && !transaction.data.callData && (
                 <div className="flex mt-3">
                   <InputText
@@ -373,7 +416,7 @@ const TransferDetails: React.FC = () => {
       {isSelectWalletAvailable && (
         <div className="mx-auto mb-2 w-[350px]">
           <Select
-            label="Select wallet to sign by"
+            label="Select wallet to sign with"
             options={availableWallets}
             onChange={selectSignWallet}
           />

@@ -7,8 +7,12 @@ import { SubmittableExtrinsic } from '@polkadot/api/types';
 
 import { Connection } from '../store/connections';
 import {
+  Asset,
+  AssetType,
   Chain,
   MultisigWallet,
+  OrmlExtras,
+  StatemineExtras,
   Transaction,
   TransactionStatus,
   TransactionType,
@@ -21,7 +25,7 @@ import {
   toPublicKey,
 } from './account';
 import { db } from '../db/db';
-import { formatBalance, getAssetById } from './assets';
+import { formatAmount, formatBalance, getAssetById } from './assets';
 import { Approvals } from '../../common/types';
 
 type MultisigTransaction = {
@@ -167,7 +171,7 @@ export const isApproved = (
   return approval?.fromBlockChain || approval?.fromMatrix;
 };
 
-export const getApprovals = (transaction: Transaction) =>
+export const getApprovals = (transaction: Transaction): string[] =>
   Object.keys(transaction.data.approvals).filter((a) =>
     isApproved(a, transaction.data.approvals),
   );
@@ -230,4 +234,31 @@ export const decodeCallData = (
   }
 
   return data;
+};
+
+export const getTxExtrinsic = (
+  connection: Connection,
+  asset: Asset,
+  address: string,
+  amount: string,
+) => {
+  if (asset.type === AssetType.STATEMINE) {
+    return connection.api.tx.assets.transfer(
+      (asset.typeExtras as StatemineExtras).assetId,
+      address,
+      formatAmount(amount, asset.precision),
+    );
+  }
+  if (asset.type === AssetType.ORML) {
+    return connection.api.tx.currencies.transfer(
+      address,
+      (asset.typeExtras as OrmlExtras).currencyIdScale,
+      formatAmount(amount, asset.precision),
+    );
+  }
+
+  return connection.api.tx.balances.transfer(
+    address,
+    formatAmount(amount, asset.precision),
+  );
 };

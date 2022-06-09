@@ -5,6 +5,7 @@ import { useMatrix } from '../Providers/MatrixProvider';
 import { Routes } from '../../../common/constants';
 import LinkButton from '../../ui/LinkButton';
 import arrowUp from '../../../../assets/arrow-up.svg';
+import mst from '../../../../assets/mst.svg';
 import { MstParams, OmniMstEvents } from '../../modules/types';
 import { getAddressFromWallet } from '../../utils/account';
 import {
@@ -83,7 +84,19 @@ const Chat: React.FC<ChatProps> = ({ network, transaction }) => {
               {description}
             </span>
           ) : (
-            'MST has been initiated'
+            <>
+              <img
+                className="inline-block mr-1 mb-0.5"
+                src={mst}
+                alt=""
+                width="22"
+                height="14"
+              />
+              <span>
+                A new MST operation has been created. It is ready to be signed
+                by the signatories.
+              </span>
+            </>
           )}
         </ChatMessage>
       ),
@@ -98,7 +111,7 @@ const Chat: React.FC<ChatProps> = ({ network, transaction }) => {
             <span>✅ {signerName} has signed the transaction</span>
           </ChatMessage>
           <ChatMessage isFinal date={notif.date}>
-            <span>Transaction executed</span>
+            <span>MST operation executed</span>
           </ChatMessage>
         </Fragment>
       ),

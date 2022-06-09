@@ -12,19 +12,17 @@ import ErrorMessage from '../../ui/ErrorMessage';
 import { db } from '../../db/db';
 import {
   Asset,
-  AssetType,
+  MultisigWallet,
   TransactionStatus,
   TransactionType,
-  OrmlExtras,
-  StatemineExtras,
-  MultisigWallet,
 } from '../../db/types';
 import { isMultisig, validateAddress } from '../../utils/validation';
 import { getAddressFromWallet, createApprovals } from '../../utils/account';
 import { ErrorTypes } from '../../../common/constants';
-import { formatAmount, formatBalance, getAssetId } from '../../utils/assets';
+import { formatBalance, getAssetId } from '../../utils/assets';
 import { useMatrix } from '../Providers/MatrixProvider';
 import { HexString } from '../../../common/types';
+import { getTxExtrinsic } from '../../utils/transactions';
 
 type TransferForm = {
   address: string;
@@ -79,26 +77,12 @@ const Transfer: React.FC = () => {
         currentNetwork.network,
       );
 
-      let transferExtrinsic;
-
-      if (currentAsset.type === AssetType.STATEMINE) {
-        transferExtrinsic = currentNetwork.api.tx.assets.transfer(
-          (currentAsset.typeExtras as StatemineExtras).assetId,
-          watchAddress,
-          formatAmount(watchAmount, currentAsset.precision),
-        );
-      } else if (currentAsset.type === AssetType.ORML) {
-        transferExtrinsic = currentNetwork.api.tx.currencies.transfer(
-          watchAddress,
-          (currentAsset.typeExtras as OrmlExtras).currencyIdScale,
-          formatAmount(watchAmount, currentAsset.precision),
-        );
-      } else {
-        transferExtrinsic = currentNetwork.api.tx.balances.transfer(
-          watchAddress,
-          formatAmount(watchAmount, currentAsset.precision),
-        );
-      }
+      const transferExtrinsic = getTxExtrinsic(
+        currentNetwork,
+        currentAsset,
+        watchAddress,
+        watchAmount,
+      );
 
       setCallHash(transferExtrinsic.method.hash.toHex());
       setCallData(transferExtrinsic.method.toHex());
