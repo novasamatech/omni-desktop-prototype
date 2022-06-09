@@ -28,7 +28,7 @@ const ChatMessage: React.FC<MessageProps> = ({
   return (
     <li
       className={cn(
-        'w-max max-w-[318px] rounded-lg shadow-md bg-white text-sm p-2',
+        'w-max max-w-[315px] rounded-lg shadow-md bg-white text-sm p-2',
         isFinal && 'bg-green-500 text-white',
       )}
     >
@@ -150,7 +150,7 @@ const Chat: React.FC<ChatProps> = ({ network, transaction }) => {
       <h2 className="text-2xl font-normal mb-6">Chat</h2>
 
       <div className="flex flex-col h-[calc(100%-56px)] justify-between gap-3">
-        <ul className="flex flex-col max-h-[412px] overflow-y-auto gap-3 pb-2">
+        <ul className="flex flex-col max-h-[412px] overflow-y-auto overflow-x-hidden gap-3 pb-2 overscroll-contain">
           {txNotifs.map(notificationMessage)}
         </ul>
 

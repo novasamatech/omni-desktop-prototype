@@ -1,9 +1,9 @@
 import React from 'react';
 import cn from 'classnames';
 import { Chain } from '../db/types';
-import subscan from '../../../assets/explorers/subscan.png';
+import subscan from '../../../assets/explorers/subscan.svg';
 import statescan from '../../../assets/explorers/statescan.svg';
-import polkascan from '../../../assets/explorers/polkascan.png';
+import polkascan from '../../../assets/explorers/polkascan.svg';
 import subid from '../../../assets/explorers/subid.svg';
 
 type ExplorerTypes = 'account' | 'extrinsic' | 'event';
