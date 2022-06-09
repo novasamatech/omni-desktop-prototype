@@ -23,7 +23,7 @@ import {
   TransactionStatus,
   TransactionType,
 } from '../../db/types';
-import { getApprovalsFromWallet, toPublicKey } from '../../utils/account';
+import { createApprovals, toPublicKey } from '../../utils/account';
 import { Approvals } from '../../../common/types';
 
 const Statuses = {
@@ -159,7 +159,7 @@ const MatrixProvider: React.FC<Props> = ({
         data: {
           callHash: content.callHash,
           callData: content.callData,
-          approvals: getApprovalsFromWallet(wallet as MultisigWallet),
+          approvals: createApprovals(wallet as MultisigWallet),
         },
         type: TransactionType.MULTISIG_TRANSFER,
       });

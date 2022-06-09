@@ -1,5 +1,5 @@
 import React from 'react';
-import cs from 'classnames';
+import cn from 'classnames';
 import { Chain } from '../db/types';
 import subscan from '../../../assets/explorers/subscan.png';
 import statescan from '../../../assets/explorers/statescan.svg';
@@ -46,7 +46,7 @@ const Explorer: React.FC<Props> = ({
   });
 
   return (
-    <div className={cs('flex gap-1 items-center', className)}>
+    <div className={cn('flex gap-1 items-center', className)}>
       {links.map((link) => (
         <a key={link.link} href={link.link} rel="noreferrer" target="_blank">
           <img className="w-5 h-5" src={Icons[link.name]} alt={link.name} />
