@@ -134,7 +134,6 @@ const ScanCode: React.FC = () => {
             )
             .forEach(({ event }) => {
               if (network.api.events.system.ExtrinsicSuccess.is(event)) {
-                console.log(2);
                 actualTxHash = hash;
                 if (!actualTxHash || !transaction.id) return;
 
@@ -208,7 +207,6 @@ const ScanCode: React.FC = () => {
                 history.push(withId(Routes.TRANSFER_DETAILS, transaction.id));
               }
               if (network.api.events.system.ExtrinsicFailed.is(event)) {
-                console.log(1);
                 actualTxHash = hash;
                 setDialogOpen(true);
               }
