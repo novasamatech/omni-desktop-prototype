@@ -8,6 +8,7 @@ import { Connection } from '../store/connections';
 import { isMultisig, validateAddress } from '../utils/validation';
 import { getTxExtrinsic } from '../utils/transactions';
 import Shimmer from './Shimmer';
+import Balance from './Balance';
 
 type Props = {
   wallet?: Wallet | MultisigWallet;
@@ -27,6 +28,7 @@ const Fee: React.FC<Props> = ({
   withDeposit,
 }) => {
   const [transactionFee, setTransactionFee] = useState('0');
+
   const defaultAsset = connection?.network.assets[0];
 
   useEffect(() => {
@@ -67,12 +69,20 @@ const Fee: React.FC<Props> = ({
     const balance = depositBase.add(
       depositFactor.mul(new BN((wallet as MultisigWallet).threshold)),
     );
-    const deposit = formatBalance(balance.toString(), asset?.precision);
+    const deposit = formatBalance(balance.toString(), defaultAsset?.precision);
     return `${deposit} ${defaultAsset?.symbol}`;
   };
 
   return (
     <div className="flex flex-col text-gray-500 text-sm gap-1">
+      {asset && wallet && connection && (
+        <div className="flex justify-between">
+          <div>Transferable balance</div>
+          <div>
+            <Balance asset={asset} wallet={wallet} connection={connection} />
+          </div>
+        </div>
+      )}
       <div className="flex justify-between">
         <div>Transaction fee</div>
         <div>{transactionFee || <Shimmer width="80px" height="20px" />}</div>

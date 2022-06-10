@@ -172,7 +172,7 @@ export const isApproved = (
 };
 
 export const getApprovals = (transaction: Transaction): string[] =>
-  Object.keys(transaction.data.approvals).filter((a) =>
+  Object.keys(transaction.data.approvals || []).filter((a) =>
     isApproved(a, transaction.data.approvals),
   );
 
