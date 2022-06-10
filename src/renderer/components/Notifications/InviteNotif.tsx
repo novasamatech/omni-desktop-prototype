@@ -7,7 +7,13 @@ import { useMatrix } from '../Providers/MatrixProvider';
 import { Routes, withId } from '../../../common/constants';
 import useToggle from '../../hooks/toggle';
 import { db } from '../../db/db';
-import { BooleanValue, CryptoType, Notification } from '../../db/types';
+import {
+  Account,
+  BooleanValue,
+  Contact,
+  CryptoType,
+  Notification,
+} from '../../db/types';
 import { OmniExtras } from '../../modules/types';
 import {
   createMultisigWalletPayload,
@@ -18,6 +24,7 @@ import DialogContent from '../../ui/DialogContent';
 import InputText from '../../ui/Input';
 import Button from '../../ui/Button';
 import NotifyItem from './NotifyItem';
+import { isMultisig } from '../../utils/validation';
 
 type Props = {
   notif: Notification;
@@ -32,6 +39,7 @@ const InviteNotif: React.FC<Props> = ({ notif }) => {
   const [walletName, setWalletName] = useState('');
 
   const contacts = useLiveQuery(() => db.contacts.toArray());
+  const wallets = useLiveQuery(() => db.wallets.toArray());
   const multisigWallets = useLiveQuery(() =>
     db.wallets.where({ isMultisig: BooleanValue.TRUE }).toArray(),
   );
@@ -94,14 +102,24 @@ const InviteNotif: React.FC<Props> = ({ notif }) => {
     }
   };
 
-  const createMstAccount = () => {
+  const createMstAccount = async () => {
+    const isSamePublicKey = (
+      contact: { mainAccounts: Account[] },
+      address: string,
+    ) => contact.mainAccounts[0]?.publicKey === toPublicKey(address);
+
     const walletContacts = account.signatories.map((signatory) => {
       const address = formatAddress(signatory);
-      const match = contacts?.find((contact) =>
-        contact.mainAccounts.some((main) => address === main.accountId),
+
+      const matchInContacts = contacts?.find((c) =>
+        isSamePublicKey(c, address),
+      );
+      const matchInWallets = wallets?.find(
+        (wallet) => !isMultisig(wallet) && isSamePublicKey(wallet, address),
       );
 
-      if (match) return match;
+      if (matchInContacts) return matchInContacts;
+      if (matchInWallets) return matchInWallets;
 
       return {
         secureProtocolId: '',
@@ -121,19 +139,20 @@ const InviteNotif: React.FC<Props> = ({ notif }) => {
       matrixRoomId: notif.roomId,
       threshold: account.threshold,
       addresses: account.signatories,
-      contacts: walletContacts,
+      contacts: walletContacts as Contact[],
     });
 
-    db.wallets.add(payload);
+    const mstAccountId = await db.wallets.add(payload);
+    history.push(withId(Routes.EDIT_MULTISIG_WALLET, mstAccountId));
   };
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     try {
-      // Will try to join deleted room
+      // Could try to join deleted room
       await matrix.joinRoom(notif.roomId);
-      createMstAccount();
+      await createMstAccount();
     } catch (error) {
       console.warn(error);
     }
