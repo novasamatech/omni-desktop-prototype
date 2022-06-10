@@ -9,10 +9,10 @@ import NotifyItem from './NotifyItem';
 import { Routes, withId } from '../../../common/constants';
 
 const TITLES = {
-  [OmniMstEvents.INIT]: 'MST ready for singing',
-  [OmniMstEvents.APPROVE]: 'MST signed',
-  [OmniMstEvents.FINAL_APPROVE]: 'MST executed',
-  [OmniMstEvents.CANCEL]: 'MST cancelled',
+  [OmniMstEvents.INIT]: 'Operation was initiated',
+  [OmniMstEvents.APPROVE]: 'Operation was signed',
+  [OmniMstEvents.FINAL_APPROVE]: 'Executed after final signing',
+  [OmniMstEvents.CANCEL]: 'Operation was cancelled',
 };
 
 const DESCRIPTIONS = {

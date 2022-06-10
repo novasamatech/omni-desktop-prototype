@@ -174,10 +174,11 @@ const MatrixProvider: React.FC<Props> = ({
 
       if (!tx?.id) return;
 
+      const senderPublicKey = toPublicKey(content.senderAddress);
       const approvals: Approvals = {
         ...tx.data.approvals,
-        [content.senderAddress]: {
-          ...tx.data.approvals[toPublicKey(content.senderAddress)],
+        [senderPublicKey]: {
+          ...tx.data.approvals[senderPublicKey],
           fromMatrix: true,
           extrinsicHash: content.extrinsicHash,
         },
@@ -185,10 +186,7 @@ const MatrixProvider: React.FC<Props> = ({
 
       db.transactions.update(tx.id, {
         status: transactionStatus,
-        data: {
-          ...tx.data,
-          approvals,
-        },
+        data: { ...tx.data, approvals },
       });
     }
   };
