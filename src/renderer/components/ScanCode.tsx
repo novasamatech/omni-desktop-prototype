@@ -162,6 +162,7 @@ const ScanCode: React.FC = () => {
                     [publicKey]: {
                       ...approvals[publicKey],
                       fromMatrix: true,
+                      fromBlockChain: true,
                       extrinsicHash,
                     },
                   };

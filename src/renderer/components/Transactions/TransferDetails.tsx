@@ -52,7 +52,7 @@ const TransferDetails: React.FC = () => {
   const [connection, setConnection] = useState<Connection>();
 
   const wallets = useLiveQuery(() => db.wallets.toArray());
-  const transaction = useLiveQuery(() => db.transactions.get(Number(id)), [id]);
+  const transaction = useLiveQuery(() => db.transactions.get(Number(id)));
   const network = useLiveQuery(
     () => db.chains.get({ chainId: transaction?.chainId || '' }),
     [transaction?.chainId],
@@ -87,15 +87,17 @@ const TransferDetails: React.FC = () => {
       if (currentConnection) {
         setConnection(currentConnection);
         if (!transaction.blockHeight) {
-          intervalId = updateTimepointFromBlockchain(
-            transaction,
-            currentConnection,
+          intervalId = setInterval(
+            () => updateTimepointFromBlockchain(transaction, currentConnection),
+            1000,
           );
         }
       }
     }
 
-    return () => clearInterval(intervalId);
+    return () => {
+      clearInterval(intervalId);
+    };
   }, [transaction, networks]);
 
   useEffect(() => {
