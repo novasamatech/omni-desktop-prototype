@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useRecoilValue } from 'recoil';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { useHistory } from 'react-router';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { Connection, connectionState } from '../../store/connections';
 import { selectedWalletsState } from '../../store/selectedWallets';
 import Button from '../../ui/Button';
@@ -23,6 +24,7 @@ import { getAssetId } from '../../utils/assets';
 import { useMatrix } from '../Providers/MatrixProvider';
 import { HexString } from '../../../common/types';
 import { getTxExtrinsic } from '../../utils/transactions';
+import InputSelect from '../../ui/InputSelect';
 import Fee from '../../ui/Fee';
 
 type TransferForm = {
@@ -48,6 +50,14 @@ const Transfer: React.FC = () => {
   const networks = useRecoilValue(connectionState);
   const wallets = useRecoilValue(selectedWalletsState);
   const defaultAsset = currentNetwork?.network.assets[0];
+
+  const contacts = useLiveQuery(async () => {
+    const data = await db.contacts.toArray();
+    return data.map((d) => ({
+      label: d.name || '',
+      value: d.mainAccounts[0].accountId,
+    }));
+  });
 
   const {
     handleSubmit,
@@ -140,65 +150,67 @@ const Transfer: React.FC = () => {
     address,
     amount,
   }) => {
-    if (currentNetwork && currentAsset) {
-      const transactions = wallets.map((w) => {
-        const addressFrom = getAddressFromWallet(w, currentNetwork.network);
+    if (!currentNetwork || !currentAsset) return;
 
-        const type = isMultisig(w)
-          ? TransactionType.MULTISIG_TRANSFER
-          : TransactionType.TRANSFER;
+    const transactions = wallets.map((w) => {
+      const addressFrom = getAddressFromWallet(w, currentNetwork.network);
 
-        const assetId = getAssetId(currentAsset);
+      const type = isMultisig(w)
+        ? TransactionType.MULTISIG_TRANSFER
+        : TransactionType.TRANSFER;
 
-        const wallet = w as MultisigWallet;
+      const assetId = getAssetId(currentAsset);
+      const wallet = w as MultisigWallet;
 
-        if (
-          type === TransactionType.MULTISIG_TRANSFER &&
-          matrix.isLoggedIn &&
-          wallet.matrixRoomId &&
-          callHash &&
-          callData
-        ) {
-          matrix.setRoom(wallet.matrixRoomId);
-          matrix.mstInitiate({
-            senderAddress: addressFrom,
-            chainId: currentNetwork.network.chainId,
-            callHash,
-            callData,
-          });
-        }
-
-        return {
-          createdAt: new Date(),
-          status: TransactionStatus.CREATED,
-          type,
+      if (
+        type === TransactionType.MULTISIG_TRANSFER &&
+        matrix.isLoggedIn &&
+        wallet.matrixRoomId &&
+        callHash &&
+        callData
+      ) {
+        matrix.setRoom(wallet.matrixRoomId);
+        matrix.mstInitiate({
+          senderAddress: addressFrom,
           chainId: currentNetwork.network.chainId,
-          address: addressFrom,
-          wallet,
-          data: {
-            callHash,
-            callData,
-            assetId,
-            precision: currentAsset.precision,
-            address,
-            amount,
-            approvals: isMultisig(w)
-              ? createApprovals(wallet, currentNetwork.network)
-              : null,
-          },
-        };
-      });
+          callHash,
+          callData,
+        });
+      }
 
-      const result = await db.transactions.bulkAdd(transactions);
-      if (result) history.push(withId(Routes.TRANSFER_DETAILS, result));
-      reset();
-    }
+      return {
+        createdAt: new Date(),
+        status: TransactionStatus.CREATED,
+        type,
+        chainId: currentNetwork.network.chainId,
+        address: addressFrom,
+        wallet,
+        data: {
+          callHash,
+          callData,
+          assetId,
+          precision: currentAsset.precision,
+          address,
+          amount,
+          approvals: isMultisig(w)
+            ? createApprovals(wallet, currentNetwork.network)
+            : null,
+        },
+      };
+    });
+
+    const result = await db.transactions.bulkAdd(transactions);
+    if (result) history.push(withId(Routes.TRANSFER_DETAILS, result));
+    reset();
   };
 
   return (
-    <form onSubmit={handleSubmit(addTransaction)}>
+    <>
       <h2 className="font-light text-xl p-4">Transfer</h2>
-      <div className="p-2">
+      <form
+        className="flex flex-col gap-3 px-2"
+        onSubmit={handleSubmit(addTransaction)}
+      >
         <Select
           label="Network"
           className="w-full"
@@ -207,8 +219,6 @@ const Transfer: React.FC = () => {
           options={networkOptions}
           onChange={(event) => setNetwork(event.target.value)}
         />
-      </div>
-      <div className="p-2">
         <Select
           label="Asset"
           className="w-full"
@@ -218,22 +228,21 @@ const Transfer: React.FC = () => {
           options={assetOptions}
           onChange={(event) => setAsset(Number(event.target.value))}
         />
-      </div>
-      <div className="p-2">
         <Controller
           name="address"
           control={control}
           rules={{ required: true, validate: validateAddress }}
-          render={({ field: { onChange, onBlur, value } }) => (
-            <InputText
-              onChange={onChange}
-              onBlur={onBlur}
-              value={value}
+          render={({ field: { onChange, value } }) => (
+            <InputSelect
               address
+              value={value}
               name="address"
               className="w-full"
               label="Recipient"
               placeholder="Recipient"
+              options={contacts || []}
+              onOptionSelect={onChange}
+              onChange={onChange}
             />
           )}
         />
@@ -243,16 +252,13 @@ const Transfer: React.FC = () => {
         <ErrorMessage visible={errors.address?.type === ErrorTypes.REQUIRED}>
           The address is required
         </ErrorMessage>
-      </div>
-      <div className="p-2">
         <Controller
           name="amount"
           control={control}
           rules={{ validate: (v) => Number(v) > 0 }}
-          render={({ field: { onChange, onBlur, value } }) => (
+          render={({ field: { onChange, value } }) => (
             <InputText
               onChange={onChange}
-              onBlur={onBlur}
               value={value}
               type="number"
               name="amount"
@@ -265,8 +271,6 @@ const Transfer: React.FC = () => {
         <ErrorMessage visible={errors.amount?.type === ErrorTypes.VALIDATE}>
           The amount is not valid, please type it again
         </ErrorMessage>
-      </div>
-      <div className="p-2">
         <Fee
           wallet={firstWallet}
           asset={currentAsset}
@@ -275,13 +279,11 @@ const Transfer: React.FC = () => {
           amount={watchAmount}
           withDeposit
         />
-      </div>
-      <div className="p-2">
-        <Button type="submit" size="lg" disabled={!isValid}>
+        <Button className="w-max" type="submit" size="lg" disabled={!isValid}>
           Add transaction
         </Button>
-      </div>
-    </form>
+      </form>
+    </>
   );
 };
 
