@@ -277,7 +277,7 @@ const Transfer: React.FC = () => {
           connection={currentNetwork}
           address={watchAddress}
           amount={watchAmount}
-          withDeposit
+          withDeposit={isMultisig(firstWallet)}
         />
         <Button className="w-max" type="submit" size="lg" disabled={!isValid}>
           Add transaction

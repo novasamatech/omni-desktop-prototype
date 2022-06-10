@@ -5,7 +5,7 @@ import { Asset, Wallet, MultisigWallet } from '../db/types';
 import { getAddressFromWallet } from '../utils/account';
 import { formatBalance } from '../utils/assets';
 import { Connection } from '../store/connections';
-import { isMultisig, validateAddress } from '../utils/validation';
+import { validateAddress } from '../utils/validation';
 import { getTxExtrinsic } from '../utils/transactions';
 import Shimmer from './Shimmer';
 import Balance from './Balance';
@@ -32,13 +32,7 @@ const Fee: React.FC<Props> = ({
   const defaultAsset = connection?.network.assets[0];
 
   useEffect(() => {
-    if (
-      !wallet ||
-      !connection ||
-      !asset ||
-      !validateAddress(address) ||
-      !amount
-    ) {
+    if (!wallet || !connection || !asset || !validateAddress(address)) {
       setTransactionFee('');
       return;
     }
@@ -87,7 +81,7 @@ const Fee: React.FC<Props> = ({
         <div>Transaction fee</div>
         <div>{transactionFee || <Shimmer width="80px" height="20px" />}</div>
       </div>
-      {withDeposit && isMultisig(wallet) && (
+      {withDeposit && (
         <>
           <div className="flex justify-between">
             <div>Deposit</div>
