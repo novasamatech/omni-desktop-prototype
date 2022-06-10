@@ -266,7 +266,7 @@ const ShowCode: React.FC = () => {
               address={transaction.data.address}
               amount={transaction.data.amount}
               withDeposit={
-                isMultisig(signWith || transaction.wallet) &&
+                isMultisig(transaction.wallet) &&
                 getApprovals(transaction).length === 0
               }
             />
