@@ -11,6 +11,7 @@ import {
   UnsignedTransaction,
 } from '@substrate/txwrapper-polkadot';
 import { Dialog } from '@headlessui/react';
+import { capitalize } from 'lodash';
 
 import { connectionState } from '../store/connections';
 import {
@@ -69,6 +70,7 @@ const ScanCode: React.FC = () => {
 
   const [isTxSent, setIsTxSent] = useState(false);
   const [isDialogOpen, setDialogOpen] = useState(false);
+  const [error, setError] = useState('');
 
   const transaction = useRecoilValue(currentTransactionState);
   const signWith = useRecoilValue(signWithState);
@@ -209,6 +211,22 @@ const ScanCode: React.FC = () => {
               }
               if (network.api.events.system.ExtrinsicFailed.is(event)) {
                 actualTxHash = hash;
+                const [dispatchError] = event.data;
+                let errorInfo;
+
+                if (dispatchError.isModule) {
+                  const decoded = network.api.registry.findMetaError(
+                    dispatchError.asModule,
+                  );
+
+                  errorInfo = `${decoded.name
+                    .split(/(?=[A-Z])/)
+                    .map((w) => w.toLowerCase())
+                    .join(' ')}`;
+                } else {
+                  errorInfo = dispatchError.toString();
+                }
+                setError(capitalize(errorInfo));
                 setDialogOpen(true);
               }
             });
@@ -253,7 +271,7 @@ const ScanCode: React.FC = () => {
           <Dialog.Title as="h3" className="font-light text-xl">
             Error
           </Dialog.Title>
-          <div className="mt-2">Something went wrong</div>
+          <div className="mt-2">{error || 'Something went wrong'}</div>
 
           <div className=" mt-2 flex justify-between">
             <Button
