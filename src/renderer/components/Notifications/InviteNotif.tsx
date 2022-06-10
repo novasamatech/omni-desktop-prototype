@@ -7,7 +7,12 @@ import { useMatrix } from '../Providers/MatrixProvider';
 import { Routes, withId } from '../../../common/constants';
 import useToggle from '../../hooks/toggle';
 import { db } from '../../db/db';
-import { BooleanValue, CryptoType, Notification } from '../../db/types';
+import {
+  BooleanValue,
+  Contact,
+  CryptoType,
+  Notification,
+} from '../../db/types';
 import { OmniExtras } from '../../modules/types';
 import {
   createMultisigWalletPayload,
@@ -18,6 +23,7 @@ import DialogContent from '../../ui/DialogContent';
 import InputText from '../../ui/Input';
 import Button from '../../ui/Button';
 import NotifyItem from './NotifyItem';
+import { isMultisig } from '../../utils/validation';
 
 type Props = {
   notif: Notification;
@@ -32,6 +38,7 @@ const InviteNotif: React.FC<Props> = ({ notif }) => {
   const [walletName, setWalletName] = useState('');
 
   const contacts = useLiveQuery(() => db.contacts.toArray());
+  const wallets = useLiveQuery(() => db.wallets.toArray());
   const multisigWallets = useLiveQuery(() =>
     db.wallets.where({ isMultisig: BooleanValue.TRUE }).toArray(),
   );
@@ -97,11 +104,16 @@ const InviteNotif: React.FC<Props> = ({ notif }) => {
   const createMstAccount = () => {
     const walletContacts = account.signatories.map((signatory) => {
       const address = formatAddress(signatory);
-      const match = contacts?.find((contact) =>
-        contact.mainAccounts.some((main) => address === main.accountId),
+      const matchInContacts = contacts?.find(
+        (contact) => contact.mainAccounts[0].accountId === address,
+      );
+      const matchInWallets = wallets?.find(
+        (wallet) =>
+          !isMultisig(wallet) && wallet.mainAccounts[0].accountId === address,
       );
 
-      if (match) return match;
+      if (matchInContacts) return matchInContacts;
+      if (matchInWallets) return matchInWallets;
 
       return {
         secureProtocolId: '',
@@ -121,7 +133,7 @@ const InviteNotif: React.FC<Props> = ({ notif }) => {
       matrixRoomId: notif.roomId,
       threshold: account.threshold,
       addresses: account.signatories,
-      contacts: walletContacts,
+      contacts: walletContacts as Contact[],
     });
 
     db.wallets.add(payload);
