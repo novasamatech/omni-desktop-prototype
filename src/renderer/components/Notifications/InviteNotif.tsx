@@ -8,6 +8,7 @@ import { Routes, withId } from '../../../common/constants';
 import useToggle from '../../hooks/toggle';
 import { db } from '../../db/db';
 import {
+  Account,
   BooleanValue,
   Contact,
   CryptoType,
@@ -104,12 +105,12 @@ const InviteNotif: React.FC<Props> = ({ notif }) => {
   const createMstAccount = () => {
     const walletContacts = account.signatories.map((signatory) => {
       const address = formatAddress(signatory);
-      const matchInContacts = contacts?.find(
-        (contact) => contact.mainAccounts[0].accountId === address,
-      );
+      const isSamePublicKey = (contact: { mainAccounts: Account[] }) =>
+        contact.mainAccounts[0]?.publicKey === toPublicKey(address);
+
+      const matchInContacts = contacts?.find(isSamePublicKey);
       const matchInWallets = wallets?.find(
-        (wallet) =>
-          !isMultisig(wallet) && wallet.mainAccounts[0]?.accountId === address,
+        (wallet) => !isMultisig(wallet) && isSamePublicKey(wallet),
       );
 
       if (matchInContacts) return matchInContacts;
