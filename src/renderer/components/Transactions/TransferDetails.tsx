@@ -78,7 +78,7 @@ const TransferDetails: React.FC = () => {
     !isConfirmed;
 
   useEffect(() => {
-    let interval: any;
+    let intervalId: any;
     if (transaction && Object.values(networks).length) {
       const currentConnection = Object.values(networks).find(
         (n) => n.network.chainId === transaction.chainId,
@@ -86,17 +86,17 @@ const TransferDetails: React.FC = () => {
 
       if (currentConnection) {
         setConnection(currentConnection);
-        if (isMultisigTransfer && !isConfirmed && !transaction.blockHash) {
-          interval = setInterval(
-            () => updateTimepointFromBlockchain(transaction, currentConnection),
-            1000,
+        if (!transaction.blockHeight) {
+          intervalId = updateTimepointFromBlockchain(
+            transaction,
+            currentConnection,
           );
         }
       }
     }
 
-    return () => clearInterval(interval);
-  }, [transaction, networks, isMultisigTransfer, isConfirmed]);
+    return () => clearInterval(intervalId);
+  }, [transaction, networks]);
 
   useEffect(() => {
     if (!network || !isMultisigTransfer) return;
@@ -169,32 +169,35 @@ const TransferDetails: React.FC = () => {
     );
   };
 
-  const updateCallData = useCallback(() => {
-    if (!transaction || !callData || !connection) return;
+  const updateCallData = useCallback(
+    (callDataParam) => {
+      const innerCallData = callDataParam || callData;
+      if (!transaction || !innerCallData || !connection) return;
 
-    const decodedData = decodeCallData(
-      connection.api,
-      connection.network,
-      callData,
-    );
+      const decodedData = decodeCallData(
+        connection.api,
+        connection.network,
+        innerCallData,
+      );
 
-    db.transactions.put({
-      ...transaction,
-      data: {
-        ...transaction.data,
-        callData,
-        ...decodedData,
-      },
-    });
+      db.transactions.put({
+        ...transaction,
+        data: {
+          ...transaction.data,
+          callData: innerCallData,
+          ...decodedData,
+        },
+      });
 
-    setCallData('');
-  }, [transaction, callData, connection]);
+      setCallData('');
+    },
+    [transaction, callData, connection],
+  );
 
   // Check this case
   useEffect(() => {
     if (transaction?.data.callData && !transaction?.data.amount) {
-      setCallData(transaction.data.callData);
-      updateCallData();
+      updateCallData(transaction.data.callData);
     }
   }, [transaction, updateCallData]);
 
