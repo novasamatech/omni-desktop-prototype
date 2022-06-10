@@ -39,9 +39,9 @@ const Balance: React.FC<Props> = ({
         address,
         async (data: FrameSystemAccountInfo) => {
           const {
-            data: { free: currentFree },
+            data: { free, feeFrozen },
           } = data;
-          updateBalance(currentFree);
+          updateBalance(free.sub(feeFrozen));
         },
       ),
     [api, updateBalance],
@@ -75,7 +75,7 @@ const Balance: React.FC<Props> = ({
         address,
         ormlAssetId,
         async (data: any) => {
-          const currentFree = data.free;
+          const currentFree = data.free.sub(data.frozen);
           updateBalance(currentFree);
         },
       );
