@@ -302,23 +302,25 @@ const TransferDetails: React.FC = () => {
                   <Button onClick={updateCallData}>Save</Button>
                 </div>
               )}
-              {transaction &&
-                transaction.status !== TransactionStatus.CONFIRMED &&
-                transaction.data.callData && (
-                  <>
-                    <hr className="my-5" />
-                    <Fee
-                      wallet={transaction.wallet}
-                      asset={currentAsset}
-                      connection={connection}
-                      address={transaction.data.address}
-                      amount={transaction.data.amount}
-                      withDeposit={getApprovals(transaction).length === 0}
-                    />
-                  </>
-                )}
             </>
           )}
+          {transaction &&
+            transaction.status !== TransactionStatus.CONFIRMED &&
+            transaction.data.callData && (
+              <>
+                <hr className="my-5" />
+                <Fee
+                  wallet={transaction.wallet}
+                  asset={currentAsset}
+                  connection={connection}
+                  address={transaction.data.address}
+                  amount={transaction.data.amount}
+                  withDeposit={
+                    isMultisigTransfer && getApprovals(transaction).length === 0
+                  }
+                />
+              </>
+            )}
         </div>
         {isMultisigTransfer && (
           <>
