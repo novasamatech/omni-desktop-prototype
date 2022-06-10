@@ -78,7 +78,7 @@ const TransferDetails: React.FC = () => {
     !isConfirmed;
 
   useEffect(() => {
-    let intervalId: any;
+    let intervalId: NodeJS.Timeout;
     if (transaction && Object.values(networks).length) {
       const currentConnection = Object.values(networks).find(
         (n) => n.network.chainId === transaction.chainId,
