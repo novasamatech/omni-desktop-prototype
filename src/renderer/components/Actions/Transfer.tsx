@@ -2,6 +2,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useRecoilValue } from 'recoil';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import { useHistory } from 'react-router';
 import { Connection, connectionState } from '../../store/connections';
 import { selectedWalletsState } from '../../store/selectedWallets';
 import Button from '../../ui/Button';
@@ -17,7 +18,7 @@ import {
 } from '../../db/types';
 import { isMultisig, validateAddress } from '../../utils/validation';
 import { getAddressFromWallet, createApprovals } from '../../utils/account';
-import { ErrorTypes } from '../../../common/constants';
+import { ErrorTypes, withId, Routes } from '../../../common/constants';
 import { getAssetId } from '../../utils/assets';
 import { useMatrix } from '../Providers/MatrixProvider';
 import { HexString } from '../../../common/types';
@@ -31,6 +32,7 @@ type TransferForm = {
 
 const Transfer: React.FC = () => {
   const { matrix } = useMatrix();
+  const history = useHistory();
 
   const [currentNetwork, setCurrentNetwork] = useState<Connection | undefined>(
     undefined,
@@ -187,8 +189,8 @@ const Transfer: React.FC = () => {
         };
       });
 
-      db.transactions.bulkAdd(transactions);
-
+      const result = await db.transactions.bulkAdd(transactions);
+      if (result) history.push(withId(Routes.TRANSFER_DETAILS, result));
       reset();
     }
   };

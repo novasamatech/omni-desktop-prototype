@@ -10,6 +10,7 @@ import {
   OptionsWithMeta,
   UnsignedTransaction,
 } from '@substrate/txwrapper-polkadot';
+import { Dialog } from '@headlessui/react';
 
 import { connectionState } from '../store/connections';
 import {
@@ -29,6 +30,9 @@ import {
 import { isFinalApprove } from '../utils/transactions';
 import { getAddressFromWallet, toPublicKey } from '../utils/account';
 import { useMatrix } from './Providers/MatrixProvider';
+import Shimmer from '../ui/Shimmer';
+import DialogContent from '../ui/DialogContent';
+import Button from '../ui/Button';
 
 // TODO: Move this function to utils
 function createSignedTx(
@@ -64,6 +68,7 @@ const ScanCode: React.FC = () => {
   const { matrix } = useMatrix();
 
   const [isTxSent, setIsTxSent] = useState(false);
+  const [isDialogOpen, setDialogOpen] = useState(false);
 
   const transaction = useRecoilValue(currentTransactionState);
   const signWith = useRecoilValue(signWithState);
@@ -98,92 +103,170 @@ const ScanCode: React.FC = () => {
       metadataRpc: metadataRpc.toHex(),
       registry,
     });
-    const actualTxHash = await network.api.rpc.author.submitExtrinsic(tx);
 
-    if (!actualTxHash || !transaction.id) return;
+    network.api.rpc.author.submitAndWatchExtrinsic(tx, async (result) => {
+      if (!result.isInBlock) return;
 
-    const extrinsicHash = actualTxHash.toHex();
+      let actualTxHash = result.inner;
 
-    if (transaction.type === TransactionType.TRANSFER) {
-      db.transactions.update(transaction.id, {
-        ...transaction,
-        transactionHash: actualTxHash.toHex(),
-        status: TransactionStatus.CONFIRMED,
-      });
-    } else if (transaction.type === TransactionType.MULTISIG_TRANSFER) {
-      const transactionStatus = isFinalApprove(transaction)
-        ? TransactionStatus.CONFIRMED
-        : TransactionStatus.PENDING;
+      const signedBlock = await network.api.rpc.chain.getBlock();
+      const apiAt = await network.api.at(signedBlock.block.header.hash);
+      const allRecords = await apiAt.query.system.events();
 
-      const publicKey = toPublicKey(signWith?.mainAccounts[0].accountId || '');
+      // the information for each of the contained extrinsics
+      signedBlock.block.extrinsics.forEach(
+        ({ method: { method, section }, signer, args, hash }, index) => {
+          if (
+            method !== tx.method.method ||
+            section !== tx.method.section ||
+            signer.toHex() !== tx.signer.toHex() ||
+            args[0]?.toString() !== tx.args[0]?.toString() ||
+            args[1]?.toString() !== tx.args[1]?.toString() ||
+            args[2]?.toString() !== tx.args[2]?.toString()
+          ) {
+            return;
+          }
 
-      const { approvals } = transaction.data;
-      const approvalsPayload = {
-        ...approvals,
-        [publicKey]: {
-          ...approvals[publicKey],
-          fromMatrix: true,
-          extrinsicHash,
+          allRecords
+            .filter(
+              ({ phase }) =>
+                phase.isApplyExtrinsic && phase.asApplyExtrinsic.eq(index),
+            )
+            .forEach(({ event }) => {
+              if (network.api.events.system.ExtrinsicSuccess.is(event)) {
+                console.log(2);
+                actualTxHash = hash;
+                if (!actualTxHash || !transaction.id) return;
+
+                const extrinsicHash = actualTxHash.toHex();
+
+                if (transaction.type === TransactionType.TRANSFER) {
+                  db.transactions.update(transaction.id, {
+                    ...transaction,
+                    transactionHash: actualTxHash.toHex(),
+                    status: TransactionStatus.CONFIRMED,
+                  });
+                } else if (
+                  transaction.type === TransactionType.MULTISIG_TRANSFER
+                ) {
+                  const transactionStatus = isFinalApprove(transaction)
+                    ? TransactionStatus.CONFIRMED
+                    : TransactionStatus.PENDING;
+
+                  const publicKey = toPublicKey(
+                    signWith?.mainAccounts[0].accountId || '',
+                  );
+
+                  const { approvals } = transaction.data;
+                  const approvalsPayload = {
+                    ...approvals,
+                    [publicKey]: {
+                      ...approvals[publicKey],
+                      fromMatrix: true,
+                      extrinsicHash,
+                    },
+                  };
+
+                  db.transactions.update(transaction.id, {
+                    status: transactionStatus,
+                    data: {
+                      ...transaction.data,
+                      approvals: approvalsPayload,
+                    },
+                  });
+
+                  const multisigWallet = transaction.wallet as MultisigWallet;
+                  if (signWith && multisigWallet.matrixRoomId) {
+                    matrix.setRoom(multisigWallet.matrixRoomId);
+
+                    if (transactionStatus === TransactionStatus.CONFIRMED) {
+                      matrix.mstFinalApprove({
+                        senderAddress: getAddressFromWallet(
+                          signWith,
+                          network.network,
+                        ),
+                        extrinsicHash,
+                        chainId: network.network.chainId,
+                        callHash: transaction.data.callHash,
+                      });
+                    }
+
+                    if (transactionStatus === TransactionStatus.PENDING) {
+                      matrix.mstApprove({
+                        senderAddress: getAddressFromWallet(
+                          signWith,
+                          network.network,
+                        ),
+                        extrinsicHash,
+                        chainId: network.network.chainId,
+                        callHash: transaction.data.callHash,
+                      });
+                    }
+                  }
+                }
+
+                history.push(withId(Routes.TRANSFER_DETAILS, transaction.id));
+              }
+              if (network.api.events.system.ExtrinsicFailed.is(event)) {
+                console.log(1);
+                actualTxHash = hash;
+                setDialogOpen(true);
+              }
+            });
         },
-      };
-
-      db.transactions.update(transaction.id, {
-        status: transactionStatus,
-        data: {
-          ...transaction.data,
-          approvals: approvalsPayload,
-        },
-      });
-
-      const multisigWallet = transaction.wallet as MultisigWallet;
-      if (signWith && multisigWallet.matrixRoomId) {
-        matrix.setRoom(multisigWallet.matrixRoomId);
-
-        if (transactionStatus === TransactionStatus.CONFIRMED) {
-          matrix.mstFinalApprove({
-            senderAddress: getAddressFromWallet(signWith, network.network),
-            extrinsicHash,
-            chainId: network.network.chainId,
-            callHash: transaction.data.callHash,
-          });
-        }
-
-        if (transactionStatus === TransactionStatus.PENDING) {
-          matrix.mstApprove({
-            senderAddress: getAddressFromWallet(signWith, network.network),
-            extrinsicHash,
-            chainId: network.network.chainId,
-            callHash: transaction.data.callHash,
-          });
-        }
-      }
-    }
-
-    history.push(withId(Routes.TRANSFER_DETAILS, transaction.id));
+      );
+    });
   };
 
   return (
-    <div className="h-ribbon flex flex-col">
-      <div className="flex justify-center items-center">
-        <LinkButton className="ml-2 absolute left-0" to={Routes.SHOW_CODE}>
-          Back
-        </LinkButton>
-        <h2 className="h-16 p-4 font-light text-lg">
-          Upload signed operations via Parity Signer
-        </h2>
+    <>
+      <div className="h-ribbon flex flex-col">
+        <div className="flex justify-center items-center">
+          <LinkButton className="ml-2 absolute left-0" to={Routes.SHOW_CODE}>
+            Back
+          </LinkButton>
+          <h2 className="h-16 p-4 font-light text-lg">
+            Upload signed operations via Parity Signer
+          </h2>
+        </div>
+
+        <div className="flex flex-1 flex-col justify-center items-center">
+          <div className="font-normal text-base">
+            Scan QR code from Parity Signer with Omni
+          </div>
+          <div className="w-80 h-80 m-4">
+            {transaction && !isTxSent ? (
+              <QrScanSignature onScan={onGetSignature} />
+            ) : (
+              <Shimmer width="100%" height="100%" />
+            )}
+          </div>
+        </div>
       </div>
 
-      <div className="flex flex-1 flex-col justify-center items-center">
-        <div className="font-normal text-base">
-          Scan QR code from Parity Signer with Omni
-        </div>
-        {transaction && (
-          <div className="w-80 h-80 m-4">
-            <QrScanSignature onScan={onGetSignature} />
+      <Dialog
+        as="div"
+        className="relative z-10"
+        open={isDialogOpen}
+        onClose={() => setDialogOpen(false)}
+      >
+        <DialogContent>
+          <Dialog.Title as="h3" className="font-light text-xl">
+            Error
+          </Dialog.Title>
+          <div className="mt-2">Something went wrong</div>
+
+          <div className=" mt-2 flex justify-between">
+            <Button
+              className="min-w-min"
+              onClick={() => history.push(Routes.SHOW_CODE)}
+            >
+              Try again
+            </Button>
           </div>
-        )}
-      </div>
-    </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
