@@ -86,7 +86,7 @@ const TransferDetails: React.FC = () => {
 
       if (currentConnection) {
         setConnection(currentConnection);
-        if (isMultisigTransfer && !isConfirmed) {
+        if (isMultisigTransfer && !isConfirmed && !transaction.blockHash) {
           interval = setInterval(
             () => updateTimepointFromBlockchain(transaction, currentConnection),
             1000,
