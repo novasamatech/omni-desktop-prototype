@@ -122,6 +122,29 @@ export const createTransactionPayload = (
   };
 };
 
+export const updateTimepointFromBlockchain = async (
+  transaction: Transaction,
+  connection: Connection,
+) => {
+  if (!transaction || !connection) return;
+  const pendingTransactions = await getPendingTransactionsFromChain(
+    connection.api,
+    getAddressFromWallet(transaction.wallet, connection.network),
+  );
+
+  const currentTransaction = pendingTransactions.find((p) =>
+    isSameTransaction(transaction, p),
+  );
+
+  if (!currentTransaction) return;
+  db.transactions.put({
+    ...transaction,
+    blockHeight: currentTransaction.opt.when.height.toNumber(),
+    blockHash: currentTransaction.opt.when.hash.toHex(),
+    extrinsicIndex: currentTransaction.opt.when.index.toNumber(),
+  });
+};
+
 export const updateTransactions = async (
   transactions: Transaction[] = [],
   wallet: Wallet,

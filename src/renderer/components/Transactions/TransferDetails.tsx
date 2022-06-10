@@ -13,9 +13,7 @@ import Address from '../../ui/Address';
 import { Routes } from '../../../common/constants';
 import { db } from '../../db/db';
 import {
-  Chain,
   MultisigWallet,
-  Transaction,
   TransactionStatus,
   TransactionType,
   Wallet,
@@ -33,7 +31,11 @@ import InputText from '../../ui/Input';
 import { Connection, connectionState } from '../../store/connections';
 import Signatories from './Signatories';
 import Chat from './Chat';
-import { decodeCallData, getApprovals } from '../../utils/transactions';
+import {
+  decodeCallData,
+  getApprovals,
+  updateTimepointFromBlockchain,
+} from '../../utils/transactions';
 import { copyToClipboard } from '../../utils/strings';
 import Fee from '../../ui/Fee';
 
@@ -45,14 +47,16 @@ const TransferDetails: React.FC = () => {
   const networks = useRecoilValue(connectionState);
   const setCurrentTransaction = useSetRecoilState(currentTransactionState);
 
-  const [transaction, setTransaction] = useState<Transaction>();
-  const [network, setNetwork] = useState<Chain>();
   const [callData, setCallData] = useState<string>();
   const [availableWallets, setAvailableWallets] = useState<OptionType[]>([]);
   const [connection, setConnection] = useState<Connection>();
 
   const wallets = useLiveQuery(() => db.wallets.toArray());
-  const transactions = useLiveQuery(() => db.transactions.toArray());
+  const transaction = useLiveQuery(() => db.transactions.get(Number(id)));
+  const network = useLiveQuery(
+    () => db.chains.get({ chainId: transaction?.chainId || '' }),
+    [transaction?.chainId],
+  );
 
   const isTransfer = transaction?.type === TransactionType.TRANSFER;
   const isMultisigTransfer =
@@ -74,6 +78,7 @@ const TransferDetails: React.FC = () => {
     !isConfirmed;
 
   useEffect(() => {
+    let intervalId: NodeJS.Timeout;
     if (transaction && Object.values(networks).length) {
       const currentConnection = Object.values(networks).find(
         (n) => n.network.chainId === transaction.chainId,
@@ -81,8 +86,18 @@ const TransferDetails: React.FC = () => {
 
       if (currentConnection) {
         setConnection(currentConnection);
+        if (!transaction.blockHeight) {
+          intervalId = setInterval(
+            () => updateTimepointFromBlockchain(transaction, currentConnection),
+            1000,
+          );
+        }
       }
     }
+
+    return () => {
+      clearInterval(intervalId);
+    };
   }, [transaction, networks]);
 
   useEffect(() => {
@@ -126,42 +141,6 @@ const TransferDetails: React.FC = () => {
     setSignWith,
   ]);
 
-  const setupTransaction = useCallback(() => {
-    if (!id) return;
-
-    db.transactions
-      .get(Number(id))
-      .then((tx) => {
-        if (tx) {
-          setTransaction(tx);
-        }
-      })
-      .catch((e) => console.warn(e));
-  }, [id]);
-
-  useEffect(() => {
-    if (!transactions) return;
-
-    const tx = transactions.find((t) => t.id === Number(id));
-
-    if (!tx) return;
-
-    setTransaction(tx);
-  }, [transactions, id]);
-
-  useEffect(() => {
-    if (!transaction?.chainId) return;
-
-    db.chains
-      .get({ chainId: transaction.chainId })
-      .then((chain) => {
-        if (chain) {
-          setNetwork(chain);
-        }
-      })
-      .catch(console.warn);
-  }, [transaction?.chainId]);
-
   const currentAsset = getAssetById(
     network?.assets || [],
     transaction?.data.assetId,
@@ -192,33 +171,35 @@ const TransferDetails: React.FC = () => {
     );
   };
 
-  const updateCallData = useCallback(() => {
-    if (!transaction || !callData || !connection) return;
+  const updateCallData = useCallback(
+    (callDataParam) => {
+      const innerCallData = callDataParam || callData;
+      if (!transaction || !innerCallData || !connection) return;
 
-    const decodedData = decodeCallData(
-      connection.api,
-      connection.network,
-      callData,
-    );
+      const decodedData = decodeCallData(
+        connection.api,
+        connection.network,
+        innerCallData,
+      );
 
-    db.transactions.put({
-      ...transaction,
-      data: {
-        ...transaction.data,
-        callData,
-        ...decodedData,
-      },
-    });
+      db.transactions.put({
+        ...transaction,
+        data: {
+          ...transaction.data,
+          callData: innerCallData,
+          ...decodedData,
+        },
+      });
 
-    setupTransaction();
-    setCallData('');
-  }, [transaction, callData, connection, setupTransaction]);
+      setCallData('');
+    },
+    [transaction, callData, connection],
+  );
 
   // Check this case
   useEffect(() => {
     if (transaction?.data.callData && !transaction?.data.amount) {
-      setCallData(transaction.data.callData);
-      updateCallData();
+      updateCallData(transaction.data.callData);
     }
   }, [transaction, updateCallData]);
 

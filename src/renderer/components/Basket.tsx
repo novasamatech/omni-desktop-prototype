@@ -39,10 +39,7 @@ const Basket: React.FC = () => {
 
       <div className="m-auto w-1/2">
         {transactions?.map((t) => (
-          <Transaction
-            key={`${t.address}_${t.createdAt.toString()}`}
-            transaction={t}
-          />
+          <Transaction key={t.id} transaction={t} />
         ))}
       </div>
     </>
