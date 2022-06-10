@@ -273,7 +273,7 @@ const Transfer: React.FC = () => {
           connection={currentNetwork}
           address={watchAddress}
           amount={watchAmount}
-          withDeposit
+          withDeposit={isMultisig(firstWallet)}
         />
       </div>
       <div className="p-2">
