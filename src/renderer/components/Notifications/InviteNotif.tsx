@@ -102,15 +102,20 @@ const InviteNotif: React.FC<Props> = ({ notif }) => {
     }
   };
 
-  const createMstAccount = () => {
+  const createMstAccount = async () => {
+    const isSamePublicKey = (
+      contact: { mainAccounts: Account[] },
+      address: string,
+    ) => contact.mainAccounts[0]?.publicKey === toPublicKey(address);
+
     const walletContacts = account.signatories.map((signatory) => {
       const address = formatAddress(signatory);
-      const isSamePublicKey = (contact: { mainAccounts: Account[] }) =>
-        contact.mainAccounts[0]?.publicKey === toPublicKey(address);
 
-      const matchInContacts = contacts?.find(isSamePublicKey);
+      const matchInContacts = contacts?.find((c) =>
+        isSamePublicKey(c, address),
+      );
       const matchInWallets = wallets?.find(
-        (wallet) => !isMultisig(wallet) && isSamePublicKey(wallet),
+        (wallet) => !isMultisig(wallet) && isSamePublicKey(wallet, address),
       );
 
       if (matchInContacts) return matchInContacts;
@@ -137,16 +142,17 @@ const InviteNotif: React.FC<Props> = ({ notif }) => {
       contacts: walletContacts as Contact[],
     });
 
-    db.wallets.add(payload);
+    const mstAccountId = await db.wallets.add(payload);
+    history.push(withId(Routes.EDIT_MULTISIG_WALLET, mstAccountId));
   };
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     try {
-      // Will try to join deleted room
+      // Could try to join deleted room
       await matrix.joinRoom(notif.roomId);
-      createMstAccount();
+      await createMstAccount();
     } catch (error) {
       console.warn(error);
     }
