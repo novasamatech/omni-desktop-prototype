@@ -27,6 +27,7 @@ import Shimmer from '../ui/Shimmer';
 import { AssetType, MultisigWallet, TransactionType } from '../db/types';
 import { getApprovals, isFinalApprove } from '../utils/transactions';
 import Fee from '../ui/Fee';
+import { isMultisig } from '../utils/validation';
 
 const ShowCode: React.FC = () => {
   const [payload, setPayload] = useState<Uint8Array>();
@@ -264,7 +265,10 @@ const ShowCode: React.FC = () => {
               connection={connection}
               address={transaction.data.address}
               amount={transaction.data.amount}
-              withDeposit={getApprovals(transaction).length === 0}
+              withDeposit={
+                isMultisig(signWith || transaction.wallet) &&
+                getApprovals(transaction).length === 0
+              }
             />
           </div>
         )}
