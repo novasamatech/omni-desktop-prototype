@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { useRecoilValue } from 'recoil';
 import { selectedWalletsState } from '../store/selectedWallets';
 import { Routes } from '../../common/constants';
+import { useMatrix } from './Providers/MatrixProvider';
 
 const SecondColumn: React.FC = () => {
+  const { matrix } = useMatrix();
   const selectedAccounts = useRecoilValue(selectedWalletsState);
 
   return (
@@ -55,6 +57,13 @@ const SecondColumn: React.FC = () => {
             Contacts
           </Link>
         </li>
+        {matrix.isLoggedIn && (
+          <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
+            <Link className="inline-block p-2 w-full" to={Routes.CHAT}>
+              Chat
+            </Link>
+          </li>
+        )}
         <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
           <Link className="inline-block p-2 w-full" to={Routes.ADD_CONTACT}>
             Add contact

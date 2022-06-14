@@ -91,7 +91,7 @@ const MatrixProvider: React.FC<Props> = ({
 
   const onSyncEnd = async () => {
     const timeline = await matrix.timelineEvents();
-    console.log('💛 ===> onSyncEnd - ', timeline);
+    console.log('💛 ===> onSyncEnd Timeline length - ', timeline.length);
 
     if (timeline.length === 0) return;
 

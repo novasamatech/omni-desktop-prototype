@@ -15,6 +15,7 @@ import ManageMultisigWallet from '../../renderer/components/Actions/ManageMultis
 import AddWallet from '../../renderer/components/Actions/AddWallet';
 import Notifications from '../../renderer/components/Notifications/Notifications';
 import TransferDetails from '../../renderer/components/Transactions/TransferDetails';
+import Chat from '../../renderer/components/Chat';
 import { Routes } from '../constants';
 
 const ConfigRoutes: Record<'pages' | 'mainLayout', RouteConfig[]> = {
@@ -38,6 +39,7 @@ const ConfigRoutes: Record<'pages' | 'mainLayout', RouteConfig[]> = {
     { path: Routes.CONTACTS, component: Contacts },
     { path: Routes.ADD_CONTACT, component: ManageContact },
     { path: Routes.EDIT_CONTACT, component: ManageContact },
+    { path: Routes.CHAT, component: Chat },
   ],
 };
 

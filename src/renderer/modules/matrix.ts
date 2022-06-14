@@ -266,6 +266,22 @@ class Matrix implements ISecureMessenger {
   }
 
   /**
+   * Leave MST room
+   * @param roomId room's identifier
+   * @return {Promise}
+   * @throws {Error}
+   */
+  async leaveRoom(roomId: string): Promise<void | never> {
+    this.checkClientLoggedIn();
+
+    try {
+      await this.matrixClient.leave(roomId);
+    } catch (error) {
+      throw this.createError(`Failed to join room - ${roomId}`, error);
+    }
+  }
+
+  /**
    * Invite signatory to existing MST room
    * @param roomId room's identifier
    * @param signatoryId signatory's identifier
@@ -673,17 +689,11 @@ class Matrix implements ISecureMessenger {
   private handleOmniEvents(): void {
     const omniEvents = Object.values(OmniMstEvents);
 
-    this.matrixClient.on(RoomEvent.Timeline, (event) => {
+    this.matrixClient.on(RoomEvent.Timeline, (event, room) => {
       const isMstEvent = omniEvents.includes(event.getType() as OmniMstEvents);
 
-      if (!isMstEvent) return;
-
-      const roomId = event.getRoomId();
-      if (!roomId) return;
-
-      const room = this.matrixClient.getRoom(roomId);
-      if (!room || !this.isOmniRoom(room.name)) return;
-
+      if (!isMstEvent || !this.isOmniRoom(room.name)) return;
+      console.log(event.getId());
       this.subscribeHandlers?.onMstEvent(
         this.createEventPayload<MSTPayload>(event),
       );
