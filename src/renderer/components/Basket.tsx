@@ -6,7 +6,7 @@ import LinkButton from '../ui/LinkButton';
 import { db } from '../db/db';
 import { connectionState } from '../store/connections';
 import { updateTransactions } from '../utils/transactions';
-import { isMultisig } from '../utils/validation';
+import { isMultisig } from '../utils/account';
 
 const Basket: React.FC = () => {
   const transactions = useLiveQuery(() =>

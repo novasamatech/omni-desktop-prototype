@@ -8,7 +8,6 @@ import {
   getProofs,
 } from './merkle';
 import { MatrixIdRegex } from '../../common/constants';
-import { MultisigWallet, Wallet } from '../db/types';
 import { formatAddress } from './account';
 
 export const validateWithBlockNumber = async (
@@ -74,9 +73,6 @@ export const validateAddress = (address: string): boolean => {
     return false;
   }
 };
-
-export const isMultisig = (wallet?: Wallet | MultisigWallet): boolean =>
-  Boolean(wallet?.isMultisig);
 
 export const validateMatrixLogin = (matrixId: string): boolean => {
   return MatrixIdRegex.test(matrixId);
