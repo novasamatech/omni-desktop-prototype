@@ -78,6 +78,12 @@ const TransferDetails: React.FC = () => {
     !isConfirmed;
 
   useEffect(() => {
+    setSignWith(undefined);
+    setCurrentTransaction(undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     let intervalId: NodeJS.Timeout;
     if (transaction && Object.values(networks).length) {
       const currentConnection = Object.values(networks).find(
