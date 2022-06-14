@@ -17,8 +17,9 @@ import { useMatrix } from '../Providers/MatrixProvider';
 import {
   createMultisigWalletPayload,
   isSameAccount,
+  isMultisig,
+  combinedContacts,
 } from '../../utils/account';
-import { isMultisig } from '../../utils/validation';
 import { RoomParams } from '../../modules/types';
 
 type DialogTypes = 'forget' | 'room' | 'mst' | 'create';
@@ -309,57 +310,16 @@ const ManageMultisigWallet: React.FC = () => {
 
   const isContactSelected = (contact: Contact) => {
     const collection = wallet ? wallet.originContacts : selectedContacts;
-
-    return collection.some((c) => {
-      if (contact.id) {
-        return c.id === contact.id;
-      }
-      return (
-        !c.id &&
-        c.mainAccounts[0].publicKey === contact.mainAccounts[0].publicKey
-      );
-    });
+    return collection.some((c) => isSameAccount(c, contact));
   };
 
   const availableContacts = useMemo(() => {
     if (wallet) return wallet.originContacts;
-    if (!wallets) return contacts;
 
-    const walletsMap = wallets.reduce((acc, w, index) => {
-      if (isMultisig(w) || !w.mainAccounts[0]) return acc;
-      if (acc[w.mainAccounts[0].publicKey] !== undefined) return acc;
-
-      acc[w.mainAccounts[0].publicKey] = index;
-      return acc;
-    }, {} as Record<string, number>);
-
-    if (!Object.keys(walletsMap).length) return contacts;
-
-    const contactsMap = contacts.reduce((acc, c) => {
-      acc[c.mainAccounts[0].publicKey] = c;
-      return acc;
-    }, {} as Record<string, Contact>);
-
-    const myWallets = wallets.reduce((acc, w, index) => {
-      const publicKey = w.mainAccounts[0]?.publicKey;
-
-      if (
-        !contactsMap[publicKey] &&
-        publicKey &&
-        index === walletsMap[publicKey]
-      ) {
-        acc.push({
-          name: w.name,
-          mainAccounts: w.mainAccounts,
-          chainAccounts: [],
-          secureProtocolId: matrix.userId,
-        });
-      }
-      // }
-      return acc;
-    }, [] as Contact[]);
-
-    return myWallets.concat(contacts);
+    return combinedContacts(wallets, contacts).map((contact) => ({
+      ...contact,
+      secureProtocolId: matrix.userId,
+    }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wallets?.length, contacts.length]);
 
@@ -429,7 +389,7 @@ const ManageMultisigWallet: React.FC = () => {
 
             {availableContacts.map((contact) => (
               <div
-                key={contact.id || contact.mainAccounts[0].accountId}
+                key={contact.mainAccounts[0].accountId}
                 className="flex items-center gap-3 p-2"
               >
                 <Checkbox

@@ -21,13 +21,12 @@ import {
 } from '../store/currentTransaction';
 import LinkButton from '../ui/LinkButton';
 import { Routes, DEFAULT, withId } from '../../common/constants';
-import { getAddressFromWallet } from '../utils/account';
+import { getAddressFromWallet, isMultisig } from '../utils/account';
 import { formatAmount, getAssetById } from '../utils/assets';
 import Shimmer from '../ui/Shimmer';
 import { AssetType, MultisigWallet, TransactionType } from '../db/types';
 import { getApprovals, isFinalApprove } from '../utils/transactions';
 import Fee from '../ui/Fee';
-import { isMultisig } from '../utils/validation';
 
 const ShowCode: React.FC = () => {
   const [payload, setPayload] = useState<Uint8Array>();

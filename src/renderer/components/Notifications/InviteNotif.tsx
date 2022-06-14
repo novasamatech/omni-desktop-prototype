@@ -19,12 +19,12 @@ import {
   createMultisigWalletPayload,
   formatAddress,
   toPublicKey,
+  isMultisig,
 } from '../../utils/account';
 import DialogContent from '../../ui/DialogContent';
 import InputText from '../../ui/Input';
 import Button from '../../ui/Button';
 import NotifyItem from './NotifyItem';
-import { isMultisig } from '../../utils/validation';
 
 type Props = {
   notif: Notification;

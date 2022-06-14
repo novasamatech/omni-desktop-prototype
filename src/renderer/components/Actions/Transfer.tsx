@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useRecoilValue } from 'recoil';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { useHistory } from 'react-router';
-import { useLiveQuery } from 'dexie-react-hooks';
 import { Connection, connectionState } from '../../store/connections';
 import { selectedWalletsState } from '../../store/selectedWallets';
 import Button from '../../ui/Button';
@@ -17,9 +16,14 @@ import {
   TransactionStatus,
   TransactionType,
 } from '../../db/types';
-import { isMultisig, validateAddress } from '../../utils/validation';
-import { getAddressFromWallet, createApprovals } from '../../utils/account';
-import { ErrorTypes, withId, Routes } from '../../../common/constants';
+import {
+  combinedContacts,
+  createApprovals,
+  getAddressFromWallet,
+  isMultisig,
+} from '../../utils/account';
+import { validateAddress } from '../../utils/validation';
+import { ErrorTypes, Routes, withId } from '../../../common/constants';
 import { getAssetId } from '../../utils/assets';
 import { useMatrix } from '../Providers/MatrixProvider';
 import { HexString } from '../../../common/types';
@@ -46,18 +50,11 @@ const Transfer: React.FC = () => {
   const [assetOptions, setAssetOptions] = useState<OptionType[]>([]);
   const [callHash, setCallHash] = useState<HexString>();
   const [callData, setCallData] = useState<HexString>();
+  const [availableContacts, setAvailableContacts] = useState<OptionType[]>([]);
 
   const networks = useRecoilValue(connectionState);
-  const wallets = useRecoilValue(selectedWalletsState);
+  const selectedWallets = useRecoilValue(selectedWalletsState);
   const defaultAsset = currentNetwork?.network.assets[0];
-
-  const contacts = useLiveQuery(async () => {
-    const data = await db.contacts.toArray();
-    return data.map((d) => ({
-      label: d.name || '',
-      value: d.mainAccounts[0].accountId,
-    }));
-  });
 
   const {
     handleSubmit,
@@ -73,7 +70,7 @@ const Transfer: React.FC = () => {
   const watchAddress = watch('address');
   const watchAmount = watch('amount');
 
-  const firstWallet = wallets[0];
+  const firstWallet = selectedWallets[0];
 
   useEffect(() => {
     if (
@@ -102,6 +99,21 @@ const Transfer: React.FC = () => {
     defaultAsset,
     isValid,
   ]);
+
+  useEffect(() => {
+    const getSelectOptions = async () => {
+      const wallets = await db.wallets.toArray();
+      const contacts = await db.contacts.toArray();
+
+      const result = combinedContacts(wallets, contacts).map((contact) => ({
+        label: contact.name || '',
+        value: contact.mainAccounts[0].accountId,
+      }));
+      setAvailableContacts(result);
+    };
+
+    getSelectOptions();
+  }, []);
 
   const setNetwork = useCallback(
     (value: string) => {
@@ -152,7 +164,7 @@ const Transfer: React.FC = () => {
   }) => {
     if (!currentNetwork || !currentAsset) return;
 
-    const transactions = wallets.map((w) => {
+    const transactions = selectedWallets.map((w) => {
       const addressFrom = getAddressFromWallet(w, currentNetwork.network);
 
       const type = isMultisig(w)
@@ -240,7 +252,7 @@ const Transfer: React.FC = () => {
               className="w-full"
               label="Recipient"
               placeholder="Recipient"
-              options={contacts || []}
+              options={availableContacts}
               onOptionSelect={onChange}
               onChange={onChange}
             />

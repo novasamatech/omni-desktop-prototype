@@ -10,10 +10,14 @@ import {
   Contact,
   CryptoType,
   MultisigWallet,
+  Wallet,
 } from '../db/types';
 import { Approvals } from '../../common/types';
 
 const SS58_DEFAULT_PREFIX = 42;
+
+export const isMultisig = (wallet?: Wallet | MultisigWallet): boolean =>
+  Boolean(wallet?.isMultisig);
 
 export const formatAddress = (
   address: string,
@@ -89,8 +93,7 @@ export const createMultisigWalletPayload = ({
 };
 
 export const isSameAccount = (first: Contact, second: Contact): boolean =>
-  first.mainAccounts[0].publicKey === second.mainAccounts[0].publicKey &&
-  first.id === second.id;
+  first.mainAccounts[0].publicKey === second.mainAccounts[0].publicKey;
 
 export const createApprovals = (wallet: MultisigWallet, network?: Chain) =>
   wallet.originContacts.reduce((acc, contact) => {
@@ -102,3 +105,31 @@ export const createApprovals = (wallet: MultisigWallet, network?: Chain) =>
 
     return acc;
   }, {} as Approvals);
+
+export const combinedContacts = (
+  wallets: Wallet[] = [],
+  contacts: Contact[] = [],
+): (Wallet | Contact)[] => {
+  const walletsMap = wallets.reduce((acc, w, index) => {
+    if (isMultisig(w) || !w.mainAccounts[0]) return acc;
+    if (acc[w.mainAccounts[0].publicKey] !== undefined) return acc;
+    acc[w.mainAccounts[0].publicKey] = index;
+    return acc;
+  }, {} as Record<string, number>);
+
+  if (!Object.keys(walletsMap).length) return contacts;
+
+  const contactsMap = contacts.reduce((acc, c) => {
+    acc[c.mainAccounts[0].publicKey] = true;
+    return acc;
+  }, {} as Record<string, boolean>);
+
+  const myWallets = wallets.filter((w, index) => {
+    const publicKey = w.mainAccounts[0]?.publicKey;
+    return (
+      publicKey && !contactsMap[publicKey] && index === walletsMap[publicKey]
+    );
+  });
+
+  return [...myWallets, ...contacts];
+};
