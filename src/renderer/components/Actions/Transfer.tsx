@@ -269,7 +269,6 @@ const Transfer: React.FC = () => {
       <div className="p-2">
         <Fee
           wallet={firstWallet}
-          asset={currentAsset}
           connection={currentNetwork}
           address={watchAddress}
           amount={watchAmount}

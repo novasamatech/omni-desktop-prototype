@@ -261,7 +261,6 @@ const ShowCode: React.FC = () => {
           <div className="w-[350px] mt-5 mb-10">
             <Fee
               wallet={signWith || transaction.wallet}
-              asset={asset}
               connection={connection}
               address={transaction.data.address}
               amount={transaction.data.amount}
