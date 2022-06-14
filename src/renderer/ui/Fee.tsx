@@ -1,3 +1,4 @@
+/* eslint-disable promise/catch-or-return */
 /* eslint-disable promise/always-return */
 import React, { ReactNode, useEffect, useState } from 'react';
 import { BN } from '@polkadot/util';
@@ -28,14 +29,17 @@ const Fee: React.FC<Props> = ({
   withDeposit,
 }) => {
   const [transactionFee, setTransactionFee] = useState('0');
+  const [isLoading, setIsLoading] = useState(false);
 
   const defaultAsset = connection?.network.assets[0];
 
   useEffect(() => {
     if (!wallet || !connection || !asset || !validateAddress(address)) {
-      setTransactionFee('');
+      setTransactionFee('0');
       return;
     }
+
+    setIsLoading(true);
 
     const fromAddress = getAddressFromWallet(wallet, connection.network);
 
@@ -50,7 +54,10 @@ const Fee: React.FC<Props> = ({
       })
       .catch((error) => {
         console.warn(error);
-        setTransactionFee('');
+        setTransactionFee('0');
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
   }, [connection, amount, address, asset, defaultAsset, wallet]);
 
@@ -79,7 +86,9 @@ const Fee: React.FC<Props> = ({
       )}
       <div className="flex justify-between">
         <div>Transaction fee</div>
-        <div>{transactionFee || <Shimmer width="80px" height="20px" />}</div>
+        <div>
+          {isLoading ? <Shimmer width="80px" height="20px" /> : transactionFee}
+        </div>
       </div>
       {withDeposit && (
         <>
