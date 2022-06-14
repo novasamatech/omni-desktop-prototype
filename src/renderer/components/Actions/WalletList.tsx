@@ -6,7 +6,7 @@ import { db } from '../../db/db';
 import LinkButton from '../../ui/LinkButton';
 import mst from '../../../../assets/mst.svg';
 import { Routes, withId } from '../../../common/constants';
-import { isMultisig } from '../../utils/validation';
+import { isMultisig } from '../../utils/account';
 
 const WalletList: React.FC = () => {
   const wallets = useLiveQuery(() => db.wallets.toArray());

@@ -2,14 +2,14 @@ import React, { InputHTMLAttributes } from 'react';
 import Identicon from '@polkadot/react-identicon';
 import cn from 'classnames';
 
-interface Props extends InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   address?: boolean;
   invalid?: boolean;
   inputClassName?: string;
 }
 
-const InputText: React.FC<Props> = ({
+const InputText: React.FC<InputProps> = ({
   type = 'text',
   label,
   required,

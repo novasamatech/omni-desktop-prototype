@@ -7,7 +7,7 @@ import { selectedWalletsState } from '../store/selectedWallets';
 import { db } from '../db/db';
 import { Wallet } from '../db/types';
 import mst from '../../../assets/mst.svg';
-import { isMultisig } from '../utils/validation';
+import { isMultisig } from '../utils/account';
 
 const SelectWallets: React.FC = () => {
   const [selectedWallets, setSelectedWallets] =
