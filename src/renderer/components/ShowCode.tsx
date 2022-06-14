@@ -25,7 +25,7 @@ import { getAddressFromWallet, isMultisig } from '../utils/account';
 import { formatAmount, getAssetById } from '../utils/assets';
 import Shimmer from '../ui/Shimmer';
 import { AssetType, MultisigWallet, TransactionType } from '../db/types';
-import { getApprovals, isFinalApprove } from '../utils/transactions';
+import { getApprovals } from '../utils/transactions';
 import Fee from '../ui/Fee';
 
 const ShowCode: React.FC = () => {
@@ -158,19 +158,6 @@ const ShowCode: React.FC = () => {
 
     const multisig = {
       approve: () => {
-        return methods.multisig.approveAsMulti(
-          {
-            threshold,
-            otherSignatories,
-            maybeTimepoint: when,
-            callHash: transaction.data.callHash,
-            maxWeight: MAX_WEIGHT,
-          },
-          info,
-          options,
-        );
-      },
-      finalApprove: () => {
         return methods.multisig.asMulti(
           {
             threshold,
@@ -205,9 +192,7 @@ const ShowCode: React.FC = () => {
     let unsignedAction = transfers[asset?.type || DEFAULT];
 
     if (transaction.type === TransactionType.MULTISIG_TRANSFER && signWith) {
-      unsignedAction = isFinalApprove(transaction)
-        ? multisig.finalApprove
-        : multisig.approve;
+      unsignedAction = multisig.approve;
     }
 
     const unsigned = unsignedAction();
