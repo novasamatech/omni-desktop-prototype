@@ -318,7 +318,9 @@ const ManageMultisigWallet: React.FC = () => {
 
     return combinedContacts(wallets, contacts).map((contact) => ({
       ...contact,
-      secureProtocolId: matrix.userId,
+      ...(!contact.secureProtocolId && {
+        secureProtocolId: matrix.userId,
+      }),
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wallets?.length, contacts.length]);

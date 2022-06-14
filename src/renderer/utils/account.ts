@@ -109,7 +109,7 @@ export const createApprovals = (wallet: MultisigWallet, network?: Chain) =>
 export const combinedContacts = (
   wallets: Wallet[] = [],
   contacts: Contact[] = [],
-): (Wallet | Contact)[] => {
+): Contact[] => {
   const walletsMap = wallets.reduce((acc, w, index) => {
     if (isMultisig(w) || !w.mainAccounts[0]) return acc;
     if (acc[w.mainAccounts[0].publicKey] !== undefined) return acc;
@@ -131,5 +131,5 @@ export const combinedContacts = (
     );
   });
 
-  return [...myWallets, ...contacts];
+  return [...myWallets, ...contacts] as Contact[];
 };
