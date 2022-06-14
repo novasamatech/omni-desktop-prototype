@@ -8,13 +8,31 @@ import mst from '../../../../assets/mst.svg';
 import { Routes, withId } from '../../../common/constants';
 import { isMultisig } from '../../utils/account';
 
+const Header: React.FC = () => {
+  return (
+    <div className="flex justify-between p-4">
+      <div>
+        <h2 className="font-light text-xl">List of wallets</h2>
+      </div>
+      <div className="flex gap-2">
+        <LinkButton size="lg" to={Routes.CREATE_WALLET}>
+          Add wallet
+        </LinkButton>
+        <LinkButton size="lg" to={Routes.CREATE_MULTISIG_WALLET}>
+          Add multisig wallet
+        </LinkButton>
+      </div>
+    </div>
+  );
+};
+
 const WalletList: React.FC = () => {
   const wallets = useLiveQuery(() => db.wallets.toArray());
 
   if (!wallets || wallets.length === 0) {
     return (
       <>
-        <h2 className="font-light text-xl p-4">List of wallets</h2>
+        <Header />
         <div className="ml-2 mr-2">
           <List />
         </div>
@@ -24,7 +42,7 @@ const WalletList: React.FC = () => {
 
   return (
     <>
-      <h2 className="font-light text-xl p-4">List of wallets</h2>
+      <Header />
       <div className="ml-2 mr-2">
         <List>
           {wallets.map(({ id, ...wallet }) => (
