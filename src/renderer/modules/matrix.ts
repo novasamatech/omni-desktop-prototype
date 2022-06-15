@@ -346,8 +346,10 @@ class Matrix implements ISecureMessenger {
       const timelineEvents = room
         .getLiveTimeline()
         .getEvents()
-        .filter((event) =>
-          omniEvents.includes(event.getType() as OmniMstEvents),
+        .filter(
+          (event) =>
+            omniEvents.includes(event.getType() as OmniMstEvents) &&
+            event.getSender() !== this.userId,
         );
 
       if (timelineEvents.length > 0) {
@@ -654,18 +656,24 @@ class Matrix implements ISecureMessenger {
 
       if (!isValidUser || !roomId) return;
 
-      const roomSummary = await this.matrixClient.getRoomSummary(roomId);
-      if (!this.isOmniRoom(roomSummary.name)) return;
+      try {
+        const roomSummary = await this.matrixClient.getRoomSummary(roomId);
+        if (!this.isOmniRoom(roomSummary.name)) return;
 
-      const room = this.matrixClient.getRoom(roomId);
-      if (!room) return;
+        const room = this.matrixClient.getRoom(roomId);
+        if (!room) return;
 
-      this.subscribeHandlers?.onInvite(
-        this.createEventPayload<InvitePayload>(event, {
-          content: this.getOmniTopic(room),
-          roomName: room.name,
-        }),
-      );
+        this.subscribeHandlers?.onInvite(
+          this.createEventPayload<InvitePayload>(event, {
+            content: this.getOmniTopic(room),
+            roomName: room.name,
+          }),
+        );
+      } catch (error) {
+        console.info(
+          'Failed to get room summary, you have left or room is deleted',
+        );
+      }
     });
   }
 
@@ -690,6 +698,8 @@ class Matrix implements ISecureMessenger {
     const omniEvents = Object.values(OmniMstEvents);
 
     this.matrixClient.on(RoomEvent.Timeline, (event, room) => {
+      if (event.getSender() === this.userId) return;
+
       const isMstEvent = omniEvents.includes(event.getType() as OmniMstEvents);
 
       if (!isMstEvent || !this.isOmniRoom(room.name)) return;
@@ -789,7 +799,7 @@ class Matrix implements ISecureMessenger {
    * @return {Object}
    */
   private getOmniTopic(room: Room): OmniExtras {
-    // on invited, user only sees stripped state, which has '' as state key for all events
+    // on invite user only sees stripped state, which has '' as state key for all events
     const strippedStateKey = '';
 
     const topicEvent = room
