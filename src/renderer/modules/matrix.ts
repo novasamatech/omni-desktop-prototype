@@ -266,6 +266,22 @@ class Matrix implements ISecureMessenger {
   }
 
   /**
+   * Leave MST room
+   * @param roomId room's identifier
+   * @return {Promise}
+   * @throws {Error}
+   */
+  async leaveRoom(roomId: string): Promise<void | never> {
+    this.checkClientLoggedIn();
+
+    try {
+      await this.matrixClient.leave(roomId);
+    } catch (error) {
+      throw this.createError(`Failed to leave room - ${roomId}`, error);
+    }
+  }
+
+  /**
    * Invite signatory to existing MST room
    * @param roomId room's identifier
    * @param signatoryId signatory's identifier
@@ -330,8 +346,10 @@ class Matrix implements ISecureMessenger {
       const timelineEvents = room
         .getLiveTimeline()
         .getEvents()
-        .filter((event) =>
-          omniEvents.includes(event.getType() as OmniMstEvents),
+        .filter(
+          (event) =>
+            omniEvents.includes(event.getType() as OmniMstEvents) &&
+            event.getSender() !== this.userId,
         );
 
       if (timelineEvents.length > 0) {
@@ -638,18 +656,28 @@ class Matrix implements ISecureMessenger {
 
       if (!isValidUser || !roomId) return;
 
-      const roomSummary = await this.matrixClient.getRoomSummary(roomId);
-      if (!this.isOmniRoom(roomSummary.name)) return;
+      try {
+        const roomSummary = await this.matrixClient.getRoomSummary(roomId);
+        if (!this.isOmniRoom(roomSummary.name)) return;
 
-      const room = this.matrixClient.getRoom(roomId);
-      if (!room) return;
+        const room = this.matrixClient.getRoom(roomId);
+        if (!room) return;
 
-      this.subscribeHandlers?.onInvite(
-        this.createEventPayload<InvitePayload>(event, {
-          content: this.getOmniTopic(room),
-          roomName: room.name,
-        }),
-      );
+        this.subscribeHandlers?.onInvite(
+          this.createEventPayload<InvitePayload>(event, {
+            content: this.getOmniTopic(room),
+            roomName: room.name,
+          }),
+        );
+      } catch (error) {
+        console.info('The person who invited you has already left');
+
+        try {
+          await this.leaveRoom(roomId);
+        } catch (leaveMsg) {
+          console.info(leaveMsg);
+        }
+      }
     });
   }
 
@@ -673,16 +701,12 @@ class Matrix implements ISecureMessenger {
   private handleOmniEvents(): void {
     const omniEvents = Object.values(OmniMstEvents);
 
-    this.matrixClient.on(RoomEvent.Timeline, (event) => {
+    this.matrixClient.on(RoomEvent.Timeline, (event, room) => {
+      if (event.getSender() === this.userId) return;
+
       const isMstEvent = omniEvents.includes(event.getType() as OmniMstEvents);
 
-      if (!isMstEvent) return;
-
-      const roomId = event.getRoomId();
-      if (!roomId) return;
-
-      const room = this.matrixClient.getRoom(roomId);
-      if (!room || !this.isOmniRoom(room.name)) return;
+      if (!isMstEvent || !this.isOmniRoom(room.name)) return;
 
       this.subscribeHandlers?.onMstEvent(
         this.createEventPayload<MSTPayload>(event),
@@ -779,7 +803,7 @@ class Matrix implements ISecureMessenger {
    * @return {Object}
    */
   private getOmniTopic(room: Room): OmniExtras {
-    // on invited, user only sees stripped state, which has '' as state key for all events
+    // on invite user only sees stripped state, which has '' as state key for all events
     const strippedStateKey = '';
 
     const topicEvent = room

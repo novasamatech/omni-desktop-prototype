@@ -22,6 +22,7 @@ export const Routes = {
   CONTACTS: '/contacts',
   ADD_CONTACT: '/add-contact',
   EDIT_CONTACT: '/edit-contact/:id',
+  CHAT: '/chat',
 };
 
 export function withId(

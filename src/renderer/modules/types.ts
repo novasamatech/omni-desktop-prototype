@@ -20,6 +20,7 @@ export interface ISecureMessenger {
   finishRoomCreation: (params: RoomParams) => Promise<void | never>;
   cancelRoomCreation: (roomId: string) => Promise<void | never>;
   joinRoom: (roomId: string) => Promise<void | never>;
+  leaveRoom: (roomId: string) => Promise<void | never>;
   invite: (roomId: string, signatoryId: string) => Promise<void | never>;
   listOfOmniRooms: (type: Membership.INVITE | Membership.JOIN) => Room[];
   setRoom: (roomId: string) => void;

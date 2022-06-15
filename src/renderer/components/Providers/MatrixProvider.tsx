@@ -24,7 +24,6 @@ import {
   TransactionType,
 } from '../../db/types';
 import { createApprovals, toPublicKey } from '../../utils/account';
-import { Approvals } from '../../../common/types';
 
 const Statuses = {
   [OmniMstEvents.INIT]: TransactionStatus.CREATED,
@@ -85,6 +84,75 @@ const MatrixProvider: React.FC<Props> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const updateInitEvent = async (eventData: MSTPayload) => {
+    const content = eventData.content as MstParams;
+    const transactionStatus = Statuses[eventData.type];
+    const senderPublicKey = toPublicKey(content.senderAddress);
+
+    const wallets = await db.wallets.toArray();
+    const wallet = wallets?.find(
+      (w) => w.mainAccounts[0].publicKey === senderPublicKey,
+    );
+
+    if (!wallet?.id) return;
+
+    db.transactions.add({
+      wallet,
+      status: transactionStatus,
+      createdAt: eventData.date,
+      address: content.senderAddress,
+      chainId: content.chainId,
+      type: TransactionType.MULTISIG_TRANSFER,
+      data: {
+        callHash: content.callHash,
+        callData: content.callData,
+        approvals: createApprovals(wallet as MultisigWallet),
+      },
+    });
+  };
+
+  const updateApproveEvent = async (eventData: MSTPayload) => {
+    const content = eventData.content as MstParams;
+    const transactionStatus = Statuses[eventData.type];
+    const tx = await db.transactions.get({ 'data.callHash': content.callHash });
+
+    if (!tx?.id) return;
+
+    const senderPublicKey = toPublicKey(content.senderAddress);
+
+    db.transactions.update(tx.id, {
+      status: transactionStatus,
+      data: {
+        ...tx.data,
+        approvals: {
+          ...tx.data.approvals,
+          [senderPublicKey]: {
+            ...tx.data.approvals[senderPublicKey],
+            fromMatrix: true,
+            extrinsicHash: content.extrinsicHash,
+          },
+        },
+      },
+    });
+  };
+
+  // TODO: Move this function outside of Matrix Provider
+  const updateTransactionData = async (eventData: MSTPayload) => {
+    if (eventData.client === eventData.sender) return;
+
+    if (eventData.type === OmniMstEvents.INIT) {
+      updateInitEvent(eventData);
+    }
+
+    if (
+      [OmniMstEvents.APPROVE, OmniMstEvents.FINAL_APPROVE].includes(
+        eventData.type,
+      )
+    ) {
+      updateApproveEvent(eventData);
+    }
+  };
+
   const onSyncProgress = () => {
     console.log('💛 ===> onSyncProgress');
   };
@@ -92,7 +160,6 @@ const MatrixProvider: React.FC<Props> = ({
   const onSyncEnd = async () => {
     const timeline = await matrix.timelineEvents();
     console.log('💛 ===> onSyncEnd - ', timeline);
-
     if (timeline.length === 0) return;
 
     const dbNotifications = await db.mxNotifications
@@ -107,14 +174,17 @@ const MatrixProvider: React.FC<Props> = ({
       {} as Record<string, boolean>,
     );
 
-    const dbTimeline = timeline
-      .filter((t) => !dbIdsMap?.[t.eventId])
-      .map(({ eventId, ...rest }) => ({
-        ...rest,
-        id: eventId,
-        isRead: BooleanValue.FALSE,
-      }));
+    const filteredTimeline = timeline.filter((t) => !dbIdsMap?.[t.eventId]);
+    if (!filteredTimeline.length) return;
+
+    const dbTimeline = filteredTimeline.map(({ eventId, ...rest }) => ({
+      ...rest,
+      id: eventId,
+      isRead: BooleanValue.FALSE,
+    }));
+
     db.mxNotifications.bulkAdd(dbTimeline);
+    filteredTimeline.forEach(updateTransactionData);
   };
 
   const onMessage = (value: any) => {
@@ -133,72 +203,16 @@ const MatrixProvider: React.FC<Props> = ({
     });
   };
 
-  // TODO: Move this function outside of Matrix Provider
-  const updateTransactionData = async (rest: Omit<MSTPayload, 'eventId'>) => {
-    if (rest.client === rest.sender) return;
-
-    const content = rest.content as MstParams;
-    const transactionStatus = Statuses[rest.type];
-
-    if (rest.type === OmniMstEvents.INIT) {
-      const wallets = await db.wallets.toArray();
-
-      const wallet = wallets?.find(
-        (w) =>
-          w.mainAccounts[0].publicKey === toPublicKey(content.senderAddress),
-      );
-
-      if (!wallet?.id) return;
-
-      db.transactions.add({
-        wallet,
-        status: transactionStatus,
-        createdAt: rest.date,
-        address: content.senderAddress,
-        chainId: content.chainId,
-        data: {
-          callHash: content.callHash,
-          callData: content.callData,
-          approvals: createApprovals(wallet as MultisigWallet),
-        },
-        type: TransactionType.MULTISIG_TRANSFER,
-      });
-    }
-
-    if (
-      [OmniMstEvents.APPROVE, OmniMstEvents.FINAL_APPROVE].includes(rest.type)
-    ) {
-      const tx = await db.transactions
-        .where({ 'data.callHash': content.callHash })
-        .first();
-
-      if (!tx?.id) return;
-
-      const senderPublicKey = toPublicKey(content.senderAddress);
-      const approvals: Approvals = {
-        ...tx.data.approvals,
-        [senderPublicKey]: {
-          ...tx.data.approvals[senderPublicKey],
-          fromMatrix: true,
-          extrinsicHash: content.extrinsicHash,
-        },
-      };
-
-      db.transactions.update(tx.id, {
-        status: transactionStatus,
-        data: { ...tx.data, approvals },
-      });
-    }
-  };
-
-  const onMstEvent = ({ eventId, ...rest }: MSTPayload) => {
-    db.mxNotifications.add({
+  const onMstEvent = (eventData: MSTPayload) => {
+    const { eventId, ...rest } = eventData;
+    const notif = {
       ...rest,
       id: eventId,
       isRead: BooleanValue.FALSE,
-    });
+    };
 
-    updateTransactionData(rest);
+    db.mxNotifications.add(notif);
+    updateTransactionData(eventData);
   };
 
   useEffect(() => {

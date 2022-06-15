@@ -156,8 +156,6 @@ const InviteNotif: React.FC<Props> = ({ notif }) => {
     } catch (error) {
       console.warn(error);
     }
-
-    toggleDialogOpen();
   };
 
   return (
