@@ -30,6 +30,7 @@ import { HexString } from '../../../common/types';
 import { getTxExtrinsic } from '../../utils/transactions';
 import InputSelect from '../../ui/InputSelect';
 import Fee from '../../ui/Fee';
+import Balance from '../../ui/Balance';
 
 type TransferForm = {
   address: string;
@@ -270,6 +271,20 @@ const Transfer: React.FC = () => {
           rules={{ validate: (v) => Number(v) > 0 }}
           render={({ field: { onChange, value } }) => (
             <InputText
+              corner={
+                currentAsset &&
+                currentNetwork &&
+                firstWallet && (
+                  <div className="flex items-center gap-1 text-sm text-gray-500">
+                    Transfarable:
+                    <Balance
+                      asset={currentAsset}
+                      wallet={firstWallet}
+                      connection={currentNetwork}
+                    />
+                  </div>
+                )
+              }
               onChange={onChange}
               value={value}
               type="number"
@@ -289,6 +304,7 @@ const Transfer: React.FC = () => {
           address={watchAddress}
           amount={watchAmount}
           withDeposit={isMultisig(firstWallet)}
+          withTransferable={defaultAsset?.assetId !== currentAsset?.assetId}
         />
         <Button className="w-max" type="submit" size="lg" disabled={!isValid}>
           Add transaction

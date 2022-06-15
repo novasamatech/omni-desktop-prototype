@@ -33,7 +33,7 @@ const Select: React.FC<Props> = ({
       } ${className}`}
     >
       {label && (
-        <label htmlFor={id} className="text-gray-500 text-sm mb-2">
+        <label htmlFor={id} className="text-gray-500 text-sm mb-1">
           {label}{' '}
           {required && <span className="text-red-500 required-dot">*</span>}
         </label>

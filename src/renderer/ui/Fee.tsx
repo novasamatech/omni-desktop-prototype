@@ -17,6 +17,7 @@ type Props = {
   address: string;
   amount: string;
   withDeposit?: boolean;
+  withTransferable?: boolean;
 };
 
 const Fee: React.FC<Props> = ({
@@ -25,6 +26,7 @@ const Fee: React.FC<Props> = ({
   address,
   amount,
   withDeposit,
+  withTransferable,
 }) => {
   const [transactionFee, setTransactionFee] = useState('0');
   const [isLoading, setIsLoading] = useState(false);
@@ -74,7 +76,7 @@ const Fee: React.FC<Props> = ({
 
   return (
     <div className="flex flex-col text-gray-500 text-sm gap-1">
-      {defaultAsset && wallet && connection && (
+      {defaultAsset && wallet && connection && withTransferable && (
         <div className="flex justify-between">
           <div>Transferable balance</div>
           <div>
