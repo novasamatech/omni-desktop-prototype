@@ -158,6 +158,7 @@ const MatrixProvider: React.FC<Props> = ({
 
   const onSyncEnd = async () => {
     const timeline = await matrix.timelineEvents();
+    console.log('💛 ===> onSyncEnd - ', timeline);
     if (timeline.length === 0) return;
 
     const dbNotifications = await db.mxNotifications
