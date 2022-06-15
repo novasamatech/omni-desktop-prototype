@@ -1,7 +1,8 @@
+/* eslint-disable promise/catch-or-return */
 /* eslint-disable promise/always-return */
 import React, { ReactNode, useEffect, useState } from 'react';
 import { BN } from '@polkadot/util';
-import { Asset, Wallet, MultisigWallet } from '../db/types';
+import { Wallet, MultisigWallet } from '../db/types';
 import { getAddressFromWallet } from '../utils/account';
 import { formatBalance } from '../utils/assets';
 import { Connection } from '../store/connections';
@@ -12,34 +13,37 @@ import Balance from './Balance';
 
 type Props = {
   wallet?: Wallet | MultisigWallet;
-  asset?: Asset;
   connection?: Connection;
   address: string;
   amount: string;
   withDeposit?: boolean;
+  withTransferable?: boolean;
 };
 
 const Fee: React.FC<Props> = ({
   wallet,
-  asset,
   connection,
   address,
   amount,
   withDeposit,
+  withTransferable,
 }) => {
   const [transactionFee, setTransactionFee] = useState('0');
+  const [isLoading, setIsLoading] = useState(false);
 
   const defaultAsset = connection?.network.assets[0];
 
   useEffect(() => {
-    if (!wallet || !connection || !asset || !validateAddress(address)) {
-      setTransactionFee('');
+    if (!wallet || !connection || !defaultAsset || !validateAddress(address)) {
+      setTransactionFee('0');
       return;
     }
 
+    setIsLoading(true);
+
     const fromAddress = getAddressFromWallet(wallet, connection.network);
 
-    getTxExtrinsic(connection, asset, address, amount)
+    getTxExtrinsic(connection, defaultAsset, address, amount)
       .paymentInfo(fromAddress)
       .then(({ partialFee }) => {
         const formattedValue = formatBalance(
@@ -50,9 +54,12 @@ const Fee: React.FC<Props> = ({
       })
       .catch((error) => {
         console.warn(error);
-        setTransactionFee('');
+        setTransactionFee('0');
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
-  }, [connection, amount, address, asset, defaultAsset, wallet]);
+  }, [connection, amount, address, defaultAsset, wallet]);
 
   const depositValue = (): string | ReactNode => {
     if (!connection) {
@@ -69,17 +76,23 @@ const Fee: React.FC<Props> = ({
 
   return (
     <div className="flex flex-col text-gray-500 text-sm gap-1">
-      {asset && wallet && connection && (
+      {defaultAsset && wallet && connection && withTransferable && (
         <div className="flex justify-between">
           <div>Transferable balance</div>
           <div>
-            <Balance asset={asset} wallet={wallet} connection={connection} />
+            <Balance
+              asset={defaultAsset}
+              wallet={wallet}
+              connection={connection}
+            />
           </div>
         </div>
       )}
       <div className="flex justify-between">
         <div>Transaction fee</div>
-        <div>{transactionFee || <Shimmer width="80px" height="20px" />}</div>
+        <div>
+          {isLoading ? <Shimmer width="80px" height="20px" /> : transactionFee}
+        </div>
       </div>
       {withDeposit && (
         <>

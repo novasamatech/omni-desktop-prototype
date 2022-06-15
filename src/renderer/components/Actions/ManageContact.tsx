@@ -5,6 +5,7 @@ import { useParams } from 'react-router-dom';
 import { useHistory } from 'react-router';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { Dialog } from '@headlessui/react';
+import { useLiveQuery } from 'dexie-react-hooks';
 
 import InputText from '../../ui/Input';
 import Button from '../../ui/Button';
@@ -32,6 +33,8 @@ const ManageContact: React.FC = () => {
 
   const [contact, setContact] = useState<Contact>();
   const [isDialogOpen, toggleDialogOpen] = useToggle(false);
+
+  const contacts = useLiveQuery(() => db.contacts.toArray());
 
   const {
     handleSubmit,
@@ -104,6 +107,17 @@ const ManageContact: React.FC = () => {
     }
   };
 
+  const checkAddressExists = (address: string) => {
+    const publicKey = toPublicKey(address);
+
+    return !contacts
+      ?.filter((c) => c.id?.toString() !== id)
+      ?.some((c) => c.mainAccounts[0].publicKey === publicKey);
+  };
+
+  const validateAddressField = (address: string) =>
+    validateAddress(address) && checkAddressExists(address);
+
   return (
     <>
       <h2 className="font-light text-xl p-4">
@@ -115,7 +129,7 @@ const ManageContact: React.FC = () => {
           <Controller
             name="address"
             control={control}
-            rules={{ required: true, validate: validateAddress }}
+            rules={{ required: true, validate: validateAddressField }}
             render={({ field: { onChange, onBlur, value } }) => (
               <InputText
                 onChange={onChange}
@@ -130,7 +144,7 @@ const ManageContact: React.FC = () => {
             )}
           />
           <ErrorMessage visible={errors.address?.type === ErrorTypes.VALIDATE}>
-            The address is not valid, please type it again
+            The address is not valid or already in use, please type it again
           </ErrorMessage>
           <ErrorMessage visible={errors.address?.type === ErrorTypes.REQUIRED}>
             The address is required

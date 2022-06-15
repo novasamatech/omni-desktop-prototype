@@ -1,4 +1,4 @@
-import React, { InputHTMLAttributes } from 'react';
+import React, { InputHTMLAttributes, ReactNode } from 'react';
 import Identicon from '@polkadot/react-identicon';
 import cn from 'classnames';
 
@@ -7,6 +7,7 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   address?: boolean;
   invalid?: boolean;
   inputClassName?: string;
+  corner?: ReactNode;
 }
 
 const InputText: React.FC<InputProps> = ({
@@ -22,6 +23,7 @@ const InputText: React.FC<InputProps> = ({
   inputClassName = '',
   value,
   invalid = false,
+  corner,
   onChange,
   onBlur,
 }) => {
@@ -34,14 +36,17 @@ const InputText: React.FC<InputProps> = ({
       )}
     >
       {label && (
-        <div className="flex justify-between">
-          <label htmlFor={id} className="text-gray-500 text-sm mb-2">
+        <div className="flex justify-between items-start">
+          <label htmlFor={id} className="text-gray-500 text-sm mb-1">
             {label}{' '}
             {required && <span className="text-red-500 required-dot">*</span>}
           </label>
-          {address && (
-            <Identicon theme="polkadot" value={value?.toString()} size={16} />
-          )}
+          <div className="flex items-start">
+            {corner}
+            {address && (
+              <Identicon theme="polkadot" value={value?.toString()} size={16} />
+            )}
+          </div>
         </div>
       )}
       <input

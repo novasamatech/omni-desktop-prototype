@@ -18,19 +18,6 @@ const SecondColumn: React.FC = () => {
           </Link>
         </li>
         <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
-          <Link className="inline-block p-2 w-full" to={Routes.CREATE_WALLET}>
-            Add wallet
-          </Link>
-        </li>
-        <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
-          <Link
-            className="inline-block p-2 w-full"
-            to={Routes.CREATE_MULTISIG_WALLET}
-          >
-            Add multisig wallet
-          </Link>
-        </li>
-        <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
           <Link className="inline-block p-2 w-full" to={Routes.NETWORK_LIST}>
             Networks
           </Link>
@@ -53,11 +40,6 @@ const SecondColumn: React.FC = () => {
         <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
           <Link className="inline-block p-2 w-full" to={Routes.CONTACTS}>
             Contacts
-          </Link>
-        </li>
-        <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
-          <Link className="inline-block p-2 w-full" to={Routes.ADD_CONTACT}>
-            Add contact
           </Link>
         </li>
       </ul>
