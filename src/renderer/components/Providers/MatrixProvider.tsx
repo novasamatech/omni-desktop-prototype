@@ -87,10 +87,11 @@ const MatrixProvider: React.FC<Props> = ({
   const updateInitEvent = async (eventData: MSTPayload) => {
     const content = eventData.content as MstParams;
     const transactionStatus = Statuses[eventData.type];
+    const senderPublicKey = toPublicKey(content.senderAddress);
 
     const wallets = await db.wallets.toArray();
     const wallet = wallets?.find(
-      (w) => w.mainAccounts[0].publicKey === toPublicKey(content.senderAddress),
+      (w) => w.mainAccounts[0].publicKey === senderPublicKey,
     );
 
     if (!wallet?.id) return;

@@ -707,7 +707,7 @@ class Matrix implements ISecureMessenger {
       const isMstEvent = omniEvents.includes(event.getType() as OmniMstEvents);
 
       if (!isMstEvent || !this.isOmniRoom(room.name)) return;
-      console.log(event.getId());
+
       this.subscribeHandlers?.onMstEvent(
         this.createEventPayload<MSTPayload>(event),
       );
