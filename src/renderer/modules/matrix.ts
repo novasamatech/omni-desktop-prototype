@@ -277,7 +277,7 @@ class Matrix implements ISecureMessenger {
     try {
       await this.matrixClient.leave(roomId);
     } catch (error) {
-      throw this.createError(`Failed to join room - ${roomId}`, error);
+      throw this.createError(`Failed to leave room - ${roomId}`, error);
     }
   }
 
@@ -670,9 +670,13 @@ class Matrix implements ISecureMessenger {
           }),
         );
       } catch (error) {
-        console.info(
-          'Failed to get room summary, you have left or room is deleted',
-        );
+        console.info('The person who invited you has already left');
+
+        try {
+          await this.leaveRoom(roomId);
+        } catch (leaveMsg) {
+          console.info(leaveMsg);
+        }
       }
     });
   }
