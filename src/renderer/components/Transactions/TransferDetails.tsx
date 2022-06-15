@@ -38,6 +38,7 @@ import {
 } from '../../utils/transactions';
 import { copyToClipboard } from '../../utils/strings';
 import Fee from '../../ui/Fee';
+import Balance from '../../ui/Balance';
 
 const TransferDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -76,6 +77,12 @@ const TransferDetails: React.FC = () => {
         transaction.data.callData &&
         availableWallets.length > 0)) &&
     !isConfirmed;
+
+  useEffect(() => {
+    setSignWith(undefined);
+    setCurrentTransaction(undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
@@ -224,11 +231,29 @@ const TransferDetails: React.FC = () => {
 
           <div className="max-h-[450px] overflow-y-auto mb-6">
             <div className="text-sm text-gray-500 mb-2">Selected account</div>
-            <div>{transaction?.wallet.name}</div>
-            <div>
-              {network && transaction && (
+            <div className="flex justify-between items-center">
+              <div>
+                <div>{transaction?.wallet.name}</div>
                 <div>
-                  <Address address={transaction.address} />
+                  {network && transaction && (
+                    <div>
+                      <Address address={transaction.address} />
+                    </div>
+                  )}
+                </div>
+              </div>
+              {connection && transaction && currentAsset && (
+                <div className="bg-gray-200 py-1 px-2 rounded-lg">
+                  <div className="flex justify-end text-gray-500 uppercase text-xs font-normal">
+                    Transferable
+                  </div>
+                  <div className="flex justify-end text-black text-sm">
+                    <Balance
+                      asset={currentAsset}
+                      wallet={transaction.wallet}
+                      connection={connection}
+                    />
+                  </div>
                 </div>
               )}
             </div>
@@ -311,7 +336,6 @@ const TransferDetails: React.FC = () => {
                 <hr className="my-5" />
                 <Fee
                   wallet={transaction.wallet}
-                  asset={currentAsset}
                   connection={connection}
                   address={transaction.data.address}
                   amount={transaction.data.amount}
