@@ -1,6 +1,7 @@
 /* eslint-disable promise/always-return */
 import React, { useCallback, useEffect, useState } from 'react';
 import { useRecoilValue } from 'recoil';
+import { nanoid } from 'nanoid';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { useHistory } from 'react-router';
 import { Connection, connectionState } from '../../store/connections';
@@ -174,6 +175,7 @@ const Transfer: React.FC = () => {
 
       const assetId = getAssetId(currentAsset);
       const wallet = w as MultisigWallet;
+      const salt = nanoid();
 
       if (
         type === TransactionType.MULTISIG_TRANSFER &&
@@ -184,6 +186,7 @@ const Transfer: React.FC = () => {
       ) {
         matrix.setRoom(wallet.matrixRoomId);
         matrix.mstInitiate({
+          salt,
           senderAddress: addressFrom,
           chainId: currentNetwork.network.chainId,
           callHash,
@@ -199,6 +202,7 @@ const Transfer: React.FC = () => {
         address: addressFrom,
         wallet,
         data: {
+          salt,
           callHash,
           callData,
           assetId,

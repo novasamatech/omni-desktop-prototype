@@ -21,17 +21,19 @@ const Chat: React.FC = () => {
   };
   const handleInit = () => {
     matrix.mstInitiate({
+      salt: '123',
       callData: '0xdata',
       callHash: '0xhash',
       chainId: '0xchain',
-      senderAddress: 'SENDER',
+      senderAddress: '5GmedEVixRJoE8TjMePLqz7DnnQG1d5517sXdiAvAF2t7EYW',
     });
   };
   const handleApprove = () => {
     matrix.mstApprove({
+      salt: '123',
       callHash: '0xhash',
       chainId: '0xchain',
-      senderAddress: 'SENDER',
+      senderAddress: '5GmedEVixRJoE8TjMePLqz7DnnQG1d5517sXdiAvAF2t7EYW',
     });
   };
 

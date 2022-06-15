@@ -53,10 +53,12 @@ type ChatProps = {
 const Chat: React.FC<ChatProps> = ({ network, transaction }) => {
   const { matrix, notifications } = useMatrix();
 
-  const txNotifs = notifications.filter(
-    (notif) =>
-      (notif.content as MstParams).callHash === transaction?.data.callHash,
-  );
+  const txNotifs = notifications.filter((notif) => {
+    const { salt, callHash } = notif.content as MstParams;
+    return (
+      callHash === transaction?.data.callHash && salt === transaction?.data.salt
+    );
+  });
 
   const contacts =
     network &&

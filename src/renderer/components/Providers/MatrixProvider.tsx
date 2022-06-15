@@ -104,6 +104,7 @@ const MatrixProvider: React.FC<Props> = ({
       chainId: content.chainId,
       type: TransactionType.MULTISIG_TRANSFER,
       data: {
+        salt: content.salt,
         callHash: content.callHash,
         callData: content.callData,
         approvals: createApprovals(wallet as MultisigWallet),
