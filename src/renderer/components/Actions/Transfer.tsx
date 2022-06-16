@@ -178,7 +178,7 @@ const Transfer: React.FC = () => {
 
     const transactions = await db.transactions.toArray();
     const mst = getExistingMstTransactions(transactions, callHash);
-    setExistingMst(mst);
+    const mstMatches: Transaction[] = [];
 
     const newTransactions = selectedWallets.reduce((acc, w) => {
       const addressFrom = getAddressFromWallet(w, currentNetwork.network);
@@ -191,8 +191,13 @@ const Transfer: React.FC = () => {
       const wallet = w as MultisigWallet;
       const salt = nanoid();
 
-      const isMstExists = mst.some((tx) => tx.data.callHash === callHash);
-      if (type === TransactionType.MULTISIG_TRANSFER && isMstExists) return acc;
+      const match = mst.find(
+        (tx) => addressFrom === tx.address && tx.data.callHash === callHash,
+      );
+      if (type === TransactionType.MULTISIG_TRANSFER && match) {
+        mstMatches.push(match);
+        return acc;
+      }
 
       if (
         type === TransactionType.MULTISIG_TRANSFER &&
@@ -237,12 +242,13 @@ const Transfer: React.FC = () => {
 
     const id = await db.transactions.bulkAdd(newTransactions);
 
-    if (mst.length > 0) {
+    if (mstMatches.length > 0) {
+      setExistingMst(mstMatches);
       toggleDialogOpen();
     } else if (newTransactions.length > 1) {
-      history.push(withId(Routes.TRANSFER_DETAILS, id));
-    } else {
       history.push(Routes.BASKET);
+    } else {
+      history.push(withId(Routes.TRANSFER_DETAILS, id));
     }
     reset();
   };
