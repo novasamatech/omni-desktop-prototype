@@ -248,6 +248,7 @@ const ShowCode: React.FC = () => {
               connection={connection}
               address={transaction.data.address}
               amount={transaction.data.amount}
+              withTransferable
               withDeposit={
                 isMultisig(transaction.wallet) &&
                 getApprovals(transaction).length === 0
