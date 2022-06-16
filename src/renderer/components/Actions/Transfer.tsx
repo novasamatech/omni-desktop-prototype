@@ -177,27 +177,29 @@ const Transfer: React.FC = () => {
     if (!currentNetwork || !currentAsset) return;
 
     const transactions = await db.transactions.toArray();
-    const mst = getExistingMstTransactions(transactions, callHash);
     const mstMatches: Transaction[] = [];
+    const mst = getExistingMstTransactions(
+      transactions,
+      currentNetwork.network.chainId,
+      callHash,
+    );
 
     const newTransactions = selectedWallets.reduce((acc, w) => {
       const addressFrom = getAddressFromWallet(w, currentNetwork.network);
-
-      const type = isMultisig(w)
-        ? TransactionType.MULTISIG_TRANSFER
-        : TransactionType.TRANSFER;
+      const match = mst.find(
+        (tx) => addressFrom === tx.address && tx.data.callHash === callHash,
+      );
+      if (match) {
+        mstMatches.push(match);
+        return acc;
+      }
 
       const assetId = getAssetId(currentAsset);
       const wallet = w as MultisigWallet;
       const salt = nanoid();
-
-      const match = mst.find(
-        (tx) => addressFrom === tx.address && tx.data.callHash === callHash,
-      );
-      if (type === TransactionType.MULTISIG_TRANSFER && match) {
-        mstMatches.push(match);
-        return acc;
-      }
+      const type = isMultisig(w)
+        ? TransactionType.MULTISIG_TRANSFER
+        : TransactionType.TRANSFER;
 
       if (
         type === TransactionType.MULTISIG_TRANSFER &&
@@ -367,8 +369,11 @@ const Transfer: React.FC = () => {
       >
         <DialogContent>
           <Dialog.Title as="h3" className="font-light text-xl">
-            Transfers already exist
+            Some transfers were not created
           </Dialog.Title>
+          <h2 className="mt-4 mb-2">
+            These transfers already exist and ready to be signed
+          </h2>
           <ul className="mt-2 mb-4 p-2 flex flex-col gap-3 bg-gray-200 rounded-lg">
             {existingMst.map((tx) => (
               <li key={tx.id} className="flex items-center justify-between">

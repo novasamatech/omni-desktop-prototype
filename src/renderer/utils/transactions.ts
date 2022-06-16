@@ -266,6 +266,7 @@ export const getTxExtrinsic = (
 
 export const getExistingMstTransactions = (
   transactions: Transaction[] = [],
+  chainId: HexString,
   callHash?: HexString,
 ): Transaction[] => {
   if (!callHash) return [];
@@ -276,6 +277,7 @@ export const getExistingMstTransactions = (
       [TransactionStatus.CREATED, TransactionStatus.PENDING].includes(
         tx.status,
       ) &&
+      tx.chainId === chainId &&
       tx.data.callHash === callHash,
   );
 };
