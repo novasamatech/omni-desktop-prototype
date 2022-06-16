@@ -44,9 +44,9 @@ const MstNotif: React.FC<Props> = ({ notif }) => {
     }
 
     const content = notif.content as MstParams;
-
     const transaction = transactions?.find(
-      (t) => t.data.callHash === content.callHash,
+      (t) =>
+        t.data.callHash === content.callHash && t.data.salt === content.salt,
     );
 
     if (transaction?.id) {

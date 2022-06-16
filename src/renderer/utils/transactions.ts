@@ -4,7 +4,6 @@ import { U8aFixed } from '@polkadot/types';
 import { PalletMultisigMultisig } from '@polkadot/types/lookup';
 import { Call } from '@polkadot/types/interfaces';
 import { SubmittableExtrinsic } from '@polkadot/api/types';
-
 import { Connection } from '../store/connections';
 import {
   Asset,
@@ -18,15 +17,10 @@ import {
   TransactionType,
   Wallet,
 } from '../db/types';
-import {
-  formatAddress,
-  getAddressFromWallet,
-  createApprovals,
-  toPublicKey,
-} from './account';
+import { createApprovals, getAddressFromWallet, toPublicKey } from './account';
 import { db } from '../db/db';
 import { formatAmount, formatBalance, getAssetById } from './assets';
-import { Approvals } from '../../common/types';
+import { Approvals, HexString } from '../../common/types';
 
 type MultisigTransaction = {
   callHash: U8aFixed;
@@ -154,36 +148,20 @@ export const updateTransactions = async (
     connection.api,
     getAddressFromWallet(wallet, connection.network),
   );
+  const activeTxs = transactions.filter((tx) =>
+    [TransactionStatus.PENDING, TransactionStatus.CREATED].includes(tx.status),
+  );
   pendingTransactions.forEach((p) => {
-    const savedTransaction = transactions.find((s) => isSameTransaction(s, p));
+    const activeTransaction = activeTxs.find((s) => isSameTransaction(s, p));
 
-    if (savedTransaction) {
-      db.transactions.put(updateTransactionPayload(savedTransaction, p));
+    if (activeTransaction) {
+      db.transactions.put(updateTransactionPayload(activeTransaction, p));
     } else {
       db.transactions.add(
         createTransactionPayload(p, connection.network, wallet),
       );
     }
   });
-};
-
-export const updateTransaction = async (
-  transaction: Transaction,
-  connection: Connection,
-) => {
-  const pendingTransactions = await getPendingTransactionsFromChain(
-    connection.api,
-    formatAddress(transaction.address),
-  );
-  const pendingTransaction = pendingTransactions.find((p) =>
-    isSameTransaction(transaction, p),
-  );
-
-  if (!pendingTransaction) return;
-
-  db.transactions.put(
-    updateTransactionPayload(transaction, pendingTransaction),
-  );
 };
 
 export const isApproved = (
@@ -283,5 +261,21 @@ export const getTxExtrinsic = (
   return connection.api.tx.balances.transfer(
     address,
     formatAmount(amount, asset.precision),
+  );
+};
+
+export const getExistingMstTransactions = (
+  transactions: Transaction[] = [],
+  callHash?: HexString,
+): Transaction[] => {
+  if (!callHash) return [];
+
+  return transactions.filter(
+    (tx) =>
+      tx.type === TransactionType.MULTISIG_TRANSFER &&
+      [TransactionStatus.CREATED, TransactionStatus.PENDING].includes(
+        tx.status,
+      ) &&
+      tx.data.callHash === callHash,
   );
 };

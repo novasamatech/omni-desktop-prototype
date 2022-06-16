@@ -115,7 +115,10 @@ const MatrixProvider: React.FC<Props> = ({
   const updateApproveEvent = async (eventData: MSTPayload) => {
     const content = eventData.content as MstParams;
     const transactionStatus = Statuses[eventData.type];
-    const tx = await db.transactions.get({ 'data.callHash': content.callHash });
+    const tx = await db.transactions.get({
+      'data.callHash': content.callHash,
+      'data.salt': content.salt,
+    });
 
     if (!tx?.id) return;
 
