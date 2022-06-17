@@ -104,6 +104,7 @@ const MatrixProvider: React.FC<Props> = ({
       chainId: content.chainId,
       type: TransactionType.MULTISIG_TRANSFER,
       data: {
+        salt: content.salt,
         callHash: content.callHash,
         callData: content.callData,
         approvals: createApprovals(wallet as MultisigWallet),
@@ -114,7 +115,10 @@ const MatrixProvider: React.FC<Props> = ({
   const updateApproveEvent = async (eventData: MSTPayload) => {
     const content = eventData.content as MstParams;
     const transactionStatus = Statuses[eventData.type];
-    const tx = await db.transactions.get({ 'data.callHash': content.callHash });
+    const tx = await db.transactions.get({
+      'data.callHash': content.callHash,
+      'data.salt': content.salt,
+    });
 
     if (!tx?.id) return;
 

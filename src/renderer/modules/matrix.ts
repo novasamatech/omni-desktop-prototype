@@ -699,18 +699,25 @@ class Matrix implements ISecureMessenger {
   }
 
   private handleOmniEvents(): void {
-    const omniEvents = Object.values(OmniMstEvents);
-
-    this.matrixClient.on(RoomEvent.Timeline, (event, room) => {
-      if (event.getSender() === this.userId) return;
-
-      const isMstEvent = omniEvents.includes(event.getType() as OmniMstEvents);
+    const eventHandler = (event: MatrixEvent, room: Room) => {
+      const isMstEvent = Object.values(OmniMstEvents).includes(
+        event.getType() as OmniMstEvents,
+      );
 
       if (!isMstEvent || !this.isOmniRoom(room.name)) return;
 
       this.subscribeHandlers?.onMstEvent(
         this.createEventPayload<MSTPayload>(event),
       );
+    };
+
+    this.matrixClient.on(RoomEvent.Timeline, (event, room) => {
+      if (event.getSender() === this.userId) return;
+      eventHandler(event, room);
+    });
+    this.matrixClient.on(RoomEvent.LocalEchoUpdated, (event, room) => {
+      if (event.getSender() !== this.userId || event.status !== 'sent') return;
+      eventHandler(event, room);
     });
   }
 

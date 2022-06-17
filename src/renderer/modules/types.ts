@@ -95,6 +95,7 @@ export enum OmniMstEvents {
 }
 
 export type MstParams = {
+  salt: string;
   senderAddress: string;
   chainId: HexString;
   callHash: HexString;

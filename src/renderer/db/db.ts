@@ -32,7 +32,7 @@ export class OmniDexie extends Dexie {
       chains: '++id,&chainId,parentId,name,activeType',
       connections: '++id,&chainId,activeType',
       contacts: '++id,name,secureProtocolId',
-      transactions: '++id,chainId,address,type,status,data.callHash',
+      transactions: '++id,chainId,address,type,status,data.callHash,data.salt',
       mxCredentials: '++id,userId,isLoggedIn',
       mxNotifications: '++id,sender,client',
     });

@@ -1,8 +1,10 @@
 /* eslint-disable promise/always-return */
 import React, { useCallback, useEffect, useState } from 'react';
 import { useRecoilValue } from 'recoil';
+import { nanoid } from 'nanoid';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { useHistory } from 'react-router';
+import { Dialog } from '@headlessui/react';
 import { Connection, connectionState } from '../../store/connections';
 import { selectedWalletsState } from '../../store/selectedWallets';
 import Button from '../../ui/Button';
@@ -13,6 +15,7 @@ import { db } from '../../db/db';
 import {
   Asset,
   MultisigWallet,
+  Transaction,
   TransactionStatus,
   TransactionType,
 } from '../../db/types';
@@ -27,10 +30,16 @@ import { ErrorTypes, Routes, withId } from '../../../common/constants';
 import { getAssetId } from '../../utils/assets';
 import { useMatrix } from '../Providers/MatrixProvider';
 import { HexString } from '../../../common/types';
-import { getTxExtrinsic } from '../../utils/transactions';
+import {
+  getExistingMstTransactions,
+  getTxExtrinsic,
+} from '../../utils/transactions';
 import InputSelect from '../../ui/InputSelect';
 import Fee from '../../ui/Fee';
 import Balance from '../../ui/Balance';
+import useToggle from '../../hooks/toggle';
+import { toShortText } from '../../utils/strings';
+import DialogContent from '../../ui/DialogContent';
 
 type TransferForm = {
   address: string;
@@ -41,6 +50,7 @@ const Transfer: React.FC = () => {
   const { matrix } = useMatrix();
   const history = useHistory();
 
+  const [isDialogOpen, toggleDialogOpen] = useToggle(false);
   const [currentNetwork, setCurrentNetwork] = useState<Connection | undefined>(
     undefined,
   );
@@ -49,6 +59,7 @@ const Transfer: React.FC = () => {
   );
   const [networkOptions, setNetworkOptions] = useState<OptionType[]>([]);
   const [assetOptions, setAssetOptions] = useState<OptionType[]>([]);
+  const [existingMst, setExistingMst] = useState<Transaction[]>([]);
   const [callHash, setCallHash] = useState<HexString>();
   const [callData, setCallData] = useState<HexString>();
   const [availableContacts, setAvailableContacts] = useState<OptionType[]>([]);
@@ -165,15 +176,30 @@ const Transfer: React.FC = () => {
   }) => {
     if (!currentNetwork || !currentAsset) return;
 
-    const transactions = selectedWallets.map((w) => {
-      const addressFrom = getAddressFromWallet(w, currentNetwork.network);
+    const transactions = await db.transactions.toArray();
+    const mstMatches: Transaction[] = [];
+    const mst = getExistingMstTransactions(
+      transactions,
+      currentNetwork.network.chainId,
+      callHash,
+    );
 
-      const type = isMultisig(w)
-        ? TransactionType.MULTISIG_TRANSFER
-        : TransactionType.TRANSFER;
+    const newTransactions = selectedWallets.reduce((acc, w) => {
+      const addressFrom = getAddressFromWallet(w, currentNetwork.network);
+      const match = mst.find(
+        (tx) => addressFrom === tx.address && tx.data.callHash === callHash,
+      );
+      if (match) {
+        mstMatches.push(match);
+        return acc;
+      }
 
       const assetId = getAssetId(currentAsset);
       const wallet = w as MultisigWallet;
+      const salt = nanoid();
+      const type = isMultisig(w)
+        ? TransactionType.MULTISIG_TRANSFER
+        : TransactionType.TRANSFER;
 
       if (
         type === TransactionType.MULTISIG_TRANSFER &&
@@ -184,6 +210,7 @@ const Transfer: React.FC = () => {
       ) {
         matrix.setRoom(wallet.matrixRoomId);
         matrix.mstInitiate({
+          salt,
           senderAddress: addressFrom,
           chainId: currentNetwork.network.chainId,
           callHash,
@@ -191,7 +218,7 @@ const Transfer: React.FC = () => {
         });
       }
 
-      return {
+      acc.push({
         createdAt: new Date(),
         status: TransactionStatus.CREATED,
         type,
@@ -199,6 +226,7 @@ const Transfer: React.FC = () => {
         address: addressFrom,
         wallet,
         data: {
+          salt,
           callHash,
           callData,
           assetId,
@@ -209,12 +237,34 @@ const Transfer: React.FC = () => {
             ? createApprovals(wallet, currentNetwork.network)
             : null,
         },
-      };
-    });
+      });
 
-    const result = await db.transactions.bulkAdd(transactions);
-    if (result) history.push(withId(Routes.TRANSFER_DETAILS, result));
+      return acc;
+    }, [] as Transaction[]);
+
+    const id = await db.transactions.bulkAdd(newTransactions);
+
+    if (mstMatches.length > 0) {
+      setExistingMst(mstMatches);
+      toggleDialogOpen();
+    } else if (newTransactions.length > 1) {
+      history.push(Routes.BASKET);
+    } else {
+      history.push(withId(Routes.TRANSFER_DETAILS, id));
+    }
     reset();
+  };
+
+  const goToDetails = (txCallHash: string) => {
+    const match = existingMst.find((tx) => tx.data.callHash === txCallHash);
+
+    return () => {
+      if (match?.id) {
+        history.push(withId(Routes.TRANSFER_DETAILS, match.id));
+      } else {
+        console.warn('Transaction not found - ', txCallHash);
+      }
+    };
   };
 
   return (
@@ -310,6 +360,43 @@ const Transfer: React.FC = () => {
           Add transaction
         </Button>
       </form>
+
+      <Dialog
+        as="div"
+        className="relative z-10"
+        open={isDialogOpen}
+        onClose={toggleDialogOpen}
+      >
+        <DialogContent>
+          <Dialog.Title as="h3" className="font-light text-xl">
+            Some transfers were not created
+          </Dialog.Title>
+          <h2 className="mt-4 mb-2">
+            These transfers already exist and ready to be signed
+          </h2>
+          <ul className="mt-2 mb-4 p-2 flex flex-col gap-3 bg-gray-200 rounded-lg">
+            {existingMst.map((tx) => (
+              <li key={tx.id} className="flex items-center justify-between">
+                <span>{tx.wallet.name}</span>
+                <span className="text-sm">{toShortText(tx.data.callHash)}</span>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={goToDetails(tx.data.callHash)}
+                >
+                  Details
+                </Button>
+              </li>
+            ))}
+          </ul>
+
+          <div className=" mt-2 flex justify-between">
+            <Button className="max-w-min" onClick={toggleDialogOpen}>
+              Ok
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
