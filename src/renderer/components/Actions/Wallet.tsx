@@ -394,7 +394,6 @@ const Wallet: React.FC = () => {
             <Button className="max-w-min" onClick={forgetWallet}>
               Forget
             </Button>
-            <button onClick={forgetWallet}>123</button>
           </div>
         </DialogContent>
       </Dialog>
