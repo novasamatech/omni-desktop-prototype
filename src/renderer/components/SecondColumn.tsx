@@ -7,7 +7,8 @@ import { useMatrix } from './Providers/MatrixProvider';
 
 const SecondColumn: React.FC = () => {
   const { matrix } = useMatrix();
-  const selectedAccounts = useRecoilValue(selectedWalletsState);
+  const selectedWallets = useRecoilValue(selectedWalletsState);
+  const hasSelectedWallets = selectedWallets.length > 0;
 
   return (
     <div className="w-60 border-r border-gray-200">
@@ -24,21 +25,6 @@ const SecondColumn: React.FC = () => {
             Networks
           </Link>
         </li>
-
-        {selectedAccounts.length > 0 && (
-          <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
-            <Link className="inline-block p-2 w-full" to={Routes.BALANCES}>
-              Balances
-            </Link>
-          </li>
-        )}
-        {selectedAccounts.length > 0 && (
-          <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
-            <Link className="inline-block p-2 w-full" to={Routes.TRANSFER}>
-              Transfer
-            </Link>
-          </li>
-        )}
         <li className="m-2 hover:bg-black hover:text-white hover:rounded-lg">
           <Link className="inline-block p-2 w-full" to={Routes.CONTACTS}>
             Contacts
@@ -52,6 +38,35 @@ const SecondColumn: React.FC = () => {
           //   </Link>
           // </li>
         )}
+        <li className="m-2">
+          {hasSelectedWallets ? (
+            <Link
+              className="inline-block p-2 w-full hover:bg-black hover:text-white hover:rounded-lg"
+              to={Routes.BALANCES}
+            >
+              Balances
+            </Link>
+          ) : (
+            <span className="inline-block p-2 w-full opacity-60 cursor-not-allowed">
+              Balances
+            </span>
+          )}
+        </li>
+
+        <li className="m-2">
+          {hasSelectedWallets ? (
+            <Link
+              className="inline-block p-2 w-full hover:bg-black hover:text-white hover:rounded-lg"
+              to={Routes.TRANSFER}
+            >
+              Transfer
+            </Link>
+          ) : (
+            <span className="inline-block p-2 w-full opacity-60 cursor-not-allowed">
+              Transfer
+            </span>
+          )}
+        </li>
       </ul>
     </div>
   );
