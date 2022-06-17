@@ -3,6 +3,7 @@ import { useHistory, useParams } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { Dialog } from '@headlessui/react';
+import { useSetRecoilState } from 'recoil';
 import Button from '../../ui/Button';
 import InputText from '../../ui/Input';
 import { Contact, MultisigWallet } from '../../db/types';
@@ -21,6 +22,7 @@ import {
   combinedContacts,
 } from '../../utils/account';
 import { RoomParams } from '../../modules/types';
+import { selectedWalletsState } from '../../store/selectedWallets';
 
 type DialogTypes = 'forget' | 'room' | 'mst' | 'create';
 
@@ -105,6 +107,7 @@ const ManageMultisigWallet: React.FC = () => {
   const [isRoomCreating, setIsRoomCreating] = useState(false);
 
   const [isDialogOpen, toggleDialogOpen] = useToggle(false);
+  const setSelectedWallets = useSetRecoilState(selectedWalletsState);
 
   const contacts = useLiveQuery(() => db.contacts.toArray()) || [];
   const wallets = useLiveQuery(() => db.wallets.toArray());
@@ -301,11 +304,15 @@ const ManageMultisigWallet: React.FC = () => {
     setSelectedContacts(newContacts);
   };
 
-  const forgetMultisigWallet = () => {
+  const forgetMultisigWallet = async () => {
     if (id) {
-      db.wallets.delete(Number(id));
-      history.push(Routes.WALLETS);
+      await db.wallets.delete(Number(id));
+      setSelectedWallets((selectedWallets) =>
+        selectedWallets.filter((w) => w.id && w.id !== Number(id)),
+      );
     }
+    toggleDialogOpen();
+    history.push(Routes.WALLETS);
   };
 
   const isContactSelected = (contact: Contact) => {

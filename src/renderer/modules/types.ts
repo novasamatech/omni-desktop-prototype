@@ -1,4 +1,4 @@
-import { EventType, Room } from 'matrix-js-sdk';
+import { EventType, MatrixEvent, Room } from 'matrix-js-sdk';
 import { HexString } from '../../common/types';
 
 // =====================================================
@@ -24,8 +24,9 @@ export interface ISecureMessenger {
   invite: (roomId: string, signatoryId: string) => Promise<void | never>;
   listOfOmniRooms: (type: Membership.INVITE | Membership.JOIN) => Room[];
   setRoom: (roomId: string) => void;
-  timelineEvents: () => Promise<MSTPayload[] | never>;
+  readTimeline: () => Promise<MSTPayload[] | never>;
   sendMessage: (message: string) => void;
+  markAsRead: (event: MatrixEvent) => Promise<void | never>;
   setupSubscribers: (handlers: Callbacks) => void;
   clearSubscribers: () => void;
   checkUserExists: (userId: string) => Promise<boolean>;

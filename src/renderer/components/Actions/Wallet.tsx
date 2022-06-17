@@ -7,7 +7,6 @@ import { u8aToHex } from '@polkadot/util';
 import { Dialog } from '@headlessui/react';
 import { useSetRecoilState } from 'recoil';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
-
 import { db } from '../../db/db';
 import { Account, ChainAccount, Chain } from '../../db/types';
 import InputText from '../../ui/Input';
@@ -22,6 +21,7 @@ import { selectedWalletsState } from '../../store/selectedWallets';
 import { validateAddress } from '../../utils/validation';
 import ErrorMessage from '../../ui/ErrorMessage';
 import { formatAddress } from '../../utils/account';
+import useToggle from '../../hooks/toggle';
 
 const enum AccountTypes {
   MAIN = 'MAIN',
@@ -62,14 +62,15 @@ const Wallet: React.FC = () => {
   const [name, setName] = useState('');
   const [networkOptions, setNetworkOptions] = useState<OptionType[]>([]);
   const [accountNetwork, setAccountNetwork] = useState<string>();
-  // const [networkType, setNetworkType] = useState<string>();
   const [accountType, setAccountType] = useState(AccountTypes.MAIN);
   const [accounts, setAccounts] = useState<
-    Array<{
+    {
       account: Account | ChainAccount | null;
       network: Chain;
-    }>
+    }[]
   >();
+
+  const [isDialogOpen, toggleDialogOpen] = useToggle(false);
   const setSelectedWallets = useSetRecoilState(selectedWalletsState);
 
   const networks = useLiveQuery(() => db.chains.toArray());
@@ -81,8 +82,6 @@ const Wallet: React.FC = () => {
     }
   }, [wallet]);
 
-  const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
-
   const forgetWallet = async () => {
     if (wallet?.id) {
       await db.wallets.delete(wallet.id);
@@ -90,8 +89,7 @@ const Wallet: React.FC = () => {
         selectedWallets.filter((w) => w.id !== wallet.id),
       );
     }
-
-    setIsRemoveDialogOpen(false);
+    toggleDialogOpen();
     history.push(Routes.WALLETS);
   };
 
@@ -187,37 +185,32 @@ const Wallet: React.FC = () => {
       (c) => c.chainId === accountNetwork,
     );
 
-    if (address && wallet?.id) {
-      if (
-        accountType === AccountTypes.CHAIN &&
-        doesntExists &&
-        accountNetwork
-      ) {
-        await db.wallets.update(wallet.id, {
-          chainAccounts: [
-            ...wallet.chainAccounts,
-            {
-              accountId: formatAddress(address),
-              chainId: accountNetwork,
-              publicKey: publicKeyHex,
-            },
-          ],
-        });
+    if (!address || !wallet?.id) return;
+    if (accountType === AccountTypes.CHAIN && doesntExists && accountNetwork) {
+      await db.wallets.update(wallet.id, {
+        chainAccounts: [
+          ...wallet.chainAccounts,
+          {
+            accountId: formatAddress(address),
+            chainId: accountNetwork,
+            publicKey: publicKeyHex,
+          },
+        ],
+      });
 
-        setAccountNetwork(undefined);
-      } else if (accountType === AccountTypes.MAIN) {
-        // TODO: add support for main accounts of different types
-        await db.wallets.update(wallet.id, {
-          mainAccounts: [
-            {
-              accountId: address,
-              publicKey: publicKeyHex,
-            },
-          ],
-        });
+      setAccountNetwork(undefined);
+    } else if (accountType === AccountTypes.MAIN) {
+      // TODO: add support for main accounts of different types
+      await db.wallets.update(wallet.id, {
+        mainAccounts: [
+          {
+            accountId: address,
+            publicKey: publicKeyHex,
+          },
+        ],
+      });
 
-        reset();
-      }
+      reset();
     }
   };
 
@@ -278,11 +271,7 @@ const Wallet: React.FC = () => {
           <Button size="lg" disabled={name === wallet?.name} type="submit">
             Update
           </Button>
-          <Button
-            className="ml-3"
-            size="lg"
-            onClick={() => setIsRemoveDialogOpen(true)}
-          >
+          <Button className="ml-3" size="lg" onClick={toggleDialogOpen}>
             Forget
           </Button>
         </div>
@@ -387,8 +376,8 @@ const Wallet: React.FC = () => {
       <Dialog
         as="div"
         className="relative z-10"
-        open={isRemoveDialogOpen}
-        onClose={() => setIsRemoveDialogOpen(false)}
+        open={isDialogOpen}
+        onClose={toggleDialogOpen}
       >
         <DialogContent>
           <Dialog.Title as="h3" className="font-light text-xl">
@@ -399,13 +388,10 @@ const Wallet: React.FC = () => {
           </div>
 
           <div className=" mt-2 flex justify-between">
-            <Button
-              className="max-w-min"
-              onClick={() => setIsRemoveDialogOpen(false)}
-            >
+            <Button className="max-w-min" onClick={toggleDialogOpen}>
               Cancel
             </Button>
-            <Button className="max-w-min" onClick={() => forgetWallet()}>
+            <Button className="max-w-min" onClick={forgetWallet}>
               Forget
             </Button>
           </div>

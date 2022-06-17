@@ -329,7 +329,7 @@ class Matrix implements ISecureMessenger {
    * @return {Array}
    * @throws {Error}
    */
-  async timelineEvents(): Promise<MSTPayload[] | never> {
+  async readTimeline(): Promise<MSTPayload[] | never> {
     let rooms;
     try {
       rooms = (await this.matrixClient.getJoinedRooms()).joined_rooms;
@@ -338,12 +338,11 @@ class Matrix implements ISecureMessenger {
     }
 
     const omniEvents = Object.values(OmniMstEvents);
-    const omniTimeline = rooms.reduce((acc, roomId) => {
+    const timeline = rooms.reduce((acc, roomId) => {
       const room = this.matrixClient.getRoom(roomId);
-
       if (!room || !this.isOmniRoom(room.name)) return acc;
 
-      const timelineEvents = room
+      const roomTimeline = room
         .getLiveTimeline()
         .getEvents()
         .filter(
@@ -352,16 +351,20 @@ class Matrix implements ISecureMessenger {
             event.getSender() !== this.userId,
         );
 
-      if (timelineEvents.length > 0) {
-        acc.push(...timelineEvents);
+      if (roomTimeline.length > 0) {
+        acc.push(...roomTimeline);
       }
-
       return acc;
     }, [] as MatrixEvent[]);
 
-    return omniTimeline.map((event) =>
-      this.createEventPayload<MSTPayload>(event),
-    );
+    try {
+      const timelineToBeRead = timeline.map((event) => this.markAsRead(event));
+      await Promise.all(timelineToBeRead);
+    } catch (error) {
+      throw this.createError('Failed to read the timeline', error);
+    }
+
+    return timeline.map((event) => this.createEventPayload<MSTPayload>(event));
   }
 
   /**
@@ -377,6 +380,21 @@ class Matrix implements ISecureMessenger {
       await this.matrixClient.sendTextMessage(this.activeRoomId, message);
     } catch (error) {
       throw this.createError('Message not sent', error);
+    }
+  }
+
+  /**
+   * Mark event as read
+   * @param event Matrix event that must be marked as read
+   * @return {Promise}
+   */
+  async markAsRead(event: MatrixEvent): Promise<void | never> {
+    this.checkClientLoggedIn();
+
+    try {
+      await this.matrixClient.sendReadReceipt(event);
+    } catch (error) {
+      throw this.createError('Mark as read failed', error);
     }
   }
 
@@ -559,7 +577,6 @@ class Matrix implements ISecureMessenger {
 
     const inviteRequests = noDuplicates.reduce((acc, matrixAddress) => {
       acc.push(this.matrixClient.invite(roomId, matrixAddress));
-
       return acc;
     }, [] as Promise<unknown>[]);
 

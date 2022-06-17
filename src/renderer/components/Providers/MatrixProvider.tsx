@@ -178,7 +178,7 @@ const MatrixProvider: React.FC<Props> = ({
   };
 
   const onSyncEnd = async () => {
-    const timeline = await matrix.timelineEvents();
+    const timeline = await matrix.readTimeline();
     console.log('💛 ===> onSyncEnd - ', timeline);
     if (timeline.length === 0) return;
 
@@ -223,8 +223,12 @@ const MatrixProvider: React.FC<Props> = ({
     });
   };
 
-  const onMstEvent = (eventData: MSTPayload) => {
+  const onMstEvent = async (eventData: MSTPayload) => {
     const { eventId, ...rest } = eventData;
+
+    const dbNotif = await db.mxNotifications.get(eventId);
+    if (dbNotif) return;
+
     const notif = {
       ...rest,
       id: eventId,
