@@ -260,37 +260,26 @@ const TransferDetails: React.FC = () => {
           </div>
           <div className="text-sm text-gray-500">Operations details:</div>
 
-          {isTransfer && (
+          {transaction && (
             <div className="inline">
-              Transfer{' '}
-              {formatBalanceFromAmount(
-                transaction.data.amount,
-                currentAsset?.precision,
-              )}{' '}
-              {tokenSymbol} to{' '}
-              <Address
-                address={formatRecipientAddress(transaction.data.address)}
-              />
+              {transaction.data.amount && (
+                <>
+                  Transfer{' '}
+                  {formatBalanceFromAmount(
+                    transaction.data.amount,
+                    currentAsset?.precision,
+                  )}{' '}
+                  {tokenSymbol} to
+                  <Address
+                    className="ml-1"
+                    address={formatRecipientAddress(transaction.data.address)}
+                  />
+                </>
+              )}
             </div>
           )}
           {isMultisigTransfer && (
             <>
-              <div className="flex">
-                {transaction.data.amount && (
-                  <>
-                    Transfer{' '}
-                    {formatBalanceFromAmount(
-                      transaction.data.amount,
-                      currentAsset?.precision,
-                    )}{' '}
-                    {tokenSymbol} to
-                    <Address
-                      className="ml-1"
-                      address={formatRecipientAddress(transaction.data.address)}
-                    />
-                  </>
-                )}
-              </div>
               {!!transaction.data.callHash && (
                 <div className="text-xs text-gray-500 mt-3">
                   <div className="flex justify-between items-center">
