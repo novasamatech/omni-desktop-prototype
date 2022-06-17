@@ -96,20 +96,36 @@ const MatrixProvider: React.FC<Props> = ({
 
     if (!wallet?.id) return;
 
-    db.transactions.add({
-      wallet,
-      status: transactionStatus,
-      createdAt: eventData.date,
+    const transaction = await db.transactions.get({
+      'data.callHash': content.callHash,
+      status: TransactionStatus.PENDING,
       address: content.senderAddress,
       chainId: content.chainId,
-      type: TransactionType.MULTISIG_TRANSFER,
-      data: {
-        salt: content.salt,
-        callHash: content.callHash,
-        callData: content.callData,
-        approvals: createApprovals(wallet as MultisigWallet),
-      },
     });
+
+    if (transaction?.id) {
+      db.transactions.update(transaction.id, {
+        data: {
+          ...transaction.data,
+          callData: content.callData,
+        },
+      });
+    } else {
+      db.transactions.add({
+        wallet,
+        status: transactionStatus,
+        createdAt: eventData.date,
+        address: content.senderAddress,
+        chainId: content.chainId,
+        type: TransactionType.MULTISIG_TRANSFER,
+        data: {
+          salt: content.salt,
+          callHash: content.callHash,
+          callData: content.callData,
+          approvals: createApprovals(wallet as MultisigWallet),
+        },
+      });
+    }
   };
 
   const updateApproveEvent = async (eventData: MSTPayload) => {
