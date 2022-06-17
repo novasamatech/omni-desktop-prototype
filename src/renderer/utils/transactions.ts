@@ -1,3 +1,4 @@
+/* eslint-disable consistent-return */
 /* eslint-disable import/prefer-default-export */
 import { ApiPromise } from '@polkadot/api';
 import { U8aFixed } from '@polkadot/types';
@@ -78,6 +79,7 @@ export const updateTransactionPayload = (
     data: {
       ...transaction.data,
       deposit: pendingTransaction.opt.deposit.toString(),
+      depositor: pendingTransaction.opt.depositor.toHex(),
       approvals,
     },
   };
@@ -121,21 +123,22 @@ export const updateTimepointFromBlockchain = async (
   connection: Connection,
 ) => {
   if (!transaction || !connection) return;
-  const pendingTransactions = await getPendingTransactionsFromChain(
-    connection.api,
+
+  const multisigTransaction = await connection.api.query.multisig.multisigs(
     getAddressFromWallet(transaction.wallet, connection.network),
+    transaction.data.callHash as string,
   );
+  if (multisigTransaction.isNone) return;
 
-  const currentTransaction = pendingTransactions.find((p) =>
-    isSameTransaction(transaction, p),
-  );
+  const pendingTransaction = multisigTransaction.unwrap();
 
-  if (!currentTransaction) return;
+  if (!pendingTransaction) return;
+
   db.transactions.put({
     ...transaction,
-    blockHeight: currentTransaction.opt.when.height.toNumber(),
-    blockHash: currentTransaction.opt.when.hash.toHex(),
-    extrinsicIndex: currentTransaction.opt.when.index.toNumber(),
+    blockHeight: pendingTransaction.when.height.toNumber(),
+    blockHash: pendingTransaction.when.hash.toHex(),
+    extrinsicIndex: pendingTransaction.when.index.toNumber(),
   });
 };
 
