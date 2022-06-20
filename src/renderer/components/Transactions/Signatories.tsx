@@ -114,14 +114,20 @@ const Signatories: React.FC<Props> = ({ network, transaction }) => {
 
   const getApproval = (contact: Contact): Approval | undefined => {
     const address = getAddressFromWallet(contact, network);
-    if (!address) return undefined;
+    if (!address) return;
 
     return transaction?.data.approvals[toPublicKey(address)];
   };
 
   const isApproved = (contact: Contact): boolean => {
     const approval = getApproval(contact);
-    return Boolean(approval?.fromBlockChain);
+    const isFinalApprove =
+      transaction &&
+      getApprovals(transaction).length ===
+        Number((transaction?.wallet as MultisigWallet).threshold);
+
+    if (approval?.fromBlockChain) return true;
+    return Boolean(approval?.fromMatrix && isFinalApprove);
   };
 
   useEffect(() => {
