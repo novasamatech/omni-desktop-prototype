@@ -229,7 +229,7 @@ export const decodeCallData = (
   }
   if (method === 'transfer' && section === 'currencies') {
     data.address = decoded.args[0].toString();
-    data.assetId = decoded.args[1].toString();
+    data.assetId = decoded.args[1].toHex();
     const asset = getAssetById(network?.assets || [], data.assetId);
     data.amount = formatBalance(
       decoded.args[2].toString(),
