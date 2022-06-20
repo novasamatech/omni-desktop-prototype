@@ -25,25 +25,16 @@ const STATUS_MAP: Record<StatusType, { text: string; status: StatusType }> = {
     text: 'waiting',
     status: StatusType.WAITING,
   },
-  pending: {
-    text: 'pending',
-    status: StatusType.PENDING,
-  },
   abstained: {
     text: 'abstained',
     status: StatusType.ABSTAINED,
   },
 };
 
-const enum ApproveStatus {
-  WAITING = 'waiting',
-  PENDING = 'pending',
-  SIGNED = 'signed',
-}
 type Signatory = {
   name?: string;
   address: string;
-  approved: ApproveStatus;
+  approved: boolean;
   extrinsicHash: string;
 };
 
@@ -65,10 +56,6 @@ function addKeyFrames(elementsToJump: number) {
 function removeKeyFrames() {
   const style = document.head.querySelector('style');
   style?.sheet?.deleteRule(0);
-}
-
-function isSigned(approve: ApproveStatus): boolean {
-  return approve === ApproveStatus.SIGNED;
 }
 
 type Props = {
@@ -132,24 +119,15 @@ const Signatories: React.FC<Props> = ({ network, transaction }) => {
     return transaction?.data.approvals[toPublicKey(address)];
   };
 
-  const isApproved = (contact: Contact): ApproveStatus => {
+  const isApproved = (contact: Contact): boolean => {
     const approval = getApproval(contact);
-    const isFinalApprove =
-      transaction &&
-      getApprovals(transaction).length ===
-        Number((transaction?.wallet as MultisigWallet).threshold);
-
-    if (approval?.fromBlockChain) return ApproveStatus.SIGNED;
-    if (approval?.fromMatrix && isFinalApprove) return ApproveStatus.SIGNED;
-    if (approval?.fromMatrix && !isFinalApprove) return ApproveStatus.PENDING;
-    return ApproveStatus.WAITING;
+    return Boolean(approval?.fromBlockChain);
   };
 
   useEffect(() => {
     if (!network || !transaction) return;
 
-    const approvesNumber =
-      signatories.filter((s) => isSigned(s.approved))?.length || 0;
+    const approvesNumber = signatories.filter((s) => s.approved)?.length || 0;
     const noNewApproves = !isFirstSetup && approvesNumber === approvals.length;
     if (noNewApproves) return;
 
@@ -185,18 +163,11 @@ const Signatories: React.FC<Props> = ({ network, transaction }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [network, transaction, approvals, signatories]);
 
-  const signatoryStatus = (approved: ApproveStatus): ReactNode => {
-    let result = STATUS_MAP[StatusType.WAITING];
-    if (approved === ApproveStatus.SIGNED) {
-      result = STATUS_MAP[StatusType.SUCCESS];
-    }
-    if (approved === ApproveStatus.PENDING) {
-      result = STATUS_MAP[StatusType.PENDING];
-    }
-    if (
-      approved === ApproveStatus.WAITING &&
-      transaction?.status === TransactionStatus.CONFIRMED
-    ) {
+  const signatoryStatus = (approved: boolean): ReactNode => {
+    let result = approved
+      ? STATUS_MAP[StatusType.SUCCESS]
+      : STATUS_MAP[StatusType.WAITING];
+    if (!approved && transaction?.status === TransactionStatus.CONFIRMED) {
       result = STATUS_MAP[StatusType.ABSTAINED];
     }
     return (
@@ -229,13 +200,13 @@ const Signatories: React.FC<Props> = ({ network, transaction }) => {
               <div
                 className={cn(
                   'flex items-center font-medium text-xs mb-2',
-                  !isSigned(approved) && 'text-gray-500',
+                  !approved && 'text-gray-500',
                 )}
               >
                 {signatoryStatus(approved)}
               </div>
               <div className="flex justify-end gap-1">
-                {isSigned(approved) && extrinsicHash && network && (
+                {extrinsicHash && network && (
                   <Explorer
                     type="extrinsic"
                     param={extrinsicHash}
