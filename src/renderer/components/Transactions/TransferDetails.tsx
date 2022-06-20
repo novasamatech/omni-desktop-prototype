@@ -328,7 +328,6 @@ const TransferDetails: React.FC = () => {
                   connection={connection}
                   address={transaction.data.address}
                   amount={transaction.data.amount}
-                  withTransferable
                   withDeposit={
                     isMultisigTransfer && getApprovals(transaction).length === 0
                   }

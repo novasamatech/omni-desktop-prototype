@@ -180,7 +180,7 @@ export const getApprovals = (transaction: Transaction): string[] =>
     isApproved(a, transaction.data.approvals),
   );
 
-export const isFinalApprove = (transaction: Transaction) =>
+export const checkFinalApprove = (transaction: Transaction) =>
   Number((transaction.wallet as MultisigWallet).threshold) -
     getApprovals(transaction).length ===
   1;
