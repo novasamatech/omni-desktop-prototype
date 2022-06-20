@@ -27,6 +27,7 @@ export const enum AssetType {
 export const enum TransactionType {
   TRANSFER = 'transfer',
   MULTISIG_TRANSFER = 'multisig_transfer',
+  CANCEL = 'cancel',
 }
 
 export const enum TransactionStatus {

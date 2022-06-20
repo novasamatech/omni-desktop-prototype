@@ -2,12 +2,20 @@
 /* eslint-disable promise/always-return */
 import React, { ReactNode, useEffect, useState } from 'react';
 import { BN } from '@polkadot/util';
-import { Wallet, MultisigWallet } from '../db/types';
+import {
+  Wallet,
+  MultisigWallet,
+  Transaction,
+  TransactionType,
+} from '../db/types';
 import { getAddressFromWallet } from '../utils/account';
 import { formatBalance } from '../utils/assets';
 import { Connection } from '../store/connections';
 import { validateAddress } from '../utils/validation';
-import { getTxExtrinsic } from '../utils/transactions';
+import {
+  getMultisigTransferExtrinsic,
+  getTransferExtrinsic,
+} from '../utils/transactions';
 import Shimmer from './Shimmer';
 import Balance from './Balance';
 
@@ -18,11 +26,15 @@ type Props = {
   amount: string;
   withDeposit?: boolean;
   withTransferable?: boolean;
+  transaction?: Transaction;
+  type: TransactionType;
 };
 
 const Fee: React.FC<Props> = ({
   wallet,
   connection,
+  type,
+  transaction,
   address,
   amount,
   withDeposit,
@@ -42,9 +54,12 @@ const Fee: React.FC<Props> = ({
     setIsLoading(true);
 
     const fromAddress = getAddressFromWallet(wallet, connection.network);
+    const tx =
+      type === TransactionType.MULTISIG_TRANSFER && transaction
+        ? getMultisigTransferExtrinsic(connection, transaction)
+        : getTransferExtrinsic(connection, defaultAsset, address, amount);
 
-    getTxExtrinsic(connection, defaultAsset, address, amount)
-      .paymentInfo(fromAddress)
+    tx.paymentInfo(fromAddress)
       .then(({ partialFee }) => {
         const formattedValue = formatBalance(
           partialFee.toString(),
@@ -59,7 +74,7 @@ const Fee: React.FC<Props> = ({
       .finally(() => {
         setIsLoading(false);
       });
-  }, [connection, amount, address, defaultAsset, wallet]);
+  }, [connection, amount, address, defaultAsset, wallet, type, transaction]);
 
   const depositValue = (): string | ReactNode => {
     if (!connection) {

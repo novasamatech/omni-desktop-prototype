@@ -32,7 +32,7 @@ import { useMatrix } from '../Providers/MatrixProvider';
 import { HexString } from '../../../common/types';
 import {
   getExistingMstTransactions,
-  getTxExtrinsic,
+  getTransferExtrinsic,
 } from '../../utils/transactions';
 import InputSelect from '../../ui/InputSelect';
 import Fee from '../../ui/Fee';
@@ -92,7 +92,7 @@ const Transfer: React.FC = () => {
       isValid &&
       firstWallet
     ) {
-      const transferExtrinsic = getTxExtrinsic(
+      const transferExtrinsic = getTransferExtrinsic(
         currentNetwork,
         currentAsset,
         watchAddress,
@@ -349,6 +349,11 @@ const Transfer: React.FC = () => {
           The amount is not valid, please type it again
         </ErrorMessage>
         <Fee
+          type={
+            isMultisig(firstWallet)
+              ? TransactionType.MULTISIG_TRANSFER
+              : TransactionType.TRANSFER
+          }
           wallet={firstWallet}
           connection={currentNetwork}
           address={watchAddress}
