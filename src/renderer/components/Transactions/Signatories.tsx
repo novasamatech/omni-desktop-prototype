@@ -134,8 +134,14 @@ const Signatories: React.FC<Props> = ({ network, transaction }) => {
 
   const isApproved = (contact: Contact): ApproveStatus => {
     const approval = getApproval(contact);
+    const isFinalApprove =
+      transaction &&
+      getApprovals(transaction).length ===
+        Number((transaction?.wallet as MultisigWallet).threshold);
+
     if (approval?.fromBlockChain) return ApproveStatus.SIGNED;
-    if (approval?.fromMatrix) return ApproveStatus.PENDING;
+    if (approval?.fromMatrix && isFinalApprove) return ApproveStatus.SIGNED;
+    if (approval?.fromMatrix && !isFinalApprove) return ApproveStatus.PENDING;
     return ApproveStatus.WAITING;
   };
 
@@ -226,7 +232,7 @@ const Signatories: React.FC<Props> = ({ network, transaction }) => {
               <div
                 className={cn(
                   'flex items-center font-medium text-xs mb-2',
-                  isSigned(approved) && 'text-gray-500',
+                  !isSigned(approved) && 'text-gray-500',
                 )}
               >
                 {signatoryStatus(approved)}
