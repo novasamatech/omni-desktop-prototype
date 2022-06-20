@@ -35,6 +35,18 @@ const STATUS_MAP: Record<StatusType, { text: string; status: StatusType }> = {
   },
 };
 
+const enum ApproveStatus {
+  WAITING = 'waiting',
+  PENDING = 'pending',
+  SIGNED = 'signed',
+}
+type Signatory = {
+  name?: string;
+  address: string;
+  approved: ApproveStatus;
+  extrinsicHash: string;
+};
+
 function addKeyFrames(elementsToJump: number) {
   const posY = (elementsToJump * 64) / 4;
   const keyframes = `
@@ -55,17 +67,9 @@ function removeKeyFrames() {
   style?.sheet?.deleteRule(0);
 }
 
-const enum ApproveStatus {
-  WAITING = 'waiting',
-  PENDING = 'pending',
-  SIGNED = 'signed',
+function isSigned(approve: ApproveStatus): boolean {
+  return approve === ApproveStatus.SIGNED;
 }
-type Signatory = {
-  name?: string;
-  address: string;
-  approved: ApproveStatus;
-  extrinsicHash: string;
-};
 
 type Props = {
   network?: Chain;
@@ -138,7 +142,8 @@ const Signatories: React.FC<Props> = ({ network, transaction }) => {
   useEffect(() => {
     if (!network || !transaction) return;
 
-    const approvesNumber = signatories.filter((s) => s.approved)?.length || 0;
+    const approvesNumber =
+      signatories.filter((s) => isSigned(s.approved))?.length || 0;
     const noNewApproves = !isFirstSetup && approvesNumber === approvals.length;
     if (noNewApproves) return;
 
@@ -221,13 +226,13 @@ const Signatories: React.FC<Props> = ({ network, transaction }) => {
               <div
                 className={cn(
                   'flex items-center font-medium text-xs mb-2',
-                  !approved && 'text-gray-500',
+                  isSigned(approved) && 'text-gray-500',
                 )}
               >
                 {signatoryStatus(approved)}
               </div>
               <div className="flex justify-end gap-1">
-                {approved && extrinsicHash && network && (
+                {isSigned(approved) && extrinsicHash && network && (
                   <Explorer
                     type="extrinsic"
                     param={extrinsicHash}

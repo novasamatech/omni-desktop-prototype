@@ -2,8 +2,6 @@
 /* eslint-disable promise/always-return */
 import React, { ReactNode, useEffect, useState } from 'react';
 import { BN } from '@polkadot/util';
-import { Wallet, MultisigWallet } from '../db/types';
-import { getAddressFromWallet } from '../utils/account';
 import { formatBalance } from '../utils/assets';
 import { Connection } from '../store/connections';
 import { validateAddress } from '../utils/validation';
@@ -12,7 +10,8 @@ import Shimmer from './Shimmer';
 import Balance from './Balance';
 
 type Props = {
-  wallet?: Wallet | MultisigWallet;
+  walletAddress: string;
+  threshold: string;
   connection?: Connection;
   address: string;
   amount: string;
@@ -21,7 +20,8 @@ type Props = {
 };
 
 const Fee: React.FC<Props> = ({
-  wallet,
+  walletAddress,
+  threshold,
   connection,
   address,
   amount,
@@ -34,17 +34,19 @@ const Fee: React.FC<Props> = ({
   const defaultAsset = connection?.network.assets[0];
 
   useEffect(() => {
-    if (!wallet || !connection || !defaultAsset || !validateAddress(address)) {
+    if (
+      !walletAddress ||
+      !connection ||
+      !defaultAsset ||
+      !validateAddress(address)
+    ) {
       setTransactionFee('0');
       return;
     }
 
     setIsLoading(true);
-
-    const fromAddress = getAddressFromWallet(wallet, connection.network);
-
     getTxExtrinsic(connection, defaultAsset, address, amount)
-      .paymentInfo(fromAddress)
+      .paymentInfo(walletAddress)
       .then(({ partialFee }) => {
         const formattedValue = formatBalance(
           partialFee.toString(),
@@ -59,7 +61,7 @@ const Fee: React.FC<Props> = ({
       .finally(() => {
         setIsLoading(false);
       });
-  }, [connection, amount, address, defaultAsset, wallet]);
+  }, [connection, amount, address, defaultAsset, walletAddress]);
 
   const depositValue = (): string | ReactNode => {
     if (!connection) {
@@ -67,22 +69,20 @@ const Fee: React.FC<Props> = ({
     }
 
     const { depositFactor, depositBase } = connection.api.consts.multisig;
-    const balance = depositBase.add(
-      depositFactor.mul(new BN((wallet as MultisigWallet).threshold)),
-    );
+    const balance = depositBase.add(depositFactor.mul(new BN(threshold)));
     const deposit = formatBalance(balance.toString(), defaultAsset?.precision);
     return `${deposit} ${defaultAsset?.symbol}`;
   };
 
   return (
     <div className="flex flex-col text-gray-500 text-sm gap-1">
-      {defaultAsset && wallet && connection && withTransferable && (
+      {defaultAsset && walletAddress && connection && withTransferable && (
         <div className="flex justify-between">
           <div>Transferable balance</div>
           <div>
             <Balance
               asset={defaultAsset}
-              wallet={wallet}
+              walletAddress={walletAddress}
               connection={connection}
             />
           </div>
@@ -111,3 +111,4 @@ const Fee: React.FC<Props> = ({
 };
 
 export default Fee;
+// export default memo(Fee);

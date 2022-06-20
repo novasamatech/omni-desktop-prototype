@@ -32,6 +32,7 @@ const ShowCode: React.FC = () => {
   const [payload, setPayload] = useState<Uint8Array>();
   const [address, setAddress] = useState('');
   const [connection, setConnection] = useState<Connection>();
+
   const networks = useRecoilValue(connectionState);
   const transaction = useRecoilValue(currentTransactionState);
   const signWith = useRecoilValue(signWithState);
@@ -61,6 +62,8 @@ const ShowCode: React.FC = () => {
     connection &&
     transaction &&
     getAssetById(connection.network.assets, transaction.data.assetId);
+
+  const wallet = (signWith || transaction?.wallet) as MultisigWallet;
 
   const setupTransaction = useCallback(async () => {
     // TODO: Refactor setup transaction flow
@@ -241,10 +244,11 @@ const ShowCode: React.FC = () => {
             <Shimmer width="100%" height="100%" />
           )}
         </div>
-        {transaction && (
+        {transaction && connection && (
           <div className="w-[350px] mt-5 mb-10">
             <Fee
-              wallet={signWith || transaction.wallet}
+              walletAddress={getAddressFromWallet(wallet, connection.network)}
+              threshold={wallet.threshold}
               connection={connection}
               address={transaction.data.address}
               amount={transaction.data.amount}

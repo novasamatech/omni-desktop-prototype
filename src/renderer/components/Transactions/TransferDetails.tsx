@@ -218,7 +218,7 @@ const TransferDetails: React.FC = () => {
 
     updateInterval.current = setInterval(() => {
       updateTransaction(transaction, connection);
-    }, 2000);
+    }, 3000);
   }, [connection, isConfirmed, transaction]);
 
   useEffect(() => {
@@ -275,8 +275,11 @@ const TransferDetails: React.FC = () => {
                   <div className="flex justify-end text-black text-sm">
                     <Balance
                       asset={currentAsset}
-                      wallet={transaction.wallet}
                       connection={connection}
+                      walletAddress={getAddressFromWallet(
+                        transaction.wallet,
+                        network,
+                      )}
                     />
                   </div>
                 </div>
@@ -349,7 +352,11 @@ const TransferDetails: React.FC = () => {
               <>
                 <hr className="my-5" />
                 <Fee
-                  wallet={transaction.wallet}
+                  walletAddress={getAddressFromWallet(
+                    transaction.wallet,
+                    network,
+                  )}
+                  threshold={(transaction.wallet as MultisigWallet).threshold}
                   connection={connection}
                   address={transaction.data.address}
                   amount={transaction.data.amount}
