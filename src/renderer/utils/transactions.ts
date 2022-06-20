@@ -240,7 +240,7 @@ export const decodeCallData = (
   return data;
 };
 
-export const getTxExtrinsic = (
+export const getTransferExtrinsic = (
   connection: Connection,
   asset: Asset,
   address: string,
@@ -264,6 +264,54 @@ export const getTxExtrinsic = (
   return connection.api.tx.balances.transfer(
     address,
     formatAmount(amount, asset.precision),
+  );
+};
+
+export const createApproveData = (
+  connection: Connection,
+  transaction: Transaction,
+) => {
+  const address = getAddressFromWallet(transaction.wallet, connection.network);
+  const MAX_WEIGHT = 640000000;
+  const when =
+    transaction.blockHeight && transaction.extrinsicIndex
+      ? {
+          height: transaction.blockHeight,
+          index: transaction.extrinsicIndex,
+        }
+      : null;
+  const otherSignatories = transaction.wallet.isMultisig
+    ? (transaction.wallet as MultisigWallet).originContacts
+        .map((c) => getAddressFromWallet(c, connection.network))
+        .filter((c) => c !== address)
+        .sort()
+    : [];
+  const { threshold } = transaction.wallet as MultisigWallet;
+
+  return {
+    threshold,
+    otherSignatories,
+    maybeTimepoint: when,
+    callHash: transaction.data.callHash,
+    maxWeight: MAX_WEIGHT,
+    call: transaction.data.callData,
+    storeCall: false,
+  };
+};
+
+export const getMultisigTransferExtrinsic = (
+  connection: Connection,
+  transaction: Transaction,
+) => {
+  const approveData = createApproveData(connection, transaction);
+
+  return connection.api.tx.multisig.asMulti(
+    approveData.threshold,
+    approveData.otherSignatories,
+    approveData.maybeTimepoint,
+    approveData.call,
+    approveData.storeCall,
+    approveData.maxWeight,
   );
 };
 

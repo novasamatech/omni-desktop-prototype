@@ -324,6 +324,12 @@ const TransferDetails: React.FC = () => {
               <>
                 <hr className="my-5" />
                 <Fee
+                  type={
+                    isMultisigTransfer
+                      ? TransactionType.MULTISIG_TRANSFER
+                      : TransactionType.TRANSFER
+                  }
+                  transaction={transaction}
                   wallet={transaction.wallet}
                   connection={connection}
                   address={transaction.data.address}

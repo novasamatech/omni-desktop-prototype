@@ -156,38 +156,35 @@ const ShowCode: React.FC = () => {
       : [];
     const { threshold } = transaction.wallet as MultisigWallet;
 
+    const approveData = {
+      threshold,
+      otherSignatories,
+      maybeTimepoint: when,
+      callHash: transaction.data.callHash,
+      maxWeight: MAX_WEIGHT,
+      call: transaction.data.callData,
+      storeCall: false,
+    };
+
     const multisig = {
       approve: () => {
-        return methods.multisig.asMulti(
-          {
-            threshold,
-            otherSignatories,
-            maybeTimepoint: when,
-            callHash: transaction.data.callHash,
-            maxWeight: MAX_WEIGHT,
-            call: transaction.data.callData,
-            storeCall: false,
-          },
-          info,
-          options,
+        return methods.multisig.asMulti(approveData, info, options);
+      },
+      cancel: () => {
+        return (
+          when &&
+          methods.multisig.cancelAsMulti(
+            {
+              threshold,
+              otherSignatories,
+              timepoint: when,
+              callHash: transaction.data.callHash,
+            },
+            info,
+            options,
+          )
         );
       },
-      // TODO: Use it for cancel transaction
-      // cancel: () => {
-      //   return (
-      //     when &&
-      //     methods.multisig.cancelAsMulti(
-      //       {
-      //         threshold,
-      //         otherSignatories,
-      //         timepoint: when,
-      //         callHash: transaction.data.callHash,
-      //       },
-      //       info,
-      //       options,
-      //     )
-      //   );
-      // },
     };
     let unsignedAction = transfers[asset?.type || DEFAULT];
 
@@ -246,6 +243,8 @@ const ShowCode: React.FC = () => {
             <Fee
               wallet={signWith || transaction.wallet}
               connection={connection}
+              type={transaction.type}
+              transaction={transaction}
               address={transaction.data.address}
               amount={transaction.data.amount}
               withTransferable
