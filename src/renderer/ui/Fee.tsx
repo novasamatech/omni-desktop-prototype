@@ -46,13 +46,7 @@ const Fee: React.FC<Props> = ({
   const defaultAsset = connection?.network.assets[0];
 
   useEffect(() => {
-    if (
-      !wallet ||
-      !connection ||
-      !defaultAsset ||
-      !validateAddress(address) ||
-      (type === TransactionType.MULTISIG_TRANSFER && !transaction)
-    ) {
+    if (!wallet || !connection || !defaultAsset || !validateAddress(address)) {
       setTransactionFee('0');
       return;
     }
