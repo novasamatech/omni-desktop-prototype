@@ -28,7 +28,6 @@ import {
   TransactionType,
   MultisigWallet,
 } from '../db/types';
-import { isFinalApprove } from '../utils/transactions';
 import { getAddressFromWallet, toPublicKey } from '../utils/account';
 import { useMatrix } from './Providers/MatrixProvider';
 import Shimmer from '../ui/Shimmer';
@@ -105,136 +104,139 @@ const ScanCode: React.FC = () => {
       metadataRpc: metadataRpc.toHex(),
       registry,
     });
+    try {
+      network.api.rpc.author.submitAndWatchExtrinsic(tx, async (result) => {
+        if (!result.isInBlock) return;
 
-    network.api.rpc.author.submitAndWatchExtrinsic(tx, async (result) => {
-      if (!result.isInBlock) return;
+        let actualTxHash = result.inner;
 
-      let actualTxHash = result.inner;
+        const signedBlock = await network.api.rpc.chain.getBlock();
+        const apiAt = await network.api.at(signedBlock.block.header.hash);
+        const allRecords = await apiAt.query.system.events();
+        let isFinalApprove = false;
+        let isSuccessExtrinsic = false;
 
-      const signedBlock = await network.api.rpc.chain.getBlock();
-      const apiAt = await network.api.at(signedBlock.block.header.hash);
-      const allRecords = await apiAt.query.system.events();
+        // the information for each of the contained extrinsics
+        signedBlock.block.extrinsics.forEach(
+          ({ method: { method, section }, signer, args, hash }, index) => {
+            if (
+              method !== tx.method.method ||
+              section !== tx.method.section ||
+              signer.toHex() !== tx.signer.toHex() ||
+              args[0]?.toString() !== tx.args[0]?.toString() ||
+              args[1]?.toString() !== tx.args[1]?.toString() ||
+              args[2]?.toString() !== tx.args[2]?.toString()
+            ) {
+              return;
+            }
 
-      // the information for each of the contained extrinsics
-      signedBlock.block.extrinsics.forEach(
-        ({ method: { method, section }, signer, args, hash }, index) => {
-          if (
-            method !== tx.method.method ||
-            section !== tx.method.section ||
-            signer.toHex() !== tx.signer.toHex() ||
-            args[0]?.toString() !== tx.args[0]?.toString() ||
-            args[1]?.toString() !== tx.args[1]?.toString() ||
-            args[2]?.toString() !== tx.args[2]?.toString()
-          ) {
-            return;
-          }
+            allRecords
+              .filter(
+                ({ phase }) =>
+                  phase.isApplyExtrinsic && phase.asApplyExtrinsic.eq(index),
+              )
+              .forEach(({ event }) => {
+                if (network.api.events.multisig.MultisigExecuted.is(event)) {
+                  isFinalApprove = true;
+                }
 
-          allRecords
-            .filter(
-              ({ phase }) =>
-                phase.isApplyExtrinsic && phase.asApplyExtrinsic.eq(index),
-            )
-            .forEach(({ event }) => {
-              if (network.api.events.system.ExtrinsicSuccess.is(event)) {
-                actualTxHash = hash;
-                if (!actualTxHash || !transaction.id) return;
+                if (network.api.events.system.ExtrinsicSuccess.is(event)) {
+                  actualTxHash = hash;
+                  isSuccessExtrinsic = true;
+                }
 
-                const extrinsicHash = actualTxHash.toHex();
+                if (network.api.events.system.ExtrinsicFailed.is(event)) {
+                  const [dispatchError] = event.data;
+                  let errorInfo;
 
-                if (transaction.type === TransactionType.TRANSFER) {
-                  db.transactions.update(transaction.id, {
-                    ...transaction,
-                    transactionHash: actualTxHash.toHex(),
-                    status: TransactionStatus.CONFIRMED,
-                  });
-                } else if (
-                  transaction.type === TransactionType.MULTISIG_TRANSFER
-                ) {
-                  const transactionStatus = isFinalApprove(transaction)
-                    ? TransactionStatus.CONFIRMED
-                    : TransactionStatus.PENDING;
+                  if (dispatchError.isModule) {
+                    const decoded = network.api.registry.findMetaError(
+                      dispatchError.asModule,
+                    );
 
-                  const publicKey = toPublicKey(
-                    signWith?.mainAccounts[0].accountId || '',
-                  );
-
-                  const { approvals } = transaction.data;
-                  const approvalsPayload = {
-                    ...approvals,
-                    [publicKey]: {
-                      ...approvals[publicKey],
-                      fromMatrix: true,
-                      fromBlockChain: true,
-                      extrinsicHash,
-                    },
-                  };
-
-                  db.transactions.update(transaction.id, {
-                    status: transactionStatus,
-                    data: {
-                      ...transaction.data,
-                      approvals: approvalsPayload,
-                    },
-                  });
-
-                  const multisigWallet = transaction.wallet as MultisigWallet;
-                  if (signWith && multisigWallet.matrixRoomId) {
-                    matrix.setRoom(multisigWallet.matrixRoomId);
-
-                    if (transactionStatus === TransactionStatus.CONFIRMED) {
-                      matrix.mstFinalApprove({
-                        senderAddress: getAddressFromWallet(
-                          signWith,
-                          network.network,
-                        ),
-                        salt: transaction.data.salt,
-                        extrinsicHash,
-                        chainId: network.network.chainId,
-                        callHash: transaction.data.callHash,
-                      });
-                    }
-
-                    if (transactionStatus === TransactionStatus.PENDING) {
-                      matrix.mstApprove({
-                        senderAddress: getAddressFromWallet(
-                          signWith,
-                          network.network,
-                        ),
-                        salt: transaction.data.salt,
-                        extrinsicHash,
-                        chainId: network.network.chainId,
-                        callHash: transaction.data.callHash,
-                      });
-                    }
+                    errorInfo = `${decoded.name
+                      .split(/(?=[A-Z])/)
+                      .map((w) => w.toLowerCase())
+                      .join(' ')}`;
+                  } else {
+                    errorInfo = dispatchError.toString();
                   }
+                  setError(capitalize(errorInfo));
+                  setDialogOpen(true);
                 }
+              });
+          },
+        );
 
-                history.push(withId(Routes.TRANSFER_DETAILS, transaction.id));
-              }
-              if (network.api.events.system.ExtrinsicFailed.is(event)) {
-                actualTxHash = hash;
-                const [dispatchError] = event.data;
-                let errorInfo;
+        if (!isSuccessExtrinsic || !actualTxHash || !transaction.id) return;
 
-                if (dispatchError.isModule) {
-                  const decoded = network.api.registry.findMetaError(
-                    dispatchError.asModule,
-                  );
+        const extrinsicHash = actualTxHash.toHex();
 
-                  errorInfo = `${decoded.name
-                    .split(/(?=[A-Z])/)
-                    .map((w) => w.toLowerCase())
-                    .join(' ')}`;
-                } else {
-                  errorInfo = dispatchError.toString();
-                }
-                setError(capitalize(errorInfo));
-                setDialogOpen(true);
-              }
-            });
-        },
-      );
-    });
+        if (transaction.type === TransactionType.TRANSFER) {
+          db.transactions.update(transaction.id, {
+            ...transaction,
+            transactionHash: actualTxHash.toHex(),
+            status: TransactionStatus.CONFIRMED,
+          });
+        } else if (transaction.type === TransactionType.MULTISIG_TRANSFER) {
+          const transactionStatus = isFinalApprove
+            ? TransactionStatus.CONFIRMED
+            : TransactionStatus.PENDING;
+
+          const publicKey = toPublicKey(
+            signWith?.mainAccounts[0].accountId || '',
+          );
+
+          const { approvals } = transaction.data;
+          const approvalsPayload = {
+            ...approvals,
+            [publicKey]: {
+              ...approvals[publicKey],
+              fromMatrix: true,
+              fromBlockChain: true,
+              extrinsicHash,
+            },
+          };
+
+          db.transactions.update(transaction.id, {
+            status: transactionStatus,
+            data: {
+              ...transaction.data,
+              approvals: approvalsPayload,
+            },
+          });
+
+          const multisigWallet = transaction.wallet as MultisigWallet;
+          if (signWith && multisigWallet.matrixRoomId) {
+            matrix.setRoom(multisigWallet.matrixRoomId);
+
+            const matrixEventData = {
+              senderAddress: getAddressFromWallet(signWith, network.network),
+              salt: transaction.data.salt,
+              extrinsicHash,
+              chainId: network.network.chainId,
+              callHash: transaction.data.callHash,
+            };
+
+            if (transactionStatus === TransactionStatus.CONFIRMED) {
+              matrix.mstFinalApprove(matrixEventData);
+            }
+
+            if (transactionStatus === TransactionStatus.PENDING) {
+              matrix.mstApprove(matrixEventData);
+            }
+          }
+        }
+
+        history.push(withId(Routes.TRANSFER_DETAILS, transaction.id));
+      });
+    } catch (e) {
+      let message = 'Unknown error';
+      if (e instanceof Error) message = e.message;
+
+      setError(capitalize(message));
+      setDialogOpen(true);
+    }
   };
 
   return (
