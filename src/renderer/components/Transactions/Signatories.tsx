@@ -31,13 +31,6 @@ const STATUS_MAP: Record<StatusType, { text: string; status: StatusType }> = {
   },
 };
 
-type Signatory = {
-  name?: string;
-  address: string;
-  approved: boolean;
-  extrinsicHash: string;
-};
-
 function addKeyFrames(elementsToJump: number) {
   const posY = (elementsToJump * 64) / 4;
   const keyframes = `
@@ -57,6 +50,13 @@ function removeKeyFrames() {
   const style = document.head.querySelector('style');
   style?.sheet?.deleteRule(0);
 }
+
+type Signatory = {
+  name?: string;
+  address: string;
+  approved: boolean;
+  extrinsicHash: string;
+};
 
 type Props = {
   network?: Chain;

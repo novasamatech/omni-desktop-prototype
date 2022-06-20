@@ -383,7 +383,7 @@ const Transfer: React.FC = () => {
           <Dialog.Title as="h3" className="font-light text-xl">
             Transfers already exist
           </Dialog.Title>
-          <ul className="mt-4 mb-4 p-2 flex flex-col gap-3 bg-gray-200 rounded-lg">
+          <ul className="my-4 p-2 flex flex-col gap-3 bg-gray-200 rounded-lg">
             {existingMst.map((tx) => (
               <li key={tx.id} className="flex items-center justify-between">
                 <span>{tx.wallet.name}</span>
