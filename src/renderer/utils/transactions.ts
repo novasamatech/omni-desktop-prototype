@@ -172,6 +172,14 @@ export const updateTransactions = async (
   });
 };
 
+const checkNewApprovals = (
+  pendingTx: MultisigTransaction,
+  approvals: Approvals,
+): boolean =>
+  pendingTx.opt.approvals.some(
+    (approval) => !approvals[toPublicKey(approval.toString())].fromBlockChain,
+  );
+
 export const updateTransaction = async (
   transaction: Transaction,
   connection: Connection,
@@ -185,6 +193,8 @@ export const updateTransaction = async (
   );
 
   if (!pendingTransaction) return;
+  if (!checkNewApprovals(pendingTransaction, transaction.data.approvals))
+    return;
 
   db.transactions.put(
     updateTransactionPayload(transaction, pendingTransaction),

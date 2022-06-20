@@ -218,7 +218,7 @@ const TransferDetails: React.FC = () => {
 
     updateInterval.current = setInterval(async () => {
       const tx = await db.transactions.get(Number(id));
-      if (tx) updateTransaction(transaction, connection);
+      if (tx) updateTransaction(tx, connection);
     }, 3000);
   }, [connection, isConfirmed, transaction, id]);
 
