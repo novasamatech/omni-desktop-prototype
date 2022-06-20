@@ -153,15 +153,12 @@ const Signatories: React.FC<Props> = ({ network, transaction }) => {
     const noNewApproves = !isFirstSetup && approvesNumber === approvals.length;
     if (noNewApproves) return;
 
-    const getExtrinsicHash = (contact: Contact): string =>
-      getApproval(contact)?.extrinsicHash || '';
-
     const contacts = (transaction.wallet as MultisigWallet).originContacts;
     const dirtySignatories = contacts.map((signature) => ({
       name: signature.name,
       address: getAddressFromWallet(signature, network),
       approved: isApproved(signature),
-      extrinsicHash: getExtrinsicHash(signature),
+      extrinsicHash: getApproval(signature)?.extrinsicHash || '',
     }));
 
     const approvedSignatories = approvals.reduce((acc, approve) => {

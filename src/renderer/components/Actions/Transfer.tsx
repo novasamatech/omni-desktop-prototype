@@ -357,12 +357,11 @@ const Transfer: React.FC = () => {
               ? TransactionType.MULTISIG_TRANSFER
               : TransactionType.TRANSFER
           }
-          wallet={firstWallet}
-          // walletAddress={getAddressFromWallet(
-          //   firstWallet,
-          //   currentNetwork?.network,
-          // )}
-          // threshold={(firstWallet as MultisigWallet).threshold}
+          walletAddress={getAddressFromWallet(
+            firstWallet,
+            currentNetwork?.network,
+          )}
+          threshold={(firstWallet as MultisigWallet).threshold}
           connection={currentNetwork}
           address={watchAddress}
           amount={watchAmount}

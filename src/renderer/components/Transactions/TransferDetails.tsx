@@ -216,10 +216,11 @@ const TransferDetails: React.FC = () => {
 
     if (!transaction || !connection || updateInterval?.current) return;
 
-    updateInterval.current = setInterval(() => {
-      updateTransaction(transaction, connection);
+    updateInterval.current = setInterval(async () => {
+      const tx = await db.transactions.get(Number(id));
+      if (tx) updateTransaction(transaction, connection);
     }, 3000);
-  }, [connection, isConfirmed, transaction]);
+  }, [connection, isConfirmed, transaction, id]);
 
   useEffect(() => {
     return () => {
@@ -352,18 +353,17 @@ const TransferDetails: React.FC = () => {
               <>
                 <hr className="my-5" />
                 <Fee
-                  // walletAddress={getAddressFromWallet(
-                  //   transaction.wallet,
-                  //   network,
-                  // )}
-                  // threshold={(transaction.wallet as MultisigWallet).threshold}
                   type={
                     isMultisigTransfer
                       ? TransactionType.MULTISIG_TRANSFER
                       : TransactionType.TRANSFER
                   }
+                  walletAddress={getAddressFromWallet(
+                    transaction.wallet,
+                    network,
+                  )}
+                  threshold={(transaction.wallet as MultisigWallet).threshold}
                   transaction={transaction}
-                  wallet={transaction.wallet}
                   connection={connection}
                   address={transaction.data.address}
                   amount={transaction.data.amount}
