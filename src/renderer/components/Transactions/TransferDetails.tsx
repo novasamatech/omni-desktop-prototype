@@ -1,5 +1,5 @@
 /* eslint-disable promise/always-return */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 import { useHistory, useParams } from 'react-router';
 import { format } from 'date-fns';
@@ -35,6 +35,7 @@ import {
   decodeCallData,
   getApprovals,
   updateTimepointFromBlockchain,
+  updateTransaction,
 } from '../../utils/transactions';
 import { copyToClipboard } from '../../utils/strings';
 import Fee from '../../ui/Fee';
@@ -44,6 +45,7 @@ const TransferDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const history = useHistory();
 
+  const updateInterval = useRef<NodeJS.Timer>();
   const [, setSignWith] = useRecoilState(signWithState);
   const networks = useRecoilValue(connectionState);
   const setCurrentTransaction = useSetRecoilState(currentTransactionState);
@@ -85,7 +87,7 @@ const TransferDetails: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    let intervalId: NodeJS.Timeout;
+    let timepointInterval: NodeJS.Timeout;
     if (transaction && Object.values(networks).length) {
       const currentConnection = Object.values(networks).find(
         (n) => n.network.chainId === transaction.chainId,
@@ -94,7 +96,7 @@ const TransferDetails: React.FC = () => {
       if (currentConnection) {
         setConnection(currentConnection);
         if (!transaction.blockHeight) {
-          intervalId = setInterval(
+          timepointInterval = setInterval(
             () => updateTimepointFromBlockchain(transaction, currentConnection),
             1000,
           );
@@ -103,7 +105,7 @@ const TransferDetails: React.FC = () => {
     }
 
     return () => {
-      clearInterval(intervalId);
+      clearInterval(timepointInterval);
     };
   }, [transaction, networks]);
 
@@ -202,6 +204,29 @@ const TransferDetails: React.FC = () => {
     },
     [transaction, callData, connection],
   );
+
+  useEffect(() => {
+    if (isConfirmed) {
+      if (!updateInterval?.current) return;
+
+      clearInterval(updateInterval.current);
+      updateInterval.current = undefined;
+      return;
+    }
+
+    if (!transaction || !connection || updateInterval?.current) return;
+
+    updateInterval.current = setInterval(() => {
+      updateTransaction(transaction, connection);
+    }, 2000);
+  }, [connection, isConfirmed, transaction]);
+
+  useEffect(() => {
+    return () => {
+      if (!updateInterval?.current) return;
+      clearInterval(updateInterval.current);
+    };
+  }, []);
 
   // Check this case
   useEffect(() => {

@@ -25,6 +25,10 @@ const STATUS_MAP: Record<StatusType, { text: string; status: StatusType }> = {
     text: 'waiting',
     status: StatusType.WAITING,
   },
+  pending: {
+    text: 'pending',
+    status: StatusType.PENDING,
+  },
   abstained: {
     text: 'abstained',
     status: StatusType.ABSTAINED,
@@ -51,10 +55,15 @@ function removeKeyFrames() {
   style?.sheet?.deleteRule(0);
 }
 
+const enum ApproveStatus {
+  WAITING = 'waiting',
+  PENDING = 'pending',
+  SIGNED = 'signed',
+}
 type Signatory = {
   name?: string;
   address: string;
-  approved: boolean;
+  approved: ApproveStatus;
   extrinsicHash: string;
 };
 
@@ -114,14 +123,16 @@ const Signatories: React.FC<Props> = ({ network, transaction }) => {
 
   const getApproval = (contact: Contact): Approval | undefined => {
     const address = getAddressFromWallet(contact, network);
-    if (!address) return;
+    if (!address) return undefined;
 
     return transaction?.data.approvals[toPublicKey(address)];
   };
 
-  const isApproved = (contact: Contact): boolean => {
+  const isApproved = (contact: Contact): ApproveStatus => {
     const approval = getApproval(contact);
-    return !!approval && (approval.fromBlockChain || approval.fromMatrix);
+    if (approval?.fromBlockChain) return ApproveStatus.SIGNED;
+    if (approval?.fromMatrix) return ApproveStatus.PENDING;
+    return ApproveStatus.WAITING;
   };
 
   useEffect(() => {
@@ -166,11 +177,18 @@ const Signatories: React.FC<Props> = ({ network, transaction }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [network, transaction, approvals, signatories]);
 
-  const signatoryStatus = (approved: boolean): ReactNode => {
-    let result = approved
-      ? STATUS_MAP[StatusType.SUCCESS]
-      : STATUS_MAP[StatusType.WAITING];
-    if (!approved && transaction?.status === TransactionStatus.CONFIRMED) {
+  const signatoryStatus = (approved: ApproveStatus): ReactNode => {
+    let result = STATUS_MAP[StatusType.WAITING];
+    if (approved === ApproveStatus.SIGNED) {
+      result = STATUS_MAP[StatusType.SUCCESS];
+    }
+    if (approved === ApproveStatus.PENDING) {
+      result = STATUS_MAP[StatusType.PENDING];
+    }
+    if (
+      approved === ApproveStatus.WAITING &&
+      transaction?.status === TransactionStatus.CONFIRMED
+    ) {
       result = STATUS_MAP[StatusType.ABSTAINED];
     }
     return (

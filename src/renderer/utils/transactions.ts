@@ -18,7 +18,12 @@ import {
   TransactionType,
   Wallet,
 } from '../db/types';
-import { createApprovals, getAddressFromWallet, toPublicKey } from './account';
+import {
+  createApprovals,
+  formatAddress,
+  getAddressFromWallet,
+  toPublicKey,
+} from './account';
 import { db } from '../db/db';
 import { formatAmount, formatBalance, getAssetById } from './assets';
 import { Approvals, HexString } from '../../common/types';
@@ -165,6 +170,25 @@ export const updateTransactions = async (
       );
     }
   });
+};
+
+export const updateTransaction = async (
+  transaction: Transaction,
+  connection: Connection,
+) => {
+  const pendingTransactions = await getPendingTransactionsFromChain(
+    connection.api,
+    formatAddress(transaction.address),
+  );
+  const pendingTransaction = pendingTransactions.find((p) =>
+    isSameTransaction(transaction, p),
+  );
+
+  if (!pendingTransaction) return;
+
+  db.transactions.put(
+    updateTransactionPayload(transaction, pendingTransaction),
+  );
 };
 
 export const isApproved = (
