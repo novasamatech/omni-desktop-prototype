@@ -166,7 +166,7 @@ const ShowCode: React.FC = () => {
             callHash: transaction.data.callHash,
             maxWeight: MAX_WEIGHT,
             call: transaction.data.callData,
-            storeCall: true,
+            storeCall: false,
           },
           info,
           options,
