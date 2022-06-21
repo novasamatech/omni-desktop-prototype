@@ -111,18 +111,6 @@ const Signatories: React.FC<Props> = ({ network, transaction }) => {
     });
   };
 
-  useEffect(() => {
-    if (!transaction) return;
-
-    const newApprovals = getApprovals(transaction).filter(
-      (a) => !approvals.includes(a),
-    );
-
-    if (!newApprovals.length) return;
-    setApprovals(approvals.concat(newApprovals));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transaction]);
-
   const getApproval = (contact: Contact): Approval | undefined => {
     const address = getAddressFromWallet(contact, network);
     if (!address) return;
@@ -138,31 +126,50 @@ const Signatories: React.FC<Props> = ({ network, transaction }) => {
         Number((transaction?.wallet as MultisigWallet).threshold);
 
     if (approval?.fromBlockChain) return ApproveStatus.SIGNED;
-    if (approval?.fromMatrix) return ApproveStatus.PENDING;
     if (approval?.fromMatrix && isFinalApprove) return ApproveStatus.SIGNED;
+    if (approval?.fromMatrix) return ApproveStatus.PENDING;
     return ApproveStatus.WAITING;
   };
+
+  useEffect(() => {
+    if (!transaction) return;
+
+    const newApprovals = getApprovals(transaction).filter(
+      (a) => !approvals.includes(a),
+    );
+
+    if (!newApprovals.length) return;
+    setApprovals(approvals.concat(newApprovals));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transaction]);
 
   useEffect(() => {
     if (!network || !transaction) return;
 
     const contacts = (transaction.wallet as MultisigWallet).originContacts;
-    const pendingAddresses = contacts
-      .filter((c) => getApproveStatus(c) === ApproveStatus.PENDING)
-      .map((c) => c.mainAccounts[0].accountId);
+    const pendingAddresses = contacts.reduce((acc, contact) => {
+      if (getApproveStatus(contact) === ApproveStatus.PENDING) {
+        const address = getAddressFromWallet(contact, network);
+        acc[address] = true;
+      }
+      return acc;
+    }, {} as Record<string, boolean>);
 
-    if (!isFirstSetup && !pendingAddresses?.length) return;
+    const hasNewPending = signatories.some(
+      (s) => pendingAddresses[s.address] && s.approve !== ApproveStatus.PENDING,
+    );
+    if (!isFirstSetup && !hasNewPending) return;
 
     setSignatories((prev) =>
       prev.map((p) => ({
         ...p,
-        approve: pendingAddresses.includes(p.address)
+        approve: pendingAddresses[p.address]
           ? ApproveStatus.PENDING
           : p.approve,
       })),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [network, transaction, isFirstSetup, signatories]);
+  }, [network, transaction]);
 
   useEffect(() => {
     if (!network || !transaction) return;
@@ -203,7 +210,7 @@ const Signatories: React.FC<Props> = ({ network, transaction }) => {
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [network, transaction, approvals, signatories]);
+  }, [network, transaction, approvals.length]);
 
   const signatoryStatus = (approve: ApproveStatus): ReactNode => {
     let result = STATUS_MAP[StatusType.WAITING];
