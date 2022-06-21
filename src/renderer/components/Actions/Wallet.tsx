@@ -1,59 +1,97 @@
 import React, { ChangeEvent, useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useParams } from 'react-router-dom';
-import { decodeAddress, encodeAddress } from '@polkadot/keyring';
+import { useHistory } from 'react-router';
+import { decodeAddress } from '@polkadot/keyring';
 import { u8aToHex } from '@polkadot/util';
+import { Dialog } from '@headlessui/react';
+import { useSetRecoilState } from 'recoil';
+import { useForm, Controller, SubmitHandler } from 'react-hook-form';
+import { db } from '../../db/db';
+import { Account, ChainAccount, Chain } from '../../db/types';
 import InputText from '../../ui/Input';
 import Button from '../../ui/Button';
 import List from '../../ui/List';
 import ListItem from '../../ui/ListItem';
 import Select, { OptionType } from '../../ui/Select';
-
-import { Account, ChainAccount, Chain, db } from '../../db/db';
 import Address from '../../ui/Address';
+import DialogContent from '../../ui/DialogContent';
+import { Routes, ErrorTypes } from '../../../common/constants';
+import { selectedWalletsState } from '../../store/selectedWallets';
+import { validateAddress } from '../../utils/validation';
+import ErrorMessage from '../../ui/ErrorMessage';
+import { formatAddress } from '../../utils/account';
+import useToggle from '../../hooks/toggle';
 
-enum AccountTypes {
-  CHAIN = 'CHAIN',
+const enum AccountTypes {
   MAIN = 'MAIN',
+  CHAIN = 'CHAIN',
 }
 
 const AccountTypeOptions = [
   {
-    label: 'Chain',
-    value: AccountTypes.CHAIN,
-  },
-  {
     label: 'Main',
     value: AccountTypes.MAIN,
   },
+  {
+    label: 'Chain',
+    value: AccountTypes.CHAIN,
+  },
 ];
 
-const Wallet: React.FC = () => {
-  const params = useParams<{ walletId: string }>();
+type AddressForm = {
+  address: string;
+};
 
-  const [address, setAddress] = useState('');
+const Wallet: React.FC = () => {
+  const history = useHistory();
+  const { id } = useParams<{ id: string }>();
+
+  const {
+    handleSubmit,
+    control,
+    reset,
+    formState: { isValid, errors },
+  } = useForm<AddressForm>({
+    mode: 'onChange',
+    defaultValues: {
+      address: '',
+    },
+  });
+
+  const [name, setName] = useState('');
   const [networkOptions, setNetworkOptions] = useState<OptionType[]>([]);
   const [accountNetwork, setAccountNetwork] = useState<string>();
-  // const [networkType, setNetworkType] = useState<string>();
-  const [accountType, setAccountType] = useState(AccountTypes.CHAIN);
+  const [accountType, setAccountType] = useState(AccountTypes.MAIN);
   const [accounts, setAccounts] = useState<
-    Array<{
+    {
       account: Account | ChainAccount | null;
       network: Chain;
-    }>
+    }[]
   >();
 
-  const networks = useLiveQuery(async () => {
-    const networkList = await db.chains.toArray();
+  const [isDialogOpen, toggleDialogOpen] = useToggle(false);
+  const setSelectedWallets = useSetRecoilState(selectedWalletsState);
 
-    return networkList;
-  });
+  const networks = useLiveQuery(() => db.chains.toArray());
+  const wallet = useLiveQuery(() => db.wallets.get(Number(id)));
 
-  const wallet = useLiveQuery(async () => {
-    const w = await db.wallets.get(Number(params.walletId));
+  useEffect(() => {
+    if (wallet) {
+      setName(wallet.name);
+    }
+  }, [wallet]);
 
-    return w;
-  });
+  const forgetWallet = async () => {
+    if (wallet?.id) {
+      await db.wallets.delete(wallet.id);
+      setSelectedWallets((selectedWallets) =>
+        selectedWallets.filter((w) => w.id !== wallet.id),
+      );
+    }
+    toggleDialogOpen();
+    history.push(Routes.WALLETS);
+  };
 
   // const NetworkTypeOptions = [
   //   {
@@ -78,7 +116,7 @@ const Wallet: React.FC = () => {
     const options =
       networks
         ?.filter(
-          (n) => !wallet?.chainAccounts.find((c) => c.chainId === n.chainId)
+          (n) => !wallet?.chainAccounts.find((c) => c.chainId === n.chainId),
         )
         .map((n) => ({
           label: n.name,
@@ -86,17 +124,20 @@ const Wallet: React.FC = () => {
         })) || [];
 
     setNetworkOptions(options);
+  }, [networks, wallet]);
+
+  useEffect(() => {
     if (!accountNetwork) {
-      setAccountNetwork(options[0]?.value);
+      setAccountNetwork(networkOptions[0]?.value);
     }
-  }, [networks, wallet, accountNetwork]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [networkOptions.length]);
 
   useEffect(() => {
     const accountList = networks
       ?.map((n) => {
-        // find chainAccount by chainId
         const chainAccount = wallet?.chainAccounts.find(
-          (c) => c.chainId === n.chainId
+          (c) => c.chainId === n.chainId,
         );
 
         if (chainAccount) {
@@ -109,9 +150,9 @@ const Wallet: React.FC = () => {
         const mainAccount = wallet?.mainAccounts[0];
 
         if (mainAccount) {
-          const updatedAccountId = encodeAddress(
-            decodeAddress(mainAccount.accountId),
-            n.addressPrefix
+          const updatedAccountId = formatAddress(
+            mainAccount.accountId,
+            n.addressPrefix,
           );
           const updatedMainAccount = {
             ...mainAccount,
@@ -133,7 +174,7 @@ const Wallet: React.FC = () => {
     setAccounts(accountList);
   }, [networks, wallet]);
 
-  const addAccount = async () => {
+  const addAccount: SubmitHandler<AddressForm> = async ({ address }) => {
     // TODO: Add validation for account address
     // const keyring = new Keyring();
     // const pair = keyring.addFromAddress(address);
@@ -141,54 +182,62 @@ const Wallet: React.FC = () => {
     const publicKeyHex = u8aToHex(publicKey);
 
     const doesntExists = !wallet?.chainAccounts.find(
-      (c) => c.chainId === accountNetwork || c.accountId === address
+      (c) => c.chainId === accountNetwork,
     );
 
-    if (address && wallet?.id) {
-      if (
-        accountType === AccountTypes.CHAIN &&
-        doesntExists &&
-        accountNetwork
-      ) {
-        await db.wallets.update(wallet.id, {
-          chainAccounts: [
-            ...wallet.chainAccounts,
-            {
-              accountId: address,
-              chainId: accountNetwork,
-              publicKey: publicKeyHex,
-            },
-          ],
-        });
-      } else if (accountType === AccountTypes.MAIN) {
-        // TODO: add support for main accounts of different types
-        await db.wallets.update(wallet.id, {
-          mainAccounts: [
-            {
-              accountId: address,
-              publicKey: publicKeyHex,
-            },
-          ],
-        });
+    if (!address || !wallet?.id) return;
+    if (accountType === AccountTypes.CHAIN && doesntExists && accountNetwork) {
+      await db.wallets.update(wallet.id, {
+        chainAccounts: [
+          ...wallet.chainAccounts,
+          {
+            accountId: formatAddress(address),
+            chainId: accountNetwork,
+            publicKey: publicKeyHex,
+          },
+        ],
+      });
 
-        setAddress('');
-      }
+      setAccountNetwork(undefined);
+    } else if (accountType === AccountTypes.MAIN) {
+      // TODO: add support for main accounts of different types
+      await db.wallets.update(wallet.id, {
+        mainAccounts: [
+          {
+            accountId: address,
+            publicKey: publicKeyHex,
+          },
+        ],
+      });
+
+      reset();
     }
   };
 
-  const removeAccount = async (accountId: string) => {
+  const removeAccount = async (chainId: string) => {
     // TODO: Add possibility to remove main accounts
     if (wallet?.id) {
       await db.wallets.update(wallet.id, {
         chainAccounts: wallet.chainAccounts.filter(
-          (c) => c.accountId !== accountId
+          (c) => c.chainId !== chainId,
         ),
       });
     }
   };
 
-  const onChangeAccountAddress = (event: ChangeEvent<HTMLInputElement>) => {
-    setAddress(event.target.value);
+  const updateWallet = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (wallet?.id) {
+      const trimmedName = name.trim();
+      await db.wallets.update(wallet.id, {
+        name: trimmedName,
+      });
+      setName(trimmedName);
+    }
+  };
+
+  const onChangeWalletName = (event: ChangeEvent<HTMLInputElement>) => {
+    setName(event.target.value);
   };
 
   const onChangeAccountNetwork = (event: ChangeEvent<HTMLSelectElement>) => {
@@ -205,54 +254,97 @@ const Wallet: React.FC = () => {
 
   return (
     <>
-      <h2 className="font-light text-xl p-4">{wallet?.name}</h2>
+      <h2 className="font-light text-xl p-4">Edit wallet</h2>
 
-      <div className="p-2">
-        <Select
-          className="w-full"
-          label="Account type"
-          placeholder="Account type"
-          value={accountType}
-          options={AccountTypeOptions}
-          onChange={onChangeAccountType}
-        />
-      </div>
-      <div className="p-2">
-        <InputText
-          className="w-full"
-          label="Account address"
-          placeholder="Account address"
-          value={address}
-          onChange={onChangeAccountAddress}
-        />
-      </div>
-      <div className="p-2">
+      <form onSubmit={updateWallet}>
+        <div className="p-2">
+          <InputText
+            className="w-full"
+            label="Wallet name"
+            placeholder="Wallet name"
+            value={name}
+            onChange={onChangeWalletName}
+          />
+        </div>
+
+        <div className="p-2 flex items-center">
+          <Button size="lg" disabled={name === wallet?.name} type="submit">
+            Update
+          </Button>
+          <Button className="ml-3" size="lg" onClick={toggleDialogOpen}>
+            Forget
+          </Button>
+        </div>
+      </form>
+
+      <h2 className="font-light text-xl p-4">Accounts</h2>
+
+      <form onSubmit={handleSubmit(addAccount)}>
+        <div className="p-2">
+          <Select
+            className="w-full"
+            label="Account type"
+            placeholder="Account type"
+            value={accountType}
+            options={AccountTypeOptions}
+            onChange={onChangeAccountType}
+          />
+        </div>
         {accountType === AccountTypes.CHAIN && (
-          <Select
-            className="w-full"
-            label="Network"
-            placeholder="Network"
-            value={accountNetwork}
-            options={networkOptions}
-            onChange={onChangeAccountNetwork}
-          />
+          <div className="p-2">
+            <Select
+              className="w-full"
+              label="Network"
+              placeholder="Network"
+              value={accountNetwork}
+              options={networkOptions}
+              onChange={onChangeAccountNetwork}
+            />
+
+            {/* {accountType === AccountTypes.MAIN && (
+              <Select
+                className="w-full"
+                label="Network type"
+                placeholder="Network type"
+                value={networkType}
+                options={networkOptions}
+                onChange={onChangeNetworkType}
+              />
+            )} */}
+          </div>
         )}
-        {/* {accountType === AccountTypes.MAIN && (
-          <Select
-            className="w-full"
-            label="Network type"
-            placeholder="Network type"
-            value={networkType}
-            options={networkOptions}
-            onChange={onChangeNetworkType}
+        <div className="p-2">
+          <Controller
+            name="address"
+            control={control}
+            rules={{ required: true, validate: validateAddress }}
+            render={({ field: { onChange, onBlur, value } }) => (
+              <InputText
+                onChange={onChange}
+                onBlur={onBlur}
+                value={value}
+                invalid={!!errors.address}
+                address
+                name="address"
+                className="w-full"
+                label="Account address"
+                placeholder="Account address"
+              />
+            )}
           />
-        )} */}
-      </div>
-      <div className="p-2">
-        <Button fat onClick={addAccount}>
-          Add account
-        </Button>
-      </div>
+          <ErrorMessage visible={errors.address?.type === ErrorTypes.VALIDATE}>
+            The address is not valid, please type it again
+          </ErrorMessage>
+          <ErrorMessage visible={errors.address?.type === ErrorTypes.REQUIRED}>
+            The address is required
+          </ErrorMessage>
+        </div>
+        <div className="p-2">
+          <Button size="lg" type="submit" disabled={!isValid}>
+            Add account
+          </Button>
+        </div>
+      </form>
 
       <div className="m-2">
         <List>
@@ -271,7 +363,8 @@ const Wallet: React.FC = () => {
               </div>
               <Button
                 className="ml-auto max-w-min"
-                onClick={() => removeAccount(account?.accountId || '')}
+                disabled={!(account as ChainAccount)?.chainId}
+                onClick={() => removeAccount(network.chainId || '')}
               >
                 Remove
               </Button>
@@ -279,6 +372,31 @@ const Wallet: React.FC = () => {
           ))}
         </List>
       </div>
+
+      <Dialog
+        as="div"
+        className="relative z-10"
+        open={isDialogOpen}
+        onClose={toggleDialogOpen}
+      >
+        <DialogContent>
+          <Dialog.Title as="h3" className="font-light text-xl">
+            Forget wallet
+          </Dialog.Title>
+          <div className="mt-2">
+            Are you sure you want to forget this wallet?
+          </div>
+
+          <div className=" mt-2 flex justify-between">
+            <Button className="max-w-min" onClick={toggleDialogOpen}>
+              Cancel
+            </Button>
+            <Button className="max-w-min" onClick={forgetWallet}>
+              Forget
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

@@ -1,85 +1,91 @@
-import React, { useEffect, useState } from 'react';
-import { useSetRecoilState, useRecoilValue } from 'recoil';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import Button from '../ui/Button';
-import { TransactionData } from '../../common/types';
-import { currentTransactionState } from '../store/currentTransaction';
-import { transactionBusketState } from '../store/transactionBusket';
-import { connectionState, Connection } from '../store/api';
-import Address from '../ui/Address';
+import { format } from 'date-fns';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { Routes, StatusType, withId } from '../../common/constants';
+import {
+  MultisigWallet,
+  Transaction as TransactionData,
+  TransactionStatus,
+  TransactionType,
+} from '../db/types';
+import { toShortText } from '../utils/strings';
+import right from '../../../assets/right.svg';
+import Status from '../ui/Status';
+import Explorer from '../ui/Explorer';
+import { db } from '../db/db';
+import { getApprovals } from '../utils/transactions';
 
 type Props = {
   transaction: TransactionData;
 };
 
-const Transaction: React.FC<Props> = ({ transaction }: Props) => {
-  const setCurrentTransaction = useSetRecoilState(currentTransactionState);
-  const setTransactions = useSetRecoilState(transactionBusketState);
-  const networks = useRecoilValue(connectionState);
+const Transaction: React.FC<Props> = ({ transaction }) => {
+  const isTxConfirmed = transaction.status === TransactionStatus.CONFIRMED;
 
-  const [transactionNetwork, setNetwork] = useState<Connection>();
-  const [tokenSymbol, setTokenSymbol] = useState('');
-
-  useEffect(() => {
-    const getTokenSymbol = async () => {
-      const chainProperties =
-        await transactionNetwork?.api.registry.getChainProperties();
-      const symbol = chainProperties?.tokenSymbol.unwrap()[0].toString();
-      setTokenSymbol(symbol || '');
-    };
-
-    const network = Object.values(networks).find(
-      (n: Connection) => n.network.name === transaction.network
-    );
-
-    if (network) {
-      setNetwork(network);
-      getTokenSymbol();
-    }
-  }, [networks, transactionNetwork, transaction]);
-
-  const sendTransaction = () => {
-    setTransactions((trxs) => {
-      return trxs.filter((t) => t !== transaction);
-    });
-  };
+  const network = useLiveQuery(
+    () => db.chains.get({ chainId: transaction.chainId }),
+    [transaction.chainId],
+  );
 
   return (
-    <div className="bg-gray-100 p-4 m-4 rounded-lg">
+    <div className="bg-gray-100 px-4 py-3 m-2 rounded-2xl">
       <div>
-        <div className="text-gray-500">Selected account</div>
-        <div>
-          <Address address={transaction.address} />
+        <div className="text-sm flex justify-between">
+          <div className="text-gray-500">
+            {format(transaction.createdAt, 'HH:mm:ss dd MMM, yyyy')}
+          </div>
+          <Link
+            to={
+              transaction?.id
+                ? withId(Routes.TRANSFER_DETAILS, transaction.id)
+                : '#'
+            }
+          >
+            <span className="text-sm flex items-center">
+              Details <img className="ml-1" src={right} alt="" />
+            </span>
+          </Link>
+        </div>
+        <div className="flex">
+          <div className="mr-8">
+            <div className="text-3xl">1</div>
+            <div className="text-xs text-gray-500">Operations</div>
+          </div>
+          <div>
+            <div className="text-xl">
+              {toShortText(transaction.data.callHash)}
+            </div>
+            <div className="text-xs text-gray-500 mt-2">Call Hash</div>
+          </div>
+        </div>
+        <div className="flex justify-between items-center">
+          {transaction.type === TransactionType.TRANSFER &&
+          network &&
+          transaction.transactionHash ? (
+            <Explorer
+              param={transaction.transactionHash}
+              type="extrinsic"
+              network={network}
+            />
+          ) : (
+            <div />
+          )}
+
+          <div className="flex">
+            {transaction.type === TransactionType.MULTISIG_TRANSFER && (
+              <span className="text-xs text-gray-500 mr-2">
+                {getApprovals(transaction).length}/
+                {(transaction.wallet as MultisigWallet).threshold} Signatures
+              </span>
+            )}
+            <Status
+              status={isTxConfirmed ? StatusType.SUCCESS : StatusType.WAITING}
+              alt={isTxConfirmed ? 'success' : 'pending'}
+            />
+          </div>
         </div>
       </div>
-      <div className="text-gray-500">Operations details:</div>
-      {transaction.type === 'transfer' ? (
-        <div className="flex">
-          Transfer {transaction.payload.amount} {tokenSymbol} to{' '}
-          <Address address={transaction.payload.address} />
-        </div>
-      ) : (
-        <div>
-          <div>Type: {transaction.type}</div>
-          {Object.entries(transaction.payload).map((type, value) => (
-            <div>
-              {type}: {value}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {transaction.signature ? (
-        <Button onClick={() => sendTransaction()}>
-          Send to the blockchain
-        </Button>
-      ) : (
-        <Link to="show-code">
-          <Button onClick={() => setCurrentTransaction(transaction)}>
-            Show QR Code
-          </Button>
-        </Link>
-      )}
     </div>
   );
 };

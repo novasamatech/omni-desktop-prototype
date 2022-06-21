@@ -4,42 +4,52 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import Checkbox from '../ui/Checkbox';
 
 import { selectedWalletsState } from '../store/selectedWallets';
-import { db, Wallet } from '../db/db';
+import { db } from '../db/db';
+import { Wallet } from '../db/types';
+import mst from '../../../assets/mst.svg';
+import { isMultisig } from '../utils/account';
 
 const SelectWallets: React.FC = () => {
-  // TODO: select wallets after hot update on interface
   const [selectedWallets, setSelectedWallets] =
     useRecoilState(selectedWalletsState);
 
-  const wallets = useLiveQuery(() => {
-    return db.wallets.toArray();
-  });
+  const wallets = useLiveQuery(() => db.wallets.toArray());
+
+  const isWalletSelected = (walletId?: number) => {
+    return selectedWallets.some((w) => w.id === walletId);
+  };
 
   const selectWallet = (wallet: Wallet) => {
-    const isExist = selectedWallets.find((w) => w.id === wallet.id);
-
     setSelectedWallets(
-      isExist
+      isWalletSelected(wallet.id)
         ? selectedWallets.filter((w) => w.id !== wallet.id)
-        : [...selectedWallets, wallet]
+        : selectedWallets.concat(wallet),
     );
   };
 
+  if (!wallets || wallets.length === 0) {
+    return null;
+  }
+
   return (
     <ul className="divide-y-2 divide-gray-100">
-      {wallets?.map((wallet: Wallet) => (
+      {wallets.map((wallet) => (
         <li
           className="account p-3 whitespace-nowrap overflow-x-auto"
           key={wallet.id}
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <Checkbox
-                className="mr-4"
-                onChange={() => selectWallet(wallet)}
-              />
-              <div>{wallet.name}</div>
-            </div>
+          <div className="flex items-center justify-between select-none">
+            <Checkbox
+              className="flex-1"
+              label={wallet.name}
+              checked={isWalletSelected(wallet.id)}
+              onChange={() => selectWallet(wallet)}
+            />
+            {isMultisig(wallet) && (
+              <div className="flex items-center ml-2">
+                <img src={mst} alt="mst" className="h-4 ml-2" />
+              </div>
+            )}
           </div>
         </li>
       ))}

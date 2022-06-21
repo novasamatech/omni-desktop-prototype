@@ -1,5 +1,4 @@
 import React from 'react';
-// import { SingleAddress } from '@polkadot/ui-keyring/observable/types';
 import { Account as AccountType } from '../../common/types';
 import Checkbox from '../ui/Checkbox';
 import Address from '../ui/Address';

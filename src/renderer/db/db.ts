@@ -1,129 +1,40 @@
 import Dexie, { Table } from 'dexie';
-import { HexString } from '../../common/types';
-
-export enum CryptoType {
-  SR25519,
-  ED25519,
-  ECDSA,
-  ETHEREUM,
-}
-
-export enum SubstrateCryptoType {
-  SR25519,
-  ED25519,
-  ECDSA,
-}
-
-export enum ChainClass {
-  ETHERIUM,
-  SUBSTRATE,
-}
-
-export interface Wallet {
-  id?: number;
-  name: string;
-  mainAccounts: Account[];
-  chainAccounts: ChainAccount[];
-}
-
-export interface StatemineExtras {
-  assetId: string;
-}
-
-export interface OrmlExtras {
-  currencyIdScale: string;
-  currencyIdType: string;
-  existentialDeposit: string;
-  transfersEnabled?: boolean;
-}
-
-export interface Account {
-  accountId: string;
-  publicKey: string;
-  cryptoType: CryptoType;
-}
-
-export interface ChainAccount extends Account {
-  chainId: HexString;
-}
-
-export interface Asset {
-  assetId: number;
-  symbol: string;
-  precision: number;
-  priceId?: string;
-  staking?: string;
-  type?: string;
-  typeExtras?: StatemineExtras | OrmlExtras;
-}
-
-export interface NodeApiKey {
-  queryName: string;
-  keyName: string;
-}
-
-export interface ChainNode {
-  name: string;
-  url: string;
-  apiKey: NodeApiKey;
-}
-
-export enum ChainOptions {
-  crowloans = 'crowloans',
-  etheriumBased = 'etheriumBased',
-  testnet = 'testnet',
-}
-
-export interface ExternalApi {
-  type: string;
-  url: string;
-}
-
-export interface ExternalApiSet {
-  history?: ExternalApi;
-  stacking?: ExternalApi;
-  crowdloans?: ExternalApi;
-}
-
-export interface Expolorer {
-  name: string;
-  account?: string;
-  extrinsic?: string;
-  event?: string;
-}
-
-export enum ActiveType {
-  DISABLED = 'disabled',
-  LOCAL_NODE = 'localNode',
-  EXTERNAL_NODE = 'externalNode',
-}
-
-export interface Chain {
-  id?: number;
-  chainId: HexString;
-  parentId?: HexString;
-  name: string;
-  assets: Asset[];
-  nodes: ChainNode[];
-  color?: string;
-  icon?: string;
-  options?: ChainOptions[];
-  externalApi?: ExternalApiSet;
-  explorers?: Expolorer[];
-  activeType: ActiveType;
-  addressPrefix?: number;
-}
+import {
+  Chain,
+  ChainConnection,
+  Contact,
+  Credential,
+  MultisigWallet,
+  Notification,
+  Transaction,
+  Wallet,
+} from './types';
 
 export class OmniDexie extends Dexie {
-  wallets!: Table<Wallet>;
+  wallets!: Table<Wallet | MultisigWallet>;
 
   chains!: Table<Chain>;
 
+  connections!: Table<ChainConnection>;
+
+  contacts!: Table<Contact>;
+
+  transactions!: Table<Transaction>;
+
+  mxCredentials!: Table<Credential>;
+
+  mxNotifications!: Table<Notification>;
+
   constructor() {
     super('omniDatabase');
-    this.version(2).stores({
-      wallets: '++id,name',
+    this.version(59).stores({
+      wallets: '++id,name,isMultisig',
       chains: '++id,&chainId,parentId,name,activeType',
+      connections: '++id,&chainId,activeType',
+      contacts: '++id,name,secureProtocolId',
+      transactions: '++id,chainId,address,type,status,data.callHash,data.salt',
+      mxCredentials: '++id,userId,isLoggedIn',
+      mxNotifications: '++id,sender,client',
     });
   }
 }

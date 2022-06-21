@@ -87,10 +87,10 @@ export default merge(baseConfig, {
           },
         },
       },
-      // Common Image Formats
+      // Common Image Formats + WASM
       {
-        test: /\.(?:ico|gif|png|jpg|jpeg|webp)$/,
-        use: 'url-loader',
+        test: /\.(ico|gif|png|jpg|jpeg|webp|wasm)$/,
+        type: 'asset/resource',
       },
     ],
   },

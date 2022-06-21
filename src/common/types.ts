@@ -14,6 +14,14 @@ export type TransactionData = {
   network: string;
 };
 
+export type Approval = {
+  fromBlockChain: boolean;
+  fromMatrix: boolean;
+  extrinsicHash?: HexString;
+};
+
+export type Approvals = Record<string, Approval>;
+
 export interface ElectronApi {
   accountStore: {
     all: () => Promise<Account[]>;
@@ -25,6 +33,5 @@ export interface ElectronApi {
 declare global {
   interface Window {
     electron: ElectronApi;
-    Olm: any;
   }
 }

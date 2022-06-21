@@ -1,6 +1,4 @@
-/* eslint-disable promise/catch-or-return */
 const { contextBridge, ipcRenderer } = require('electron');
-const Olm = require('@matrix-org/olm/olm');
 
 contextBridge.exposeInMainWorld('electron', {
   accountStore: {
@@ -9,7 +7,3 @@ contextBridge.exposeInMainWorld('electron', {
     add: (address) => ipcRenderer.invoke('account-store-add', address),
   },
 });
-
-Olm.init();
-
-contextBridge.exposeInMainWorld('Olm', Olm);
