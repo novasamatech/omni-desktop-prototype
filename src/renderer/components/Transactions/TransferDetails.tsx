@@ -210,7 +210,7 @@ const TransferDetails: React.FC = () => {
     const updateInterval = setInterval(async () => {
       const tx = await db.transactions.get(Number(id));
       if (tx) updateTransaction(tx, connection);
-    }, 3000);
+    }, 2000);
 
     return () => {
       clearInterval(updateInterval);
