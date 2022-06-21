@@ -8,6 +8,7 @@ const IMG: Record<StatusType, string | undefined> = {
   success,
   waiting,
   abstained,
+  pending: waiting,
 };
 
 type Props = {

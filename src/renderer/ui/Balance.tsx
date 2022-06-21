@@ -2,26 +2,19 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { FrameSystemAccountInfo } from '@polkadot/types/lookup';
 
 import { Connection } from '../store/connections';
-import {
-  Asset,
-  StatemineExtras,
-  OrmlExtras,
-  AssetType,
-  Wallet,
-} from '../db/types';
+import { Asset, AssetType, OrmlExtras, StatemineExtras } from '../db/types';
 import Shimmer from './Shimmer';
 import { formatBalance } from '../utils/assets';
-import { getAddressFromWallet } from '../utils/account';
 
 type Props = {
   asset: Asset;
   connection: Connection;
-  wallet: Wallet;
+  walletAddress: string;
 };
 
 const Balance: React.FC<Props> = ({
   asset,
-  wallet,
+  walletAddress,
   connection: { api, network },
 }) => {
   const [balance, setBalance] = useState<string>();
@@ -84,24 +77,22 @@ const Balance: React.FC<Props> = ({
   );
 
   useEffect(() => {
-    if (wallet) {
-      const address = getAddressFromWallet(wallet, network);
-
+    if (walletAddress) {
       // TODO: Unsubscribe from subscriptions
       if (!asset.type) {
-        subscribeBalanceChange(address);
+        subscribeBalanceChange(walletAddress);
       }
 
       if (asset.type === AssetType.STATEMINE) {
-        subscribeStatemineAssetChange(address);
+        subscribeStatemineAssetChange(walletAddress);
       }
 
       if (asset.type === AssetType.ORML) {
-        subscribeOrmlAssetChange(address);
+        subscribeOrmlAssetChange(walletAddress);
       }
     }
   }, [
-    wallet,
+    walletAddress,
     asset,
     network,
     subscribeBalanceChange,
@@ -109,7 +100,7 @@ const Balance: React.FC<Props> = ({
     subscribeOrmlAssetChange,
   ]);
 
-  if (!asset || !wallet) return <Shimmer width="80px" height="20px" />;
+  if (!asset || !walletAddress) return <Shimmer width="80px" height="20px" />;
 
   return (
     <span>

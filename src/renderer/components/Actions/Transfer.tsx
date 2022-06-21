@@ -329,8 +329,11 @@ const Transfer: React.FC = () => {
                     Transfarable:
                     <Balance
                       asset={currentAsset}
-                      wallet={firstWallet}
                       connection={currentNetwork}
+                      walletAddress={getAddressFromWallet(
+                        firstWallet,
+                        currentNetwork.network,
+                      )}
                     />
                   </div>
                 )
@@ -354,7 +357,11 @@ const Transfer: React.FC = () => {
               ? TransactionType.MULTISIG_TRANSFER
               : TransactionType.TRANSFER
           }
-          wallet={firstWallet}
+          walletAddress={getAddressFromWallet(
+            firstWallet,
+            currentNetwork?.network,
+          )}
+          threshold={(firstWallet as MultisigWallet)?.threshold}
           connection={currentNetwork}
           address={watchAddress}
           amount={watchAmount}
@@ -374,12 +381,9 @@ const Transfer: React.FC = () => {
       >
         <DialogContent>
           <Dialog.Title as="h3" className="font-light text-xl">
-            Some transfers were not created
+            Transfers already exist
           </Dialog.Title>
-          <h2 className="mt-4 mb-2">
-            These transfers already exist and ready to be signed
-          </h2>
-          <ul className="mt-2 mb-4 p-2 flex flex-col gap-3 bg-gray-200 rounded-lg">
+          <ul className="my-4 p-2 flex flex-col gap-3 bg-gray-200 rounded-lg">
             {existingMst.map((tx) => (
               <li key={tx.id} className="flex items-center justify-between">
                 <span>{tx.wallet.name}</span>

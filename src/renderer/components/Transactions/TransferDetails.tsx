@@ -1,4 +1,4 @@
-/* eslint-disable promise/always-return */
+/* eslint-disable promise/always-return,consistent-return */
 import React, { useCallback, useEffect, useState } from 'react';
 import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 import { useHistory, useParams } from 'react-router';
@@ -35,6 +35,7 @@ import {
   decodeCallData,
   getApprovals,
   updateTimepointFromBlockchain,
+  updateTransaction,
 } from '../../utils/transactions';
 import { copyToClipboard } from '../../utils/strings';
 import Fee from '../../ui/Fee';
@@ -85,7 +86,7 @@ const TransferDetails: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    let intervalId: NodeJS.Timeout;
+    let timepointInterval: NodeJS.Timeout;
     if (transaction && Object.values(networks).length) {
       const currentConnection = Object.values(networks).find(
         (n) => n.network.chainId === transaction.chainId,
@@ -94,7 +95,7 @@ const TransferDetails: React.FC = () => {
       if (currentConnection) {
         setConnection(currentConnection);
         if (!transaction.blockHeight) {
-          intervalId = setInterval(
+          timepointInterval = setInterval(
             () => updateTimepointFromBlockchain(transaction, currentConnection),
             1000,
           );
@@ -103,7 +104,7 @@ const TransferDetails: React.FC = () => {
     }
 
     return () => {
-      clearInterval(intervalId);
+      clearInterval(timepointInterval);
     };
   }, [transaction, networks]);
 
@@ -203,6 +204,19 @@ const TransferDetails: React.FC = () => {
     [transaction, callData, connection],
   );
 
+  useEffect(() => {
+    if (!transaction || !connection || isConfirmed) return;
+
+    const updateInterval = setInterval(async () => {
+      const tx = await db.transactions.get(Number(id));
+      if (tx) updateTransaction(tx, connection);
+    }, 2000);
+
+    return () => {
+      clearInterval(updateInterval);
+    };
+  }, [connection, isConfirmed, transaction, id]);
+
   // Check this case
   useEffect(() => {
     if (transaction?.data.callData && !transaction?.data.amount) {
@@ -250,8 +264,11 @@ const TransferDetails: React.FC = () => {
                   <div className="flex justify-end text-black text-sm">
                     <Balance
                       asset={currentAsset}
-                      wallet={transaction.wallet}
                       connection={connection}
+                      walletAddress={getAddressFromWallet(
+                        transaction.wallet,
+                        network,
+                      )}
                     />
                   </div>
                 </div>
@@ -329,8 +346,12 @@ const TransferDetails: React.FC = () => {
                       ? TransactionType.MULTISIG_TRANSFER
                       : TransactionType.TRANSFER
                   }
+                  walletAddress={getAddressFromWallet(
+                    transaction.wallet,
+                    network,
+                  )}
+                  threshold={(transaction.wallet as MultisigWallet).threshold}
                   transaction={transaction}
-                  wallet={transaction.wallet}
                   connection={connection}
                   address={transaction.data.address}
                   amount={transaction.data.amount}
