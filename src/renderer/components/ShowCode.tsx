@@ -245,7 +245,7 @@ const ShowCode: React.FC = () => {
           <div className="w-[350px] mt-5 mb-10">
             <Fee
               walletAddress={getAddressFromWallet(wallet, connection.network)}
-              threshold={wallet.threshold}
+              threshold={wallet?.threshold}
               connection={connection}
               type={transaction.type}
               transaction={transaction}

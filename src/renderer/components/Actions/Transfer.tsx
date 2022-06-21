@@ -361,7 +361,7 @@ const Transfer: React.FC = () => {
             firstWallet,
             currentNetwork?.network,
           )}
-          threshold={(firstWallet as MultisigWallet).threshold}
+          threshold={(firstWallet as MultisigWallet)?.threshold}
           connection={currentNetwork}
           address={watchAddress}
           amount={watchAmount}

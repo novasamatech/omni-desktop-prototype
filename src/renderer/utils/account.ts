@@ -39,9 +39,11 @@ type WalletAccounts = {
   mainAccounts: Account[];
 };
 export const getAddressFromWallet = <T extends WalletAccounts>(
-  wallet: T,
+  wallet?: T,
   network?: Chain,
 ): string => {
+  if (!wallet) return '';
+
   const chainAccount = wallet.chainAccounts.find(
     (c) => c.chainId === network?.chainId,
   );
