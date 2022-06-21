@@ -131,6 +131,7 @@ const Signatories: React.FC<Props> = ({ network, transaction }) => {
     return ApproveStatus.WAITING;
   };
 
+  // Pick new approves form transactions
   useEffect(() => {
     if (!transaction) return;
 
@@ -143,6 +144,7 @@ const Signatories: React.FC<Props> = ({ network, transaction }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transaction]);
 
+  // Update signatures to "Pending" state
   useEffect(() => {
     if (!network || !transaction) return;
 
@@ -171,6 +173,7 @@ const Signatories: React.FC<Props> = ({ network, transaction }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [network, transaction]);
 
+  // Update and animate signatories to their final state
   useEffect(() => {
     if (!network || !transaction) return;
 
