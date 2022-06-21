@@ -1,5 +1,5 @@
-/* eslint-disable promise/always-return */
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+/* eslint-disable promise/always-return,consistent-return */
+import React, { useCallback, useEffect, useState } from 'react';
 import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 import { useHistory, useParams } from 'react-router';
 import { format } from 'date-fns';
@@ -45,7 +45,6 @@ const TransferDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const history = useHistory();
 
-  const updateInterval = useRef<NodeJS.Timer>();
   const [, setSignWith] = useRecoilState(signWithState);
   const networks = useRecoilValue(connectionState);
   const setCurrentTransaction = useSetRecoilState(currentTransactionState);
@@ -206,28 +205,17 @@ const TransferDetails: React.FC = () => {
   );
 
   useEffect(() => {
-    if (isConfirmed) {
-      if (!updateInterval?.current) return;
+    if (!transaction || !connection || isConfirmed) return;
 
-      clearInterval(updateInterval.current);
-      updateInterval.current = undefined;
-      return;
-    }
-
-    if (!transaction || !connection || updateInterval?.current) return;
-
-    updateInterval.current = setInterval(async () => {
+    const updateInterval = setInterval(async () => {
       const tx = await db.transactions.get(Number(id));
       if (tx) updateTransaction(tx, connection);
     }, 3000);
-  }, [connection, isConfirmed, transaction, id]);
 
-  useEffect(() => {
     return () => {
-      if (!updateInterval?.current) return;
-      clearInterval(updateInterval.current);
+      clearInterval(updateInterval);
     };
-  }, []);
+  }, [connection, isConfirmed, transaction, id]);
 
   // Check this case
   useEffect(() => {
