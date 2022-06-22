@@ -6,3 +6,5 @@ export const toShortText = (text = ''): string => {
 export const copyToClipboard = (text = '') => {
   navigator.clipboard.writeText(text);
 };
+
+export const version = () => process.env.VERSION?.replace(/\s/g, '') || '???';

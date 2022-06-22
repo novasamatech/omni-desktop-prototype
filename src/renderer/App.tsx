@@ -6,6 +6,7 @@ import createRouter from '../common/utils/routing';
 import SplashScreen from './components/SplashScreen';
 import { Routes } from '../common/constants';
 import NetworkRefresh from './components/NetworkRefresh';
+import { version } from './utils/strings';
 import './App.css';
 
 const App: React.FC = () => {
@@ -25,8 +26,8 @@ const App: React.FC = () => {
       >
         <div className="ribbon">
           This is internal build of Omni Enterprise application proof of concept
-          demo. User Interface is not final (
-          {process.env.VERSION?.toLowerCase()})
+          demo. User Interface is not final{' '}
+          <span className="lowercase">({version()})</span>
         </div>
         {renderRoutes(router)}
       </MatrixProvider>
