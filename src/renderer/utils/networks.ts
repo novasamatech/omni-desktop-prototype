@@ -31,5 +31,14 @@ export const createConnection = async (
 
   if (!provider) return;
 
-  return ApiPromise.create({ provider });
+  const api = new ApiPromise({ provider });
+  await api.isReady;
+  api.on('error', (...args: any[]) => {
+    console.error(`Error occurred for ${network.name} - `, args);
+  });
+  api.on('disconnected', (...args: any[]) => {
+    console.error(`Disconnect occurred for ${network.name} - `, args);
+  });
+
+  return api;
 };
