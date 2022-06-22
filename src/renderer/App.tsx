@@ -25,7 +25,8 @@ const App: React.FC = () => {
       >
         <div className="ribbon">
           This is internal build of Omni Enterprise application proof of concept
-          demo. User Interface is not final
+          demo. User Interface is not final (
+          {process.env.VERSION?.toLowerCase()})
         </div>
         {renderRoutes(router)}
       </MatrixProvider>
