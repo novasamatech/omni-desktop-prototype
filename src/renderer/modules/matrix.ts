@@ -699,10 +699,12 @@ class Matrix implements ISecureMessenger {
     this.matrixClient.on(MatrixEventEvent.Decrypted, async (event) => {
       let handler: any = () => {};
       if (this.isMstEvent(event)) {
-        handler = this.subscribeHandlers?.onMstEvent;
+        const payload = this.createEventPayload<MSTPayload>(event.getContent());
+        handler = this.subscribeHandlers?.onMstEvent.bind(this, payload);
       }
       if (event.getType() === EventType.RoomMessage) {
-        handler = this.subscribeHandlers?.onMessage;
+        const payload = event.getContent().body;
+        handler = this.subscribeHandlers?.onMessage.bind(this, payload);
       }
 
       const roomId = event.getRoomId();
@@ -711,7 +713,7 @@ class Matrix implements ISecureMessenger {
       const room = this.matrixClient.getRoom(roomId);
       if (!room || !this.isOmniRoom(room.name)) return;
 
-      handler(event);
+      handler();
     });
   }
 
