@@ -132,4 +132,3 @@ const Fee: React.FC<Props> = ({
 };
 
 export default Fee;
-// export default memo(Fee);

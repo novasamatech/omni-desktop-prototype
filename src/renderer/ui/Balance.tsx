@@ -1,6 +1,4 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { FrameSystemAccountInfo } from '@polkadot/types/lookup';
-
 import { Connection } from '../store/connections';
 import { Asset, AssetType, OrmlExtras, StatemineExtras } from '../db/types';
 import Shimmer from './Shimmer';
@@ -27,70 +25,66 @@ const Balance: React.FC<Props> = ({
   );
 
   const subscribeBalanceChange = useCallback(
-    (address: string) =>
-      api.query.system.account(
-        address,
-        async (data: FrameSystemAccountInfo) => {
-          const {
-            data: { free, feeFrozen },
-          } = data;
-          updateBalance(free.sub(feeFrozen));
-        },
-      ),
+    (address: string) => {
+      return api.query.system.account(address, (data) => {
+        const { free, feeFrozen } = data.data;
+        updateBalance(free.sub(feeFrozen));
+      });
+    },
     [api, updateBalance],
   );
 
   const subscribeStatemineAssetChange = useCallback(
-    async (address: string) => {
-      // eslint-disable-next-line prefer-destructuring
+    (address: string) => {
       const statemineAssetId = (asset?.typeExtras as StatemineExtras).assetId;
-      return api.query.assets.account(
-        statemineAssetId,
-        address,
-        async (data) => {
-          let currentFree = '0';
 
-          if (!data.isNone) {
-            currentFree = data.unwrap().balance.toString();
-          }
-          updateBalance(currentFree);
-        },
-      );
+      return api.query.assets.account(statemineAssetId, address, (data) => {
+        const free = data.isNone ? '0' : data.unwrap().balance.toString();
+        updateBalance(free);
+      });
     },
     [asset, api, updateBalance],
   );
 
   const subscribeOrmlAssetChange = useCallback(
     async (address: string) => {
-      // eslint-disable-next-line prefer-destructuring
       const ormlAssetId = (asset?.typeExtras as OrmlExtras).currencyIdScale;
-      return api.query.tokens.accounts(
-        address,
-        ormlAssetId,
-        async (data: any) => {
-          const currentFree = data.free.sub(data.frozen);
-          updateBalance(currentFree);
-        },
-      );
+
+      return api.query.tokens.accounts(address, ormlAssetId, (data: any) => {
+        const currentFree = data.free.sub(data.frozen);
+        updateBalance(currentFree);
+      });
     },
     [asset, api, updateBalance],
   );
 
   useEffect(() => {
-    if (walletAddress) {
-      // TODO: Unsubscribe from subscriptions
-      if (!asset.type) {
-        subscribeBalanceChange(walletAddress);
-      }
+    if (!walletAddress) return;
 
-      if (asset.type === AssetType.STATEMINE) {
-        subscribeStatemineAssetChange(walletAddress);
-      }
+    let unsubBalance: any;
+    let unsubStatemine: any;
+    let unsubOrml: any;
 
-      if (asset.type === AssetType.ORML) {
-        subscribeOrmlAssetChange(walletAddress);
-      }
+    if (!asset.type) {
+      unsubBalance = subscribeBalanceChange(walletAddress);
     }
+
+    if (asset.type === AssetType.STATEMINE) {
+      unsubStatemine = subscribeStatemineAssetChange(walletAddress);
+    }
+
+    if (asset.type === AssetType.ORML) {
+      unsubOrml = subscribeOrmlAssetChange(walletAddress);
+    }
+
+    return () => {
+      const logOk = () => console.info('unsub ok');
+      const logFail = () => console.info('unsub fail');
+
+      if (unsubBalance) unsubBalance.then(logOk).catch(logFail);
+      if (unsubStatemine) unsubStatemine.then(logOk).catch(logFail);
+      if (unsubOrml) unsubOrml.then(logOk).catch(logFail);
+    };
   }, [
     walletAddress,
     asset,

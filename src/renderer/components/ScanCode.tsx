@@ -2,18 +2,16 @@ import React, { useState } from 'react';
 import { useRecoilValue } from 'recoil';
 import { useHistory } from 'react-router-dom';
 import { QrScanSignature } from '@polkadot/react-qr';
-import { GenericExtrinsic } from '@polkadot/types';
 import {
   getRegistry,
   GetRegistryOpts,
-  createMetadata,
-  OptionsWithMeta,
   UnsignedTransaction,
 } from '@substrate/txwrapper-polkadot';
 import { Dialog } from '@headlessui/react';
 import { capitalize } from 'lodash';
 
-import { connectionState } from '../store/connections';
+import { GenericExtrinsic } from '@polkadot/types';
+import { Connection, connectionState } from '../store/connections';
 import {
   currentTransactionState,
   currentUnsignedState,
@@ -24,46 +22,25 @@ import LinkButton from '../ui/LinkButton';
 import { Routes, withId } from '../../common/constants';
 import { db } from '../db/db';
 import {
+  MultisigWallet,
+  Transaction,
   TransactionStatus,
   TransactionType,
-  MultisigWallet,
 } from '../db/types';
+import { getSignedExtrinsic } from '../utils/transactions';
 import { getAddressFromWallet, toPublicKey } from '../utils/account';
 import { useMatrix } from './Providers/MatrixProvider';
 import Shimmer from '../ui/Shimmer';
 import DialogContent from '../ui/DialogContent';
 import Button from '../ui/Button';
 
-// TODO: Move this function to utils
-function createSignedTx(
-  unsigned: UnsignedTransaction,
-  signature: HexString,
-  options: OptionsWithMeta,
-): GenericExtrinsic {
-  const {
-    metadataRpc,
-    registry,
-    asCallsOnlyArg,
-    signedExtensions,
-    userExtensions,
-  } = options;
-  const metadata = createMetadata(registry, metadataRpc, asCallsOnlyArg);
-
-  registry.setMetadata(metadata, signedExtensions, userExtensions);
-
-  const extrinsic = registry.createType(
-    'Extrinsic',
-    { method: unsigned.method },
-    { version: unsigned.version },
-  );
-
-  extrinsic.addSignature(unsigned.address, signature, unsigned);
-
-  return extrinsic;
-}
+type ExtrinsicSubmit = {
+  extrinsicHash: HexString;
+  isFinalApprove: boolean;
+  isSuccessExtrinsic: boolean;
+};
 
 const ScanCode: React.FC = () => {
-  const networks = useRecoilValue(connectionState);
   const history = useHistory();
   const { matrix } = useMatrix();
 
@@ -71,24 +48,16 @@ const ScanCode: React.FC = () => {
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [error, setError] = useState('');
 
+  const networks = useRecoilValue(connectionState);
   const transaction = useRecoilValue(currentTransactionState);
   const signWith = useRecoilValue(signWithState);
   const unsigned = useRecoilValue(currentUnsignedState);
 
-  // TODO: Refactor sign and send transaction flow
-  const onGetSignature = async (payload: any) => {
-    if (isTxSent || !unsigned) return;
-
-    setIsTxSent(true);
-
-    if (!transaction || !Object.values(networks).length) return;
-
-    const network = Object.values(networks).find(
-      (n) => n.network.chainId === transaction.chainId,
-    );
-
-    if (!network?.api) return;
-
+  const createSignedTx = async (
+    network: Connection,
+    signature: HexString,
+    unsignedTx: UnsignedTransaction,
+  ): Promise<GenericExtrinsic> => {
     const metadataRpc = await network.api.rpc.state.getMetadata();
     const { specVersion, specName } =
       await network.api.rpc.state.getRuntimeVersion();
@@ -99,141 +68,196 @@ const ScanCode: React.FC = () => {
       specVersion: specVersion.toNumber(),
       metadataRpc: metadataRpc.toHex(),
     });
-    const signature = payload.signature || '';
-    const tx = createSignedTx(unsigned, signature, {
+
+    return getSignedExtrinsic(unsignedTx, signature, {
       metadataRpc: metadataRpc.toHex(),
       registry,
     });
-    try {
-      network.api.rpc.author.submitAndWatchExtrinsic(tx, async (result) => {
-        if (!result.isInBlock) return;
+  };
 
-        let actualTxHash = result.inner;
+  const submitAndWatchExtrinsic = (
+    tx: GenericExtrinsic,
+    network: Connection,
+    callback: (result: ExtrinsicSubmit) => void,
+  ): ExtrinsicSubmit | void => {
+    let extrinsicCalls = 0;
 
-        const signedBlock = await network.api.rpc.chain.getBlock();
-        const apiAt = await network.api.at(signedBlock.block.header.hash);
-        const allRecords = await apiAt.query.system.events();
-        let isFinalApprove = false;
-        let isSuccessExtrinsic = false;
+    network.api.rpc.author.submitAndWatchExtrinsic(tx, async (result) => {
+      if (!result.isInBlock || extrinsicCalls > 1) return;
 
-        // the information for each of the contained extrinsics
-        signedBlock.block.extrinsics.forEach(
-          ({ method: { method, section }, signer, args, hash }, index) => {
-            if (
-              method !== tx.method.method ||
-              section !== tx.method.section ||
-              signer.toHex() !== tx.signer.toHex() ||
-              args[0]?.toString() !== tx.args[0]?.toString() ||
-              args[1]?.toString() !== tx.args[1]?.toString() ||
-              args[2]?.toString() !== tx.args[2]?.toString()
-            ) {
-              return;
-            }
+      const signedBlock = await network.api.rpc.chain.getBlock();
+      const apiAt = await network.api.at(signedBlock.block.header.hash);
+      const allRecords = await apiAt.query.system.events();
 
-            allRecords
-              .filter(
-                ({ phase }) =>
-                  phase.isApplyExtrinsic && phase.asApplyExtrinsic.eq(index),
-              )
-              .forEach(({ event }) => {
-                if (network.api.events.multisig.MultisigExecuted.is(event)) {
-                  isFinalApprove = true;
-                }
+      let actualTxHash = result.inner;
+      let isFinalApprove = false;
+      let isSuccessExtrinsic = false;
 
-                if (network.api.events.system.ExtrinsicSuccess.is(event)) {
-                  actualTxHash = hash;
-                  isSuccessExtrinsic = true;
-                }
-
-                if (network.api.events.system.ExtrinsicFailed.is(event)) {
-                  const [dispatchError] = event.data;
-                  let errorInfo;
-
-                  if (dispatchError.isModule) {
-                    const decoded = network.api.registry.findMetaError(
-                      dispatchError.asModule,
-                    );
-
-                    errorInfo = `${decoded.name
-                      .split(/(?=[A-Z])/)
-                      .map((w) => w.toLowerCase())
-                      .join(' ')}`;
-                  } else {
-                    errorInfo = dispatchError.toString();
-                  }
-                  setError(capitalize(errorInfo));
-                  setDialogOpen(true);
-                }
-              });
-          },
-        );
-
-        if (!isSuccessExtrinsic || !actualTxHash || !transaction.id) return;
-
-        const extrinsicHash = actualTxHash.toHex();
-
-        if (transaction.type === TransactionType.TRANSFER) {
-          db.transactions.update(transaction.id, {
-            ...transaction,
-            transactionHash: actualTxHash.toHex(),
-            status: TransactionStatus.CONFIRMED,
-          });
-        } else if (transaction.type === TransactionType.MULTISIG_TRANSFER) {
-          const transactionStatus = isFinalApprove
-            ? TransactionStatus.CONFIRMED
-            : TransactionStatus.PENDING;
-
-          const publicKey = toPublicKey(
-            signWith?.mainAccounts[0].accountId || '',
-          );
-
-          const { approvals } = transaction.data;
-          const approvalsPayload = {
-            ...approvals,
-            [publicKey]: {
-              ...approvals[publicKey],
-              fromMatrix: true,
-              fromBlockChain: true,
-              extrinsicHash,
-            },
-          };
-
-          db.transactions.update(transaction.id, {
-            status: transactionStatus,
-            data: {
-              ...transaction.data,
-              approvals: approvalsPayload,
-            },
-          });
-
-          const multisigWallet = transaction.wallet as MultisigWallet;
-          if (signWith && multisigWallet.matrixRoomId) {
-            matrix.setRoom(multisigWallet.matrixRoomId);
-
-            const matrixEventData = {
-              senderAddress: getAddressFromWallet(signWith, network.network),
-              salt: transaction.data.salt,
-              extrinsicHash,
-              chainId: network.network.chainId,
-              callHash: transaction.data.callHash,
-            };
-
-            if (transactionStatus === TransactionStatus.CONFIRMED) {
-              matrix.mstFinalApprove(matrixEventData);
-            }
-
-            if (transactionStatus === TransactionStatus.PENDING) {
-              matrix.mstApprove(matrixEventData);
-            }
+      // information for each contained extrinsic
+      signedBlock.block.extrinsics.forEach(
+        ({ method: { method, section }, signer, args, hash }, index) => {
+          if (
+            method !== tx.method.method ||
+            section !== tx.method.section ||
+            signer.toHex() !== tx.signer.toHex() ||
+            args[0]?.toString() !== tx.args[0]?.toString() ||
+            args[1]?.toString() !== tx.args[1]?.toString() ||
+            args[2]?.toString() !== tx.args[2]?.toString()
+          ) {
+            return;
           }
-        }
 
+          allRecords.forEach(({ phase, event }) => {
+            if (!phase.isApplyExtrinsic || !phase.asApplyExtrinsic.eq(index))
+              return;
+
+            if (network.api.events.multisig.MultisigExecuted.is(event)) {
+              isFinalApprove = true;
+            }
+
+            if (network.api.events.system.ExtrinsicSuccess.is(event)) {
+              actualTxHash = hash;
+              isSuccessExtrinsic = true;
+              extrinsicCalls += 1;
+            }
+
+            if (network.api.events.system.ExtrinsicFailed.is(event)) {
+              const [dispatchError] = event.data;
+              let errorInfo = dispatchError.toString();
+
+              if (dispatchError.isModule) {
+                const decoded = network.api.registry.findMetaError(
+                  dispatchError.asModule,
+                );
+
+                errorInfo = decoded.name
+                  .split(/(?=[A-Z])/)
+                  .map((w) => w.toLowerCase())
+                  .join(' ');
+              }
+              setError(capitalize(errorInfo));
+              setDialogOpen(true);
+            }
+          });
+        },
+      );
+
+      if (extrinsicCalls === 1) {
+        callback({
+          extrinsicHash: actualTxHash.toHex(),
+          isFinalApprove,
+          isSuccessExtrinsic,
+        });
+      }
+    });
+  };
+
+  const updateTransactionDb = (
+    tx: Transaction,
+    extrinsicHash: HexString,
+    txStatus: TransactionStatus,
+  ) => {
+    if (!tx.id) return;
+
+    if (tx.type === TransactionType.TRANSFER) {
+      db.transactions.update(tx.id, {
+        ...tx,
+        transactionHash: extrinsicHash,
+        status: TransactionStatus.CONFIRMED,
+      });
+    }
+
+    if (tx.type === TransactionType.MULTISIG_TRANSFER) {
+      const { approvals } = tx.data;
+      const publicKey = toPublicKey(signWith?.mainAccounts[0].accountId || '');
+
+      const approvalsPayload = {
+        ...approvals,
+        [publicKey]: {
+          ...approvals[publicKey],
+          fromMatrix: true,
+          fromBlockChain: true,
+          extrinsicHash,
+        },
+      };
+
+      db.transactions.update(tx.id, {
+        status: txStatus,
+        data: { ...tx.data, approvals: approvalsPayload },
+      });
+    }
+  };
+
+  const sendMatrixEvent = async (
+    tx: Transaction,
+    network: Connection,
+    txStatus: TransactionStatus,
+    extrinsicHash: HexString,
+  ) => {
+    const multisigWallet = tx.wallet as MultisigWallet;
+    if (!signWith || !multisigWallet.matrixRoomId) return;
+
+    const matrixEventData = {
+      senderAddress: getAddressFromWallet(signWith, network.network),
+      salt: tx.data.salt,
+      extrinsicHash,
+      chainId: network.network.chainId,
+      callHash: tx.data.callHash,
+    };
+
+    matrix.setRoom(multisigWallet.matrixRoomId);
+    if (txStatus === TransactionStatus.CONFIRMED) {
+      matrix.mstFinalApprove(matrixEventData);
+    }
+    if (txStatus === TransactionStatus.PENDING) {
+      matrix.mstApprove(matrixEventData);
+    }
+  };
+
+  const onGetSignature = async ({ signature }: { signature: HexString }) => {
+    if (isTxSent || !unsigned || !signature) return;
+    setIsTxSent(true);
+
+    if (!transaction || !transaction.id || !Object.values(networks).length)
+      return;
+
+    const network = Object.values(networks).find(
+      (n) => n.network.chainId === transaction.chainId,
+    );
+    if (!network?.api) return;
+
+    try {
+      const tx = await createSignedTx(network, signature, unsigned);
+      submitAndWatchExtrinsic(tx, network, async (txResult) => {
+        if (
+          !transaction.id ||
+          !txResult ||
+          !txResult.isSuccessExtrinsic ||
+          !txResult.extrinsicHash
+        )
+          return;
+
+        const transactionStatus = txResult.isFinalApprove
+          ? TransactionStatus.CONFIRMED
+          : TransactionStatus.PENDING;
+
+        await updateTransactionDb(
+          transaction,
+          txResult.extrinsicHash,
+          transactionStatus,
+        );
+        if (transaction.type === TransactionType.MULTISIG_TRANSFER) {
+          await sendMatrixEvent(
+            transaction,
+            network,
+            transactionStatus,
+            txResult.extrinsicHash,
+          );
+        }
         history.push(withId(Routes.TRANSFER_DETAILS, transaction.id));
       });
     } catch (e) {
-      let message = 'Unknown error';
-      if (e instanceof Error) message = e.message;
-
+      const message = e instanceof Error ? e.message : 'Unknown error';
       setError(capitalize(message));
       setDialogOpen(true);
     }

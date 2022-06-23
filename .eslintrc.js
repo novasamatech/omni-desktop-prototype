@@ -9,6 +9,7 @@ module.exports = {
     'react/button-has-type': 'off',
     '@typescript-eslint/lines-between-class-members': 'off',
     'class-methods-use-this': 'off',
+    'consistent-return': 'off',
   },
   parserOptions: {
     ecmaVersion: 2020,

@@ -1,10 +1,15 @@
 /* eslint-disable consistent-return */
 /* eslint-disable import/prefer-default-export */
 import { ApiPromise } from '@polkadot/api';
-import { U8aFixed } from '@polkadot/types';
+import { GenericExtrinsic, U8aFixed } from '@polkadot/types';
 import { PalletMultisigMultisig } from '@polkadot/types/lookup';
 import { Call } from '@polkadot/types/interfaces';
 import { SubmittableExtrinsic } from '@polkadot/api/types';
+import {
+  createMetadata,
+  OptionsWithMeta,
+  UnsignedTransaction,
+} from '@substrate/txwrapper-polkadot';
 import { Connection } from '../store/connections';
 import {
   Asset,
@@ -365,4 +370,28 @@ export const getExistingMstTransactions = (
       tx.chainId === chainId &&
       tx.data.callHash === callHash,
   );
+};
+
+export const getSignedExtrinsic = (
+  unsigned: UnsignedTransaction,
+  signature: HexString,
+  {
+    metadataRpc,
+    registry,
+    asCallsOnlyArg,
+    signedExtensions,
+    userExtensions,
+  }: OptionsWithMeta,
+): GenericExtrinsic => {
+  const metadata = createMetadata(registry, metadataRpc, asCallsOnlyArg);
+  registry.setMetadata(metadata, signedExtensions, userExtensions);
+
+  const extrinsic = registry.createType(
+    'Extrinsic',
+    { method: unsigned.method },
+    { version: unsigned.version },
+  );
+
+  extrinsic.addSignature(unsigned.address, signature, unsigned);
+  return extrinsic;
 };

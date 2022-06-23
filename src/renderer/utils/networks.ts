@@ -1,5 +1,3 @@
-/* eslint-disable consistent-return */
-/* eslint-disable import/prefer-default-export */
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { ProviderInterface } from '@polkadot/rpc-provider/types';
 import { ScProvider } from '@polkadot/rpc-provider/substrate-connect';
@@ -33,3 +31,5 @@ export const createConnection = async (
 
   return ApiPromise.create({ provider });
 };
+
+export default {};
