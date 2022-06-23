@@ -39,8 +39,8 @@ const Balance: React.FC<Props> = ({
       const statemineAssetId = (asset?.typeExtras as StatemineExtras).assetId;
 
       return api.query.assets.account(statemineAssetId, address, (data) => {
-        const fee = data.isNone ? '0' : data.unwrap().balance.toString();
-        updateBalance(fee);
+        const free = data.isNone ? '0' : data.unwrap().balance.toString();
+        updateBalance(free);
       });
     },
     [asset, api, updateBalance],
@@ -78,9 +78,12 @@ const Balance: React.FC<Props> = ({
     }
 
     return () => {
-      if (unsubBalance) unsubBalance();
-      if (unsubStatemine) unsubStatemine();
-      if (unsubOrml) unsubOrml();
+      const logOk = () => console.info('unsub ok');
+      const logFail = () => console.info('unsub fail');
+
+      if (unsubBalance) unsubBalance.then(logOk).catch(logFail);
+      if (unsubStatemine) unsubStatemine.then(logOk).catch(logFail);
+      if (unsubOrml) unsubOrml.then(logOk).catch(logFail);
     };
   }, [
     walletAddress,
