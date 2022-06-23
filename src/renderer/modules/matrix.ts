@@ -35,7 +35,7 @@ import {
   RoomParams,
   Signatory,
 } from './types';
-import { BASE_MATRIX_URL } from './constants';
+import { BASE_MATRIX_URL, MST_EVENTS, ROOM_CRYPTO_CONFIG } from './constants';
 
 class Matrix implements ISecureMessenger {
   private static instance: Matrix;
@@ -337,7 +337,6 @@ class Matrix implements ISecureMessenger {
       throw this.createError('Failed to load joined rooms', error);
     }
 
-    const omniEvents = Object.values(OmniMstEvents);
     const timeline = rooms.reduce((acc, roomId) => {
       const room = this.matrixClient.getRoom(roomId);
       if (!room || !this.isOmniRoom(room.name)) return acc;
@@ -347,8 +346,7 @@ class Matrix implements ISecureMessenger {
         .getEvents()
         .filter(
           (event) =>
-            omniEvents.includes(event.getType() as OmniMstEvents) &&
-            event.getSender() !== this.userId,
+            this.isMstEvent(event) && event.getSender() !== this.userId,
         );
 
       if (roomTimeline.length > 0) {
@@ -531,12 +529,11 @@ class Matrix implements ISecureMessenger {
   // =====================================================
 
   private async initialStateEvents(params: RoomParams): Promise<void> {
-    // TODO: temporary disabled
-    // await this.matrixClient.sendStateEvent(
-    //   roomId,
-    //   'm.room.encryption',
-    //   ROOM_CRYPTO_CONFIG,
-    // );
+    await this.matrixClient.sendStateEvent(
+      params.roomId,
+      'm.room.encryption',
+      ROOM_CRYPTO_CONFIG,
+    );
 
     const omniExtras = {
       mst_account: {
@@ -645,8 +642,8 @@ class Matrix implements ISecureMessenger {
   private subscribeToEvents(): void {
     this.handleSyncEvent();
     this.handleInviteEvent();
-    this.handleMatrixEvents();
-    this.handleOmniEvents();
+    this.handleDecryptedEvents();
+    this.handleSelfCustomEvents();
   }
 
   private handleSyncEvent() {
@@ -698,9 +695,15 @@ class Matrix implements ISecureMessenger {
     });
   }
 
-  private handleMatrixEvents(): void {
+  private handleDecryptedEvents(): void {
     this.matrixClient.on(MatrixEventEvent.Decrypted, async (event) => {
-      if (event.getType() !== EventType.RoomMessage) return;
+      let handler: any = () => {};
+      if (this.isMstEvent(event)) {
+        handler = this.subscribeHandlers?.onMstEvent;
+      }
+      if (event.getType() === EventType.RoomMessage) {
+        handler = this.subscribeHandlers?.onMessage;
+      }
 
       const roomId = event.getRoomId();
       if (!roomId) return;
@@ -708,33 +711,22 @@ class Matrix implements ISecureMessenger {
       const room = this.matrixClient.getRoom(roomId);
       if (!room || !this.isOmniRoom(room.name)) return;
 
-      console.log(`=== 🟢 new event ${event.getType()} - ${room.name} ===`);
-      console.log(`=== 🟢 message ${event.getContent().body} ===`);
-
-      this.subscribeHandlers?.onMessage(event.getContent().body);
+      handler(event);
     });
   }
 
-  private handleOmniEvents(): void {
-    const eventHandler = (event: MatrixEvent, room: Room) => {
-      const isMstEvent = Object.values(OmniMstEvents).includes(
-        event.getType() as OmniMstEvents,
-      );
+  /**
+   * Handle echo events (init, approve, final, cancel)
+   */
+  private handleSelfCustomEvents(): void {
+    this.matrixClient.on(RoomEvent.LocalEchoUpdated, (event, room) => {
+      if (event.getSender() !== this.userId || event.status !== 'sent') return;
 
-      if (!isMstEvent || !this.isOmniRoom(room.name)) return;
+      if (!this.isMstEvent(event) || !this.isOmniRoom(room.name)) return;
 
       this.subscribeHandlers?.onMstEvent(
         this.createEventPayload<MSTPayload>(event),
       );
-    };
-
-    this.matrixClient.on(RoomEvent.Timeline, (event, room) => {
-      if (event.getSender() === this.userId) return;
-      eventHandler(event, room);
-    });
-    this.matrixClient.on(RoomEvent.LocalEchoUpdated, (event, room) => {
-      if (event.getSender() !== this.userId || event.status !== 'sent') return;
-      eventHandler(event, room);
     });
   }
 
@@ -844,6 +836,15 @@ class Matrix implements ISecureMessenger {
    */
   private createDefaultClient() {
     this.matrixClient = createClient(BASE_MATRIX_URL);
+  }
+
+  /**
+   * Check Mst Event
+   * @param event Matrix event
+   * @return {Boolean}
+   */
+  private isMstEvent(event: MatrixEvent): boolean {
+    return MST_EVENTS.includes(event.getType() as OmniMstEvents);
   }
 }
 
