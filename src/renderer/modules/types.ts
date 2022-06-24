@@ -130,6 +130,7 @@ type GeneralCallbacks = {
   onSyncEnd: () => void;
   onSyncProgress: () => void;
   onInvite: (data: InvitePayload) => void;
+  // TODO: change message type in future
   onMessage: (message: string) => void;
 };
 

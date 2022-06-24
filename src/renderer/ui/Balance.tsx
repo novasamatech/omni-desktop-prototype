@@ -18,7 +18,7 @@ const Balance: React.FC<Props> = ({
   const [balance, setBalance] = useState<string>();
 
   const updateBalance = useCallback(
-    (newBalance: any) => {
+    (newBalance) => {
       setBalance(formatBalance(newBalance.toString(), asset?.precision));
     },
     [asset],
