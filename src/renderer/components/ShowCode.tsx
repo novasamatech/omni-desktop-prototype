@@ -158,7 +158,7 @@ const ShowCode: React.FC = () => {
     const otherSignatories = transaction.wallet.isMultisig
       ? (transaction.wallet as MultisigWallet).originContacts
           .map((c) => toPublicKey(getAddressFromWallet(c, connection.network)))
-          .filter((c) => c !== address)
+          .filter((c) => c !== toPublicKey(address))
           .sort()
       : [];
     const { threshold } = transaction.wallet as MultisigWallet;
