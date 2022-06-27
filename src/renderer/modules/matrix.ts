@@ -132,6 +132,32 @@ class Matrix implements ISecureMessenger {
   }
 
   /**
+   * Register user in Matrix
+   * @param login login value
+   * @param password password value
+   * @return {Promise}
+   * @throws {Error}
+   */
+  async registration(login: string, password: string): Promise<void | never> {
+    console.log(login, password);
+    try {
+      const auth = { type: 'm.login.omni_matrix_protocol' };
+      const data = await this.matrixClient.register(
+        login,
+        password,
+        null,
+        auth,
+        {
+          email: false,
+        },
+      );
+      console.log(data);
+    } catch (error) {
+      throw this.createError('Registration failed', error);
+    }
+  }
+
+  /**
    * Get matrix userId
    * @return {String}
    */
@@ -180,7 +206,14 @@ class Matrix implements ISecureMessenger {
       this.matrixClient.stopClient();
       await this.matrixClient.logout();
       // await this.matrixClient.clearStores();
-      await this.storage.mxCredentials.where({ userId: this.userId }).delete();
+      const credentials = await this.storage.mxCredentials.get({
+        userId: this.userId,
+      });
+      if (credentials) {
+        await this.storage.mxCredentials.update(credentials, {
+          isLoggedIn: BooleanValue.FALSE,
+        });
+      }
       this.createDefaultClient();
     } catch (error) {
       throw this.createError('Logout failed', error);
@@ -636,26 +669,39 @@ class Matrix implements ISecureMessenger {
     login: string,
     password: string,
   ): Promise<void | never> {
-    const userLoginResult = await this.matrixClient.loginWithPassword(
-      login,
+    const credentials = await this.storage.mxCredentials.get({
+      userName: login,
+    });
+    const userLoginResult = await this.matrixClient.login('m.login.password', {
+      ...(credentials?.deviceId && { device_id: credentials.deviceId }),
+      initial_device_display_name: 'Omni Matrix',
+      identifier: { type: 'm.id.user', user: login },
       password,
-    );
+    });
 
     this.matrixClient = createClient({
       baseUrl: BASE_MATRIX_URL,
       userId: userLoginResult.user_id,
       accessToken: userLoginResult.access_token,
-      deviceId: userLoginResult.device_id,
+      deviceId: credentials?.deviceId || userLoginResult.device_id,
       sessionStore: new MemoryCryptoStore(),
       cryptoStore: new IndexedDBCryptoStore(window.indexedDB, 'matrix'),
     });
 
-    await this.storage.mxCredentials.add({
-      userId: userLoginResult.user_id,
-      accessToken: userLoginResult.access_token,
-      deviceId: userLoginResult.device_id,
-      isLoggedIn: BooleanValue.TRUE,
-    });
+    if (credentials) {
+      await this.storage.mxCredentials.update(credentials, {
+        accessToken: userLoginResult.access_token,
+        isLoggedIn: BooleanValue.TRUE,
+      });
+    } else {
+      await this.storage.mxCredentials.add({
+        userName: login,
+        userId: userLoginResult.user_id,
+        accessToken: userLoginResult.access_token,
+        deviceId: userLoginResult.device_id,
+        isLoggedIn: BooleanValue.TRUE,
+      });
+    }
   }
 
   /**

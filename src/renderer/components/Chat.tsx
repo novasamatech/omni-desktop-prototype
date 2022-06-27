@@ -19,6 +19,9 @@ const Chat: React.FC = () => {
   const handleLeaveRoom = (roomId: string) => {
     matrix.leaveRoom(roomId);
   };
+  const handleRegister = () => {
+    matrix.registration('pamelo321', '3a5p6qq1w');
+  };
   const handleInit = () => {
     matrix.mstInitiate({
       salt: '123',
@@ -39,6 +42,13 @@ const Chat: React.FC = () => {
 
   return (
     <div>
+      <button
+        type="button"
+        className="border p-1 mr-2 bg-red-400 text-white"
+        onClick={handleRegister}
+      >
+        register
+      </button>
       <button type="button" className="border p-1 mr-2" onClick={handleInit}>
         init
       </button>
