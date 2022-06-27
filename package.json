@@ -230,6 +230,7 @@
     "webpack-merge": "^5.8.0"
   },
   "dependencies": {
+    "@edgeware/node-types": "^3.6.2-wako",
     "@headlessui/react": "^1.6.0",
     "@hookform/resolvers": "^2.8.8",
     "@matrix-org/olm": "https://gitlab.matrix.org/api/v4/projects/27/packages/npm/@matrix-org/olm/-/@matrix-org/olm-3.2.8.tgz",

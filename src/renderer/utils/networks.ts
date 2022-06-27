@@ -1,6 +1,7 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { ProviderInterface } from '@polkadot/rpc-provider/types';
 import { ScProvider } from '@polkadot/rpc-provider/substrate-connect';
+import { spec } from '@edgeware/node-types';
 import { Chain, ActiveType } from '../db/types';
 import { getKnownChainId, getChainSpec } from '../../common/networks';
 
@@ -29,7 +30,14 @@ export const createConnection = async (
 
   if (!provider) return;
 
-  return ApiPromise.create({ provider });
+  return ApiPromise.create({
+    provider,
+    typesBundle: {
+      spec: {
+        ...spec.typesBundle.spec,
+      },
+    },
+  });
 };
 
 export default {};
