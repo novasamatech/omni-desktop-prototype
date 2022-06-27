@@ -10,8 +10,9 @@ export interface ISecureMessenger {
   init: () => Promise<void | never>;
   loginWithCreds: (login: string, password: string) => Promise<void | never>;
   loginFromCache: () => Promise<void | never>;
-  stopClient: () => void;
   logout: () => Promise<void | never>;
+  registration: (login: string, password: string) => Promise<void | never>;
+  stopClient: () => void;
 
   // Actions
   startRoomCreation: (

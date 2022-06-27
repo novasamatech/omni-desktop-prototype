@@ -6,7 +6,7 @@ import Button from '../ui/Button';
 import InputText from '../ui/Input';
 import ErrorMessage from '../ui/ErrorMessage';
 import { useMatrix } from './Providers/MatrixProvider';
-import { Routes } from '../../common/constants';
+import { MatrixUserNameRegex, Routes } from '../../common/constants';
 
 type LoginForm = {
   matrixId: string;
@@ -39,10 +39,16 @@ const Login: React.FC = () => {
     setIsLoginInProgress(true);
 
     try {
-      await matrix.loginWithCreds(matrixId, password);
+      const username = matrixId.match(MatrixUserNameRegex);
+      if (!username || !username[1]) {
+        throw new Error('Wrong matrixId');
+      }
+
+      await matrix.loginWithCreds(username[1], password);
       setIsLoggedIn(true);
       history.push(Routes.WALLETS);
     } catch (error) {
+      console.warn(error);
       setIsLoginFailed(true);
     }
 
@@ -121,7 +127,12 @@ const Login: React.FC = () => {
         </Button>
       </form>
       <footer className="mt-auto pb-10 w-max">
-        <Button className="w-[300px] mx-auto" size="lg" onClick={handleSkip}>
+        <Button
+          className="w-[300px] mx-auto"
+          size="lg"
+          disabled={isLoginInProgress}
+          onClick={handleSkip}
+        >
           Skip login
         </Button>
         <div className="text-xs mt-4 text-gray-400">
