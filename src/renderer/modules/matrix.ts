@@ -36,6 +36,7 @@ import {
   Signatory,
 } from './types';
 import { BASE_MATRIX_URL, MST_EVENTS, ROOM_CRYPTO_CONFIG } from './constants';
+import { MatrixUserNameRegex } from '../../common/constants';
 
 class Matrix implements ISecureMessenger {
   private static instance: Matrix;
@@ -139,7 +140,6 @@ class Matrix implements ISecureMessenger {
    * @throws {Error}
    */
   async registration(login: string, password: string): Promise<void | never> {
-    console.log(login, password);
     try {
       const auth = { type: 'm.login.omni_matrix_protocol' };
       const data = await this.matrixClient.register(
@@ -457,13 +457,13 @@ class Matrix implements ISecureMessenger {
       throw this.createError('Client is not active');
     }
 
-    const userName = userId.match(/^@([a-z\d=_\-./]+):/);
-    if (!userName) {
+    const username = userId.match(MatrixUserNameRegex);
+    if (!username) {
       throw new Error('User ID can only contain characters a-z, 0-9, or =_-./');
     }
 
     try {
-      return await this.matrixClient.isUsernameAvailable(userName?.[1]);
+      return await this.matrixClient.isUsernameAvailable(username?.[1]);
     } catch (error) {
       throw this.createError((error as Error).message, error);
     }
@@ -660,22 +660,20 @@ class Matrix implements ISecureMessenger {
 
   /**
    * Initiate Matrix client with user credentials
-   * @param login user's login
+   * @param username user's login
    * @param password user's password
    * @return {Promise}
    * @throws {Error}
    */
   private async initClientWithCreds(
-    login: string,
+    username: string,
     password: string,
   ): Promise<void | never> {
-    const credentials = await this.storage.mxCredentials.get({
-      userName: login,
-    });
+    const credentials = await this.storage.mxCredentials.get({ username });
     const userLoginResult = await this.matrixClient.login('m.login.password', {
       ...(credentials?.deviceId && { device_id: credentials.deviceId }),
-      initial_device_display_name: 'Omni Matrix',
-      identifier: { type: 'm.id.user', user: login },
+      initial_device_display_name: process.env.PRODUCT_NAME,
+      identifier: { type: 'm.id.user', user: username },
       password,
     });
 
@@ -695,7 +693,7 @@ class Matrix implements ISecureMessenger {
       });
     } else {
       await this.storage.mxCredentials.add({
-        userName: login,
+        username,
         userId: userLoginResult.user_id,
         accessToken: userLoginResult.access_token,
         deviceId: userLoginResult.device_id,

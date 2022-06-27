@@ -1,6 +1,8 @@
 export const MatrixIdRegex =
   /@[\w\d\-_]*:(?:[a-z\d](?:[a-z\d-]{0,61}[a-z\d])?\.)+[a-z\d][a-z\d-]{0,61}[a-z\d]/i;
 
+export const MatrixUserNameRegex = /^@([a-z\d=_\-./]+):/;
+
 export const Routes = {
   // Independent routes
   LOGIN: '/login',

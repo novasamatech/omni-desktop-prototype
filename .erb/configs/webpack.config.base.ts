@@ -4,7 +4,10 @@
 
 import webpack from 'webpack';
 import webpackPaths from './webpack.paths';
-import { dependencies as externals } from '../../release/app/package.json';
+import {
+  dependencies as externals,
+  productName,
+} from '../../release/app/package.json';
 import { getAppVersion } from '../scripts/version';
 
 export default {
@@ -57,6 +60,7 @@ export default {
     new webpack.DefinePlugin({
       'process.env': {
         VERSION: JSON.stringify(getAppVersion()),
+        PRODUCT_NAME: JSON.stringify(productName),
         WS_URL: JSON.stringify(process.env.WS_URL),
       },
     }),

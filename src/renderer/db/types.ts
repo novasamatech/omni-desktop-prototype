@@ -164,7 +164,7 @@ export type Contact = WithID<{
 
 export type Credential = WithID<{
   userId: string;
-  userName: string;
+  username: string;
   accessToken: string;
   deviceId: string;
   isLoggedIn: BooleanValue;
