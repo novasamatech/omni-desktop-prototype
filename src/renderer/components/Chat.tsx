@@ -20,7 +20,7 @@ const Chat: React.FC = () => {
     matrix.leaveRoom(roomId);
   };
   const handleRegister = () => {
-    matrix.registration('pamelo321', '3a5p6qq1w');
+    matrix.registration('xxx', 'yyyy');
   };
   const handleInit = () => {
     matrix.mstInitiate({
