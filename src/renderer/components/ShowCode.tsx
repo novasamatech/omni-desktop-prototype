@@ -21,7 +21,11 @@ import {
 } from '../store/currentTransaction';
 import LinkButton from '../ui/LinkButton';
 import { Routes, DEFAULT, withId } from '../../common/constants';
-import { getAddressFromWallet, isMultisig } from '../utils/account';
+import {
+  getAddressFromWallet,
+  isMultisig,
+  toPublicKey,
+} from '../utils/account';
 import { formatAmount, getAssetById } from '../utils/assets';
 import Shimmer from '../ui/Shimmer';
 import { AssetType, MultisigWallet, TransactionType } from '../db/types';
@@ -153,7 +157,7 @@ const ShowCode: React.FC = () => {
         : null;
     const otherSignatories = transaction.wallet.isMultisig
       ? (transaction.wallet as MultisigWallet).originContacts
-          .map((c) => getAddressFromWallet(c, connection.network))
+          .map((c) => toPublicKey(getAddressFromWallet(c, connection.network)))
           .filter((c) => c !== address)
           .sort()
       : [];
