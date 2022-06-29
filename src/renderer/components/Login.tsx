@@ -120,7 +120,7 @@ const Login: React.FC = () => {
         <Button
           size="lg"
           type="submit"
-          disabled={!isValid}
+          disabled={!isValid || isLoginInProgress}
           isLoading={isLoginInProgress}
         >
           Login

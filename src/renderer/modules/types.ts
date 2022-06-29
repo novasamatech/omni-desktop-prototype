@@ -32,6 +32,10 @@ export interface ISecureMessenger {
   clearSubscribers: () => void;
   checkUserExists: (userId: string) => Promise<boolean>;
 
+  // Verification
+  verifyWithKey: (securityKey: string) => Promise<boolean | never>;
+  verifyWithPhrase: (securityPhrase: string) => Promise<boolean | never>;
+
   // MST operations
   mstInitiate: (params: MstParams) => void;
   mstApprove: (params: MstParams) => void;
@@ -42,6 +46,8 @@ export interface ISecureMessenger {
   userId: string;
   isLoggedIn: boolean;
   isSynced: boolean;
+  isVerified: boolean;
+  sessionKey: any;
 }
 
 // =====================================================
