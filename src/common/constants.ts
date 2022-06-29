@@ -39,6 +39,7 @@ export const enum ErrorTypes {
   REQUIRED = 'required',
   VALIDATE = 'validate',
   PATTERN = 'pattern',
+  MAX_LENGTH = 'maxLength',
 }
 
 export const DEFAULT = 'default';

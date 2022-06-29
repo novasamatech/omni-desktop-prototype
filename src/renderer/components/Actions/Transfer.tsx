@@ -45,6 +45,7 @@ import DialogContent from '../../ui/DialogContent';
 type TransferForm = {
   address: string;
   amount: string;
+  description: string;
 };
 
 const Transfer: React.FC = () => {
@@ -78,7 +79,7 @@ const Transfer: React.FC = () => {
     formState: { errors, isValid },
   } = useForm<TransferForm>({
     mode: 'onChange',
-    defaultValues: { amount: '', address: '' },
+    defaultValues: { amount: '', address: '', description: '' },
   });
 
   const watchAddress = watch('address');
@@ -174,6 +175,7 @@ const Transfer: React.FC = () => {
   const addTransaction: SubmitHandler<TransferForm> = async ({
     address,
     amount,
+    description,
   }) => {
     if (!currentNetwork || !currentAsset) return;
 
@@ -215,6 +217,7 @@ const Transfer: React.FC = () => {
         matrix.setRoom(multisigWallet.matrixRoomId);
         matrix.mstInitiate({
           salt,
+          description,
           senderAddress: addressFrom,
           chainId: currentNetwork.network.chainId,
           callHash,
@@ -270,6 +273,8 @@ const Transfer: React.FC = () => {
       }
     };
   };
+
+  const hasMultisigWallet = selectedWallets.some(isMultisig);
 
   return (
     <>
@@ -352,12 +357,34 @@ const Transfer: React.FC = () => {
             />
           )}
         />
-        <ErrorMessage visible={errors.amount?.type === ErrorTypes.VALIDATE}>
-          The amount is not valid, please type it again
-        </ErrorMessage>
+        {hasMultisigWallet && (
+          <>
+            <Controller
+              name="description"
+              control={control}
+              rules={{ maxLength: 120 }}
+              render={({ field: { onChange, value } }) => (
+                <InputText
+                  onChange={onChange}
+                  value={value}
+                  type="text"
+                  name="description"
+                  className="w-full"
+                  label="Description"
+                  placeholder="Description"
+                />
+              )}
+            />
+            <ErrorMessage
+              visible={errors.description?.type === ErrorTypes.MAX_LENGTH}
+            >
+              Description can be 120 symbols long
+            </ErrorMessage>
+          </>
+        )}
         <Fee
           type={
-            isMultisig(firstWallet)
+            hasMultisigWallet
               ? TransactionType.MULTISIG_TRANSFER
               : TransactionType.TRANSFER
           }
@@ -369,7 +396,7 @@ const Transfer: React.FC = () => {
           connection={currentNetwork}
           address={watchAddress}
           amount={watchAmount}
-          withDeposit={isMultisig(firstWallet)}
+          withDeposit={hasMultisigWallet}
           withTransferable={defaultAsset?.assetId !== currentAsset?.assetId}
         />
         <Button className="w-max" type="submit" size="lg" disabled={!isValid}>
