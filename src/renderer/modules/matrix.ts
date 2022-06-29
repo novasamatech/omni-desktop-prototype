@@ -21,6 +21,8 @@ import {
 } from 'matrix-js-sdk';
 import { SyncState } from 'matrix-js-sdk/lib/sync';
 import { uniq } from 'lodash';
+import { deriveKey } from 'matrix-js-sdk/lib/crypto/key_passphrase';
+import { ISecretStorageKeyInfo } from 'matrix-js-sdk/lib/crypto/api';
 import { OmniDexie } from '../db/db';
 import { BooleanValue } from '../db/types';
 import {
@@ -158,6 +160,63 @@ class Matrix implements ISecureMessenger {
   }
 
   /**
+   * Verify user with Cross signing security key
+   * @param securityKey secret user's key
+   * @return {Promise}
+   * @throws {Error}
+   */
+  async verifyWithKey(securityKey: string): Promise<boolean | never> {
+    this.checkClientLoggedIn();
+
+    try {
+      const mx = this.matrixClient;
+      const defaultSSKey = mx
+        .getAccountData('m.secret_storage.default_key')
+        .getContent().key;
+      const sSKeyInfo = mx
+        .getAccountData(`m.secret_storage.key.${defaultSSKey}`)
+        .getContent<ISecretStorageKeyInfo>();
+      const privateKey = mx.keyBackupKeyFromRecoveryKey(securityKey);
+      const isCorrect = await mx.checkSecretStorageKey(privateKey, sSKeyInfo);
+      if (isCorrect) {
+        await mx.checkOwnCrossSigningTrust();
+      }
+      return isCorrect;
+    } catch (error) {
+      throw this.createError('Verification with security key failed', error);
+    }
+  }
+
+  /**
+   * Verify user with Cross signing security phrase
+   * @param securityPhrase secret user's phrase
+   * @return {Promise}
+   * @throws {Error}
+   */
+  async verifyWithPhrase(securityPhrase: string): Promise<boolean | never> {
+    this.checkClientLoggedIn();
+
+    try {
+      const mx = this.matrixClient;
+      const defaultSSKey = mx
+        .getAccountData('m.secret_storage.default_key')
+        .getContent().key;
+      const sSKeyInfo = mx
+        .getAccountData(`m.secret_storage.key.${defaultSSKey}`)
+        .getContent<ISecretStorageKeyInfo>();
+      const { salt, iterations } = sSKeyInfo.passphrase || {};
+      const privateKey = await deriveKey(securityPhrase, salt, iterations);
+      const isCorrect = await mx.checkSecretStorageKey(privateKey, sSKeyInfo);
+      if (isCorrect) {
+        await mx.checkOwnCrossSigningTrust();
+      }
+      return isCorrect;
+    } catch (error) {
+      throw this.createError('Verification with security phrase failed', error);
+    }
+  }
+
+  /**
    * Get matrix userId
    * @return {String}
    */
@@ -179,6 +238,33 @@ class Matrix implements ISecureMessenger {
    */
   get isSynced(): boolean {
     return this.isLoggedIn && this.isClientSynced;
+  }
+
+  /**
+   * Get device session key
+   * @return {String}
+   */
+  get sessionKey(): string {
+    return this.matrixClient.getDeviceEd25519Key();
+  }
+
+  /**
+   * Get current device cross sign verification status
+   * @return {Boolean}
+   */
+  get isVerified(): boolean {
+    this.checkClientLoggedIn();
+
+    const mx = this.matrixClient;
+    const crossSignInfo = mx.getStoredCrossSigningForUser(this.userId);
+    const deviceInfo = mx.getStoredDevice(this.userId, mx.getDeviceId());
+    const deviceTrust = crossSignInfo.checkDeviceTrust(
+      crossSignInfo,
+      deviceInfo,
+      false,
+      true,
+    );
+    return deviceTrust.isCrossSigningVerified();
   }
 
   /**

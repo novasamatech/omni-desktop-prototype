@@ -44,6 +44,7 @@ export default {
     fallback: {
       crypto: require.resolve('crypto-browserify'),
       stream: require.resolve('stream-browserify'),
+      buffer: require.resolve('buffer'),
       url: false,
       fs: false,
       path: false,
@@ -56,6 +57,9 @@ export default {
   plugins: [
     new webpack.EnvironmentPlugin({
       NODE_ENV: 'production',
+    }),
+    new webpack.ProvidePlugin({
+      Buffer: ['buffer', 'Buffer'],
     }),
     new webpack.DefinePlugin({
       'process.env': {

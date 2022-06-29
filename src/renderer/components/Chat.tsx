@@ -19,6 +19,12 @@ const Chat: React.FC = () => {
   const handleLeaveRoom = (roomId: string) => {
     matrix.leaveRoom(roomId);
   };
+  const handleVerifyKey = () => {
+    matrix.verifyWithKey('xxxx xxxx');
+  };
+  const handleVerifyPhrase = () => {
+    matrix.verifyWithPhrase('xxxxxxx');
+  };
   const handleRegister = () => {
     matrix.registration('xxx', 'yyyy');
   };
@@ -42,19 +48,41 @@ const Chat: React.FC = () => {
 
   return (
     <div>
-      <button
-        type="button"
-        className="border p-1 mr-2 bg-red-400 text-white"
-        onClick={handleRegister}
-      >
-        register
-      </button>
-      <button type="button" className="border p-1 mr-2" onClick={handleInit}>
-        init
-      </button>
-      <button type="button" className="border p-1" onClick={handleApprove}>
-        approve
-      </button>
+      <div>
+        <span className="text-lg block">
+          Verification status: {matrix.isVerified.toString()}
+        </span>
+        <span className="text-lg block">{`Session Key: ${matrix.sessionKey}`}</span>
+      </div>
+      <div className="flex">
+        <button
+          type="button"
+          className="border p-1 mr-2 bg-red-400 text-white"
+          onClick={handleRegister}
+        >
+          register
+        </button>
+        <button
+          type="button"
+          className="border p-1 mr-2 bg-green-200"
+          onClick={handleVerifyKey}
+        >
+          verify with key
+        </button>
+        <button
+          type="button"
+          className="border p-1 mr-2 bg-green-200"
+          onClick={handleVerifyPhrase}
+        >
+          verify with phrase
+        </button>
+        <button type="button" className="border p-1 mr-2" onClick={handleInit}>
+          init
+        </button>
+        <button type="button" className="border p-1" onClick={handleApprove}>
+          approve
+        </button>
+      </div>
       <ul>
         {rooms.map((room) => (
           <li key={room.roomId}>
