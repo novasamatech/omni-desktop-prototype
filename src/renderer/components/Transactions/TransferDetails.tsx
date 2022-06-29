@@ -1,5 +1,5 @@
 /* eslint-disable promise/always-return,consistent-return */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 import { useHistory, useParams } from 'react-router';
 import { format } from 'date-fns';
@@ -40,10 +40,13 @@ import {
 import { copyToClipboard } from '../../utils/strings';
 import Fee from '../../ui/Fee';
 import Balance from '../../ui/Balance';
+import { useMatrix } from '../Providers/MatrixProvider';
+import { MstParams, OmniMstEvents } from '../../modules/types';
 
 const TransferDetails: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
   const history = useHistory();
+  const { notifications } = useMatrix();
+  const { id } = useParams<{ id: string }>();
 
   const [, setSignWith] = useRecoilState(signWithState);
   const networks = useRecoilValue(connectionState);
@@ -78,6 +81,23 @@ const TransferDetails: React.FC = () => {
         transaction.data.callData &&
         availableWallets.length > 0)) &&
     !isConfirmed;
+
+  const description = useMemo(() => {
+    if (!transaction || !notifications.length) return undefined;
+
+    const initNotification = notifications.find((notif) => {
+      const { salt, callHash } = notif.content as MstParams;
+      return (
+        notif.type === OmniMstEvents.INIT &&
+        callHash === transaction?.data.callHash &&
+        salt === transaction?.data.salt
+      );
+    });
+    if (!initNotification) return undefined;
+
+    return (initNotification.content as MstParams).description;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notifications.length, transaction]);
 
   useEffect(() => {
     setSignWith(undefined);
@@ -275,8 +295,7 @@ const TransferDetails: React.FC = () => {
               )}
             </div>
           </div>
-          <div className="text-sm text-gray-500">Operations details:</div>
-
+          <div className="text-sm text-gray-500">Operation details:</div>
           {transaction && (
             <div className="inline">
               {transaction.data.amount && (
@@ -294,6 +313,14 @@ const TransferDetails: React.FC = () => {
                 </>
               )}
             </div>
+          )}
+          {isMultisigTransfer && description && (
+            <>
+              <div className="text-sm text-gray-500 mt-2">
+                Operation description:
+              </div>
+              <div className="text-md leading-none">{description}</div>
+            </>
           )}
           {isMultisigTransfer && (
             <>
