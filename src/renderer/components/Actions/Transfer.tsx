@@ -1,5 +1,6 @@
 /* eslint-disable promise/always-return */
 import React, { useCallback, useEffect, useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { useRecoilValue } from 'recoil';
 import { nanoid } from 'nanoid';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
@@ -66,6 +67,7 @@ const Transfer: React.FC = () => {
 
   const networks = useRecoilValue(connectionState);
   const selectedWallets = useRecoilValue(selectedWalletsState);
+  const wallets = useLiveQuery(() => db.wallets.toArray());
   const defaultAsset = currentNetwork?.network.assets[0];
 
   const {
@@ -82,7 +84,7 @@ const Transfer: React.FC = () => {
   const watchAddress = watch('address');
   const watchAmount = watch('amount');
 
-  const firstWallet = selectedWallets[0];
+  const firstWallet = wallets?.find((w) => w.id === selectedWallets[0].id);
 
   useEffect(() => {
     if (
@@ -114,7 +116,6 @@ const Transfer: React.FC = () => {
 
   useEffect(() => {
     const getSelectOptions = async () => {
-      const wallets = await db.wallets.toArray();
       const contacts = await db.contacts.toArray();
 
       const result = combinedContacts(wallets, contacts).map((contact) => ({
@@ -125,7 +126,7 @@ const Transfer: React.FC = () => {
     };
 
     getSelectOptions();
-  }, []);
+  }, [wallets]);
 
   const setNetwork = useCallback(
     (value: string) => {
@@ -185,7 +186,10 @@ const Transfer: React.FC = () => {
     );
 
     const newTransactions = selectedWallets.reduce((acc, w) => {
-      const addressFrom = getAddressFromWallet(w, currentNetwork.network);
+      const wallet = wallets?.find((wa) => wa.id === w.id);
+      if (!wallet) return acc;
+
+      const addressFrom = getAddressFromWallet(wallet, currentNetwork.network);
       const match = mst.find(
         (tx) => addressFrom === tx.address && tx.data.callHash === callHash,
       );
@@ -195,20 +199,20 @@ const Transfer: React.FC = () => {
       }
 
       const assetId = getAssetId(currentAsset);
-      const wallet = w as MultisigWallet;
+      const multisigWallet = wallet as MultisigWallet;
       const salt = nanoid();
-      const type = isMultisig(w)
+      const type = isMultisig(wallet)
         ? TransactionType.MULTISIG_TRANSFER
         : TransactionType.TRANSFER;
 
       if (
         type === TransactionType.MULTISIG_TRANSFER &&
         matrix.isLoggedIn &&
-        wallet.matrixRoomId &&
+        multisigWallet.matrixRoomId &&
         callHash &&
         callData
       ) {
-        matrix.setRoom(wallet.matrixRoomId);
+        matrix.setRoom(multisigWallet.matrixRoomId);
         matrix.mstInitiate({
           salt,
           senderAddress: addressFrom,
@@ -233,8 +237,8 @@ const Transfer: React.FC = () => {
           precision: currentAsset.precision,
           address,
           amount,
-          approvals: isMultisig(w)
-            ? createApprovals(wallet, currentNetwork.network)
+          approvals: isMultisig(wallet)
+            ? createApprovals(multisigWallet, currentNetwork.network)
             : null,
         },
       });
