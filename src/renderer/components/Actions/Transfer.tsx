@@ -380,7 +380,7 @@ const Transfer: React.FC = () => {
         )}
         <Fee
           type={
-            isMultisig(firstWallet)
+            hasMultisigWallet
               ? TransactionType.MULTISIG_TRANSFER
               : TransactionType.TRANSFER
           }
@@ -392,7 +392,7 @@ const Transfer: React.FC = () => {
           connection={currentNetwork}
           address={watchAddress}
           amount={watchAmount}
-          withDeposit={isMultisig(firstWallet)}
+          withDeposit={hasMultisigWallet}
           withTransferable={defaultAsset?.assetId !== currentAsset?.assetId}
         />
         <Button className="w-max" type="submit" size="lg" disabled={!isValid}>
