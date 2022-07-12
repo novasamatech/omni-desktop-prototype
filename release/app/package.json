@@ -2,7 +2,7 @@
   "name": "omni-desktop",
   "productName": "Omni Desktop",
   "description": "Polkadot Enterprise Desktop app",
-  "version": "0.0.2",
+  "version": "1.0.0",
   "main": "./dist/main/main.js",
   "author": {
     "name": "Electron React Boilerplate Maintainers",
