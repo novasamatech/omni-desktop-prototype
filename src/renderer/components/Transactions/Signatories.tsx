@@ -25,6 +25,10 @@ const STATUS_MAP: Record<StatusType, { text: string; status: StatusType }> = {
     text: 'waiting',
     status: StatusType.WAITING,
   },
+  pending: {
+    text: 'pending',
+    status: StatusType.PENDING,
+  },
   abstained: {
     text: 'abstained',
     status: StatusType.ABSTAINED,
@@ -51,10 +55,17 @@ function removeKeyFrames() {
   style?.sheet?.deleteRule(0);
 }
 
+const enum ApproveStatus {
+  WAITING = 'waiting',
+  PENDING = 'pending',
+  SIGNED = 'signed',
+  ABSTAINED = 'abstained',
+}
+
 type Signatory = {
   name?: string;
   address: string;
-  approved: boolean;
+  approve: ApproveStatus;
   extrinsicHash: string;
 };
 
@@ -100,6 +111,27 @@ const Signatories: React.FC<Props> = ({ network, transaction }) => {
     });
   };
 
+  const getApproval = (contact: Contact): Approval | undefined => {
+    const address = getAddressFromWallet(contact, network);
+    if (!address) return;
+
+    return transaction?.data.approvals[toPublicKey(address)];
+  };
+
+  const getApproveStatus = (contact: Contact): ApproveStatus => {
+    const approval = getApproval(contact);
+    const isFinalApprove =
+      transaction &&
+      getApprovals(transaction).length ===
+        Number((transaction?.wallet as MultisigWallet).threshold);
+
+    if (approval?.fromBlockChain) return ApproveStatus.SIGNED;
+    if (approval?.fromMatrix && isFinalApprove) return ApproveStatus.SIGNED;
+    if (approval?.fromMatrix) return ApproveStatus.PENDING;
+    return ApproveStatus.WAITING;
+  };
+
+  // Pick new approves form transactions
   useEffect(() => {
     if (!transaction) return;
 
@@ -112,34 +144,51 @@ const Signatories: React.FC<Props> = ({ network, transaction }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transaction]);
 
-  const getApproval = (contact: Contact): Approval | undefined => {
-    const address = getAddressFromWallet(contact, network);
-    if (!address) return;
-
-    return transaction?.data.approvals[toPublicKey(address)];
-  };
-
-  const isApproved = (contact: Contact): boolean => {
-    const approval = getApproval(contact);
-    return !!approval && (approval.fromBlockChain || approval.fromMatrix);
-  };
-
+  // Update signatures to "Pending" state
   useEffect(() => {
     if (!network || !transaction) return;
 
-    const approvesNumber = signatories.filter((s) => s.approved)?.length || 0;
-    const noNewApproves = !isFirstSetup && approvesNumber === approvals.length;
-    if (noNewApproves) return;
+    const contacts = (transaction.wallet as MultisigWallet).originContacts;
+    const pendingAddresses = contacts.reduce((acc, contact) => {
+      if (getApproveStatus(contact) === ApproveStatus.PENDING) {
+        const address = getAddressFromWallet(contact, network);
+        acc[address] = true;
+      }
+      return acc;
+    }, {} as Record<string, boolean>);
 
-    const getExtrinsicHash = (contact: Contact): string =>
-      getApproval(contact)?.extrinsicHash || '';
+    const hasNewPending = signatories.some(
+      (s) => pendingAddresses[s.address] && s.approve !== ApproveStatus.PENDING,
+    );
+    if (!isFirstSetup && !hasNewPending) return;
+
+    setSignatories((prev) =>
+      prev.map((p) => ({
+        ...p,
+        approve: pendingAddresses[p.address]
+          ? ApproveStatus.PENDING
+          : p.approve,
+      })),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [network, transaction]);
+
+  // Update and animate signatories to their final state
+  useEffect(() => {
+    if (!network || !transaction) return;
+
+    const approvesNumber =
+      signatories.filter((s) => s.approve === ApproveStatus.SIGNED)?.length ||
+      0;
+    const noNewApproves = approvesNumber === approvals.length;
+    if (!isFirstSetup && noNewApproves) return;
 
     const contacts = (transaction.wallet as MultisigWallet).originContacts;
     const dirtySignatories = contacts.map((signature) => ({
       name: signature.name,
       address: getAddressFromWallet(signature, network),
-      approved: isApproved(signature),
-      extrinsicHash: getExtrinsicHash(signature),
+      approve: getApproveStatus(signature),
+      extrinsicHash: getApproval(signature)?.extrinsicHash || '',
     }));
 
     const approvedSignatories = approvals.reduce((acc, approve) => {
@@ -164,13 +213,18 @@ const Signatories: React.FC<Props> = ({ network, transaction }) => {
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [network, transaction, approvals, signatories]);
+  }, [network, transaction, approvals.length]);
 
-  const signatoryStatus = (approved: boolean): ReactNode => {
-    let result = approved
-      ? STATUS_MAP[StatusType.SUCCESS]
-      : STATUS_MAP[StatusType.WAITING];
-    if (!approved && transaction?.status === TransactionStatus.CONFIRMED) {
+  const signatoryStatus = (approve: ApproveStatus): ReactNode => {
+    let result = STATUS_MAP[StatusType.WAITING];
+    if (approve === ApproveStatus.SIGNED) {
+      result = STATUS_MAP[StatusType.SUCCESS];
+    } else if (approve === ApproveStatus.PENDING) {
+      result = STATUS_MAP[StatusType.PENDING];
+    } else if (
+      approve === ApproveStatus.WAITING &&
+      transaction?.status === TransactionStatus.CONFIRMED
+    ) {
       result = STATUS_MAP[StatusType.ABSTAINED];
     }
     return (
@@ -189,7 +243,7 @@ const Signatories: React.FC<Props> = ({ network, transaction }) => {
         {(transaction?.wallet as MultisigWallet).threshold}
       </div>
       <ul className="max-h-[450px] overflow-y-auto px-3">
-        {signatories.map(({ approved, name, address, extrinsicHash }) => (
+        {signatories.map(({ approve, name, address, extrinsicHash }) => (
           <li
             key={address}
             data-element="slide"
@@ -203,13 +257,13 @@ const Signatories: React.FC<Props> = ({ network, transaction }) => {
               <div
                 className={cn(
                   'flex items-center font-medium text-xs mb-2',
-                  !approved && 'text-gray-500',
+                  approve !== ApproveStatus.SIGNED && 'text-gray-500',
                 )}
               >
-                {signatoryStatus(approved)}
+                {signatoryStatus(approve)}
               </div>
               <div className="flex justify-end gap-1">
-                {approved && extrinsicHash && network && (
+                {extrinsicHash && network && (
                   <Explorer
                     type="extrinsic"
                     param={extrinsicHash}

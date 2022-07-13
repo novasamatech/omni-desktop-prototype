@@ -1,6 +1,8 @@
 export const MatrixIdRegex =
   /@[\w\d\-_]*:(?:[a-z\d](?:[a-z\d-]{0,61}[a-z\d])?\.)+[a-z\d][a-z\d-]{0,61}[a-z\d]/i;
 
+export const MatrixUserNameRegex = /^@([a-z\d=_\-./]+):/;
+
 export const Routes = {
   // Independent routes
   LOGIN: '/login',
@@ -37,6 +39,7 @@ export const enum ErrorTypes {
   REQUIRED = 'required',
   VALIDATE = 'validate',
   PATTERN = 'pattern',
+  MAX_LENGTH = 'maxLength',
 }
 
 export const DEFAULT = 'default';
@@ -55,5 +58,6 @@ export const enum Decimal {
 export const enum StatusType {
   WAITING = 'waiting',
   SUCCESS = 'success',
+  PENDING = 'pending',
   ABSTAINED = 'abstained',
 }

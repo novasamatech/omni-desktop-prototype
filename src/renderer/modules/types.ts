@@ -10,8 +10,9 @@ export interface ISecureMessenger {
   init: () => Promise<void | never>;
   loginWithCreds: (login: string, password: string) => Promise<void | never>;
   loginFromCache: () => Promise<void | never>;
-  stopClient: () => void;
   logout: () => Promise<void | never>;
+  registration: (login: string, password: string) => Promise<void | never>;
+  stopClient: () => void;
 
   // Actions
   startRoomCreation: (
@@ -31,6 +32,10 @@ export interface ISecureMessenger {
   clearSubscribers: () => void;
   checkUserExists: (userId: string) => Promise<boolean>;
 
+  // Verification
+  verifyWithKey: (securityKey: string) => Promise<boolean | never>;
+  verifyWithPhrase: (securityPhrase: string) => Promise<boolean | never>;
+
   // MST operations
   mstInitiate: (params: MstParams) => void;
   mstApprove: (params: MstParams) => void;
@@ -41,6 +46,8 @@ export interface ISecureMessenger {
   userId: string;
   isLoggedIn: boolean;
   isSynced: boolean;
+  isVerified: boolean;
+  sessionKey: any;
 }
 
 // =====================================================
@@ -130,6 +137,7 @@ type GeneralCallbacks = {
   onSyncEnd: () => void;
   onSyncProgress: () => void;
   onInvite: (data: InvitePayload) => void;
+  // TODO: change message type in future
   onMessage: (message: string) => void;
 };
 

@@ -21,7 +21,11 @@ import {
 } from '../store/currentTransaction';
 import LinkButton from '../ui/LinkButton';
 import { Routes, DEFAULT, withId } from '../../common/constants';
-import { getAddressFromWallet, isMultisig } from '../utils/account';
+import {
+  getAddressFromWallet,
+  isMultisig,
+  toPublicKey,
+} from '../utils/account';
 import { formatAmount, getAssetById } from '../utils/assets';
 import Shimmer from '../ui/Shimmer';
 import { AssetType, MultisigWallet, TransactionType } from '../db/types';
@@ -32,6 +36,7 @@ const ShowCode: React.FC = () => {
   const [payload, setPayload] = useState<Uint8Array>();
   const [address, setAddress] = useState('');
   const [connection, setConnection] = useState<Connection>();
+
   const networks = useRecoilValue(connectionState);
   const transaction = useRecoilValue(currentTransactionState);
   const signWith = useRecoilValue(signWithState);
@@ -61,6 +66,8 @@ const ShowCode: React.FC = () => {
     connection &&
     transaction &&
     getAssetById(connection.network.assets, transaction.data.assetId);
+
+  const wallet = (signWith || transaction?.wallet) as MultisigWallet;
 
   const setupTransaction = useCallback(async () => {
     // TODO: Refactor setup transaction flow
@@ -150,8 +157,8 @@ const ShowCode: React.FC = () => {
         : null;
     const otherSignatories = transaction.wallet.isMultisig
       ? (transaction.wallet as MultisigWallet).originContacts
-          .map((c) => getAddressFromWallet(c, connection.network))
-          .filter((c) => c !== address)
+          .map((c) => toPublicKey(getAddressFromWallet(c, connection.network)))
+          .filter((c) => c !== toPublicKey(address))
           .sort()
       : [];
     const { threshold } = transaction.wallet as MultisigWallet;
@@ -238,10 +245,11 @@ const ShowCode: React.FC = () => {
             <Shimmer width="100%" height="100%" />
           )}
         </div>
-        {transaction && (
+        {transaction && connection && (
           <div className="w-[350px] mt-5 mb-10">
             <Fee
-              wallet={signWith || transaction.wallet}
+              walletAddress={getAddressFromWallet(wallet, connection.network)}
+              threshold={wallet?.threshold}
               connection={connection}
               type={transaction.type}
               transaction={transaction}

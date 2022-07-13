@@ -78,29 +78,24 @@ const Chat: React.FC<ChatProps> = ({ network, transaction }) => {
 
     const messages = {
       [OmniMstEvents.INIT]: (
-        <ChatMessage key={notif.id} date={notif.date}>
-          {description ? (
-            <span>
-              Description:
-              <br />
-              {description}
-            </span>
-          ) : (
-            <>
-              <img
-                className="inline-block mr-1 mb-0.5"
-                src={mst}
-                alt=""
-                width="22"
-                height="14"
-              />
-              <span>
-                A new MST operation has been created. It is ready to be signed
-                by the signatories.
-              </span>
-            </>
+        <Fragment key={notif.id}>
+          <ChatMessage date={notif.date}>
+            <img
+              className="inline-block mr-1 mb-0.5"
+              src={mst}
+              alt=""
+              width="22"
+              height="14"
+            />
+            A new MST operation has been created. It is ready to be signed by
+            the signatories.
+          </ChatMessage>
+          {description && (
+            <ChatMessage date={notif.date}>
+              Description: {description}
+            </ChatMessage>
           )}
-        </ChatMessage>
+        </Fragment>
       ),
       [OmniMstEvents.APPROVE]: (
         <ChatMessage key={notif.id} date={notif.date}>

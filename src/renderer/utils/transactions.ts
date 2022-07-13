@@ -1,10 +1,15 @@
 /* eslint-disable consistent-return */
 /* eslint-disable import/prefer-default-export */
 import { ApiPromise } from '@polkadot/api';
-import { U8aFixed } from '@polkadot/types';
+import { GenericExtrinsic, U8aFixed } from '@polkadot/types';
 import { PalletMultisigMultisig } from '@polkadot/types/lookup';
 import { Call } from '@polkadot/types/interfaces';
 import { SubmittableExtrinsic } from '@polkadot/api/types';
+import {
+  createMetadata,
+  OptionsWithMeta,
+  UnsignedTransaction,
+} from '@substrate/txwrapper-polkadot';
 import { Connection } from '../store/connections';
 import {
   Asset,
@@ -18,7 +23,12 @@ import {
   TransactionType,
   Wallet,
 } from '../db/types';
-import { createApprovals, getAddressFromWallet, toPublicKey } from './account';
+import {
+  createApprovals,
+  formatAddress,
+  getAddressFromWallet,
+  toPublicKey,
+} from './account';
 import { db } from '../db/db';
 import { formatAmount, formatBalance, getAssetById } from './assets';
 import { Approvals, HexString } from '../../common/types';
@@ -165,6 +175,35 @@ export const updateTransactions = async (
       );
     }
   });
+};
+
+const checkNewApprovals = (
+  pendingTx: MultisigTransaction,
+  approvals: Approvals,
+): boolean =>
+  pendingTx.opt.approvals.some(
+    (approval) => !approvals[toPublicKey(approval.toString())].fromBlockChain,
+  );
+
+export const updateTransaction = async (
+  transaction: Transaction,
+  connection: Connection,
+) => {
+  const pendingTransactions = await getPendingTransactionsFromChain(
+    connection.api,
+    formatAddress(transaction.address),
+  );
+  const pendingTransaction = pendingTransactions.find((p) =>
+    isSameTransaction(transaction, p),
+  );
+
+  if (!pendingTransaction) return;
+  if (!checkNewApprovals(pendingTransaction, transaction.data.approvals))
+    return;
+
+  db.transactions.put(
+    updateTransactionPayload(transaction, pendingTransaction),
+  );
 };
 
 export const isApproved = (
@@ -331,4 +370,28 @@ export const getExistingMstTransactions = (
       tx.chainId === chainId &&
       tx.data.callHash === callHash,
   );
+};
+
+export const getSignedExtrinsic = (
+  unsigned: UnsignedTransaction,
+  signature: HexString,
+  {
+    metadataRpc,
+    registry,
+    asCallsOnlyArg,
+    signedExtensions,
+    userExtensions,
+  }: OptionsWithMeta,
+): GenericExtrinsic => {
+  const metadata = createMetadata(registry, metadataRpc, asCallsOnlyArg);
+  registry.setMetadata(metadata, signedExtensions, userExtensions);
+
+  const extrinsic = registry.createType(
+    'Extrinsic',
+    { method: unsigned.method },
+    { version: unsigned.version },
+  );
+
+  extrinsic.addSignature(unsigned.address, signature, unsigned);
+  return extrinsic;
 };

@@ -1,7 +1,6 @@
-import React from 'react';
+import React, { ChangeEvent } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useRecoilState } from 'recoil';
-
 import { ActiveType, Chain } from '../../db/types';
 import { db } from '../../db/db';
 import List from '../../ui/List';
@@ -45,29 +44,27 @@ const NetworkList: React.FC = () => {
     }
   };
 
-  const handleNetworkTypeChange = async (
-    value: string,
-    id: number | undefined,
-  ) => {
-    if (!id) return;
+  const onNetworkChange =
+    (id?: number) => async (event: ChangeEvent<HTMLSelectElement>) => {
+      if (!id) return;
 
-    await db.chains.update(id, {
-      activeType: value,
-    });
+      await db.chains.update(id, {
+        activeType: event.target.value,
+      });
 
-    const network = await db.chains.get(id);
-    if (!network) return;
+      const network = await db.chains.get(id);
+      if (!network) return;
 
-    disableNetwork(network);
+      disableNetwork(network);
 
-    const api = await createConnection(network);
-    if (!api) return;
+      const api = await createConnection(network);
+      if (!api) return;
 
-    setConnections((prev) => ({
-      ...prev,
-      [network.chainId]: { network, api },
-    }));
-  };
+      setConnections((prev) => ({
+        ...prev,
+        [network.chainId]: { network, api },
+      }));
+    };
 
   return (
     <>
@@ -86,9 +83,7 @@ const NetworkList: React.FC = () => {
                 className="w-40 ml-auto"
                 options={NETWORK_OPTIONS}
                 value={network.activeType || ActiveType.DISABLED}
-                onChange={(event) => {
-                  handleNetworkTypeChange(event.target.value, network.id);
-                }}
+                onChange={onNetworkChange(network.id)}
               />
             </ListItem>
           ))}

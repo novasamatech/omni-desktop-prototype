@@ -31,7 +31,6 @@ const LinkButton: React.FC<Props> = ({
         ${className}
       `}
     >
-      {/* HOOK */}
       <>{children}</>
     </Link>
   );

@@ -6,8 +6,9 @@ import webpack from 'webpack';
 import webpackPaths from './webpack.paths';
 import {
   dependencies as externals,
-  version,
+  productName,
 } from '../../release/app/package.json';
+import { getAppVersion } from '../scripts/version';
 
 export default {
   externals: [...Object.keys(externals || {})],
@@ -43,6 +44,7 @@ export default {
     fallback: {
       crypto: require.resolve('crypto-browserify'),
       stream: require.resolve('stream-browserify'),
+      buffer: require.resolve('buffer'),
       url: false,
       fs: false,
       path: false,
@@ -56,9 +58,13 @@ export default {
     new webpack.EnvironmentPlugin({
       NODE_ENV: 'production',
     }),
+    new webpack.ProvidePlugin({
+      Buffer: ['buffer', 'Buffer'],
+    }),
     new webpack.DefinePlugin({
       'process.env': {
-        VERSION: JSON.stringify(version),
+        VERSION: JSON.stringify(getAppVersion()),
+        PRODUCT_NAME: JSON.stringify(productName),
         WS_URL: JSON.stringify(process.env.WS_URL),
       },
     }),

@@ -1,5 +1,6 @@
 /* eslint-disable promise/always-return */
 import React, { useCallback, useEffect, useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { useRecoilValue } from 'recoil';
 import { nanoid } from 'nanoid';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
@@ -44,6 +45,7 @@ import DialogContent from '../../ui/DialogContent';
 type TransferForm = {
   address: string;
   amount: string;
+  description: string;
 };
 
 const Transfer: React.FC = () => {
@@ -66,6 +68,7 @@ const Transfer: React.FC = () => {
 
   const networks = useRecoilValue(connectionState);
   const selectedWallets = useRecoilValue(selectedWalletsState);
+  const wallets = useLiveQuery(() => db.wallets.toArray());
   const defaultAsset = currentNetwork?.network.assets[0];
 
   const {
@@ -76,13 +79,13 @@ const Transfer: React.FC = () => {
     formState: { errors, isValid },
   } = useForm<TransferForm>({
     mode: 'onChange',
-    defaultValues: { amount: '', address: '' },
+    defaultValues: { amount: '', address: '', description: '' },
   });
 
   const watchAddress = watch('address');
   const watchAmount = watch('amount');
 
-  const firstWallet = selectedWallets[0];
+  const firstWallet = wallets?.find((w) => w.id === selectedWallets[0].id);
 
   useEffect(() => {
     if (
@@ -114,7 +117,6 @@ const Transfer: React.FC = () => {
 
   useEffect(() => {
     const getSelectOptions = async () => {
-      const wallets = await db.wallets.toArray();
       const contacts = await db.contacts.toArray();
 
       const result = combinedContacts(wallets, contacts).map((contact) => ({
@@ -125,7 +127,7 @@ const Transfer: React.FC = () => {
     };
 
     getSelectOptions();
-  }, []);
+  }, [wallets]);
 
   const setNetwork = useCallback(
     (value: string) => {
@@ -173,6 +175,7 @@ const Transfer: React.FC = () => {
   const addTransaction: SubmitHandler<TransferForm> = async ({
     address,
     amount,
+    description,
   }) => {
     if (!currentNetwork || !currentAsset) return;
 
@@ -185,7 +188,10 @@ const Transfer: React.FC = () => {
     );
 
     const newTransactions = selectedWallets.reduce((acc, w) => {
-      const addressFrom = getAddressFromWallet(w, currentNetwork.network);
+      const wallet = wallets?.find((wa) => wa.id === w.id);
+      if (!wallet) return acc;
+
+      const addressFrom = getAddressFromWallet(wallet, currentNetwork.network);
       const match = mst.find(
         (tx) => addressFrom === tx.address && tx.data.callHash === callHash,
       );
@@ -195,22 +201,23 @@ const Transfer: React.FC = () => {
       }
 
       const assetId = getAssetId(currentAsset);
-      const wallet = w as MultisigWallet;
+      const multisigWallet = wallet as MultisigWallet;
       const salt = nanoid();
-      const type = isMultisig(w)
+      const type = isMultisig(wallet)
         ? TransactionType.MULTISIG_TRANSFER
         : TransactionType.TRANSFER;
 
       if (
         type === TransactionType.MULTISIG_TRANSFER &&
         matrix.isLoggedIn &&
-        wallet.matrixRoomId &&
+        multisigWallet.matrixRoomId &&
         callHash &&
         callData
       ) {
-        matrix.setRoom(wallet.matrixRoomId);
+        matrix.setRoom(multisigWallet.matrixRoomId);
         matrix.mstInitiate({
           salt,
+          description,
           senderAddress: addressFrom,
           chainId: currentNetwork.network.chainId,
           callHash,
@@ -233,8 +240,8 @@ const Transfer: React.FC = () => {
           precision: currentAsset.precision,
           address,
           amount,
-          approvals: isMultisig(w)
-            ? createApprovals(wallet, currentNetwork.network)
+          approvals: isMultisig(wallet)
+            ? createApprovals(multisigWallet, currentNetwork.network)
             : null,
         },
       });
@@ -266,6 +273,8 @@ const Transfer: React.FC = () => {
       }
     };
   };
+
+  const hasMultisigWallet = selectedWallets.some(isMultisig);
 
   return (
     <>
@@ -329,8 +338,11 @@ const Transfer: React.FC = () => {
                     Transfarable:
                     <Balance
                       asset={currentAsset}
-                      wallet={firstWallet}
                       connection={currentNetwork}
+                      walletAddress={getAddressFromWallet(
+                        firstWallet,
+                        currentNetwork.network,
+                      )}
                     />
                   </div>
                 )
@@ -345,20 +357,46 @@ const Transfer: React.FC = () => {
             />
           )}
         />
-        <ErrorMessage visible={errors.amount?.type === ErrorTypes.VALIDATE}>
-          The amount is not valid, please type it again
-        </ErrorMessage>
+        {hasMultisigWallet && (
+          <>
+            <Controller
+              name="description"
+              control={control}
+              rules={{ maxLength: 120 }}
+              render={({ field: { onChange, value } }) => (
+                <InputText
+                  onChange={onChange}
+                  value={value}
+                  type="text"
+                  name="description"
+                  className="w-full"
+                  label="Description"
+                  placeholder="Description"
+                />
+              )}
+            />
+            <ErrorMessage
+              visible={errors.description?.type === ErrorTypes.MAX_LENGTH}
+            >
+              Description can be 120 symbols long
+            </ErrorMessage>
+          </>
+        )}
         <Fee
           type={
-            isMultisig(firstWallet)
+            hasMultisigWallet
               ? TransactionType.MULTISIG_TRANSFER
               : TransactionType.TRANSFER
           }
-          wallet={firstWallet}
+          walletAddress={getAddressFromWallet(
+            firstWallet,
+            currentNetwork?.network,
+          )}
+          threshold={(firstWallet as MultisigWallet)?.threshold}
           connection={currentNetwork}
           address={watchAddress}
           amount={watchAmount}
-          withDeposit={isMultisig(firstWallet)}
+          withDeposit={hasMultisigWallet}
           withTransferable={defaultAsset?.assetId !== currentAsset?.assetId}
         />
         <Button className="w-max" type="submit" size="lg" disabled={!isValid}>
@@ -374,12 +412,9 @@ const Transfer: React.FC = () => {
       >
         <DialogContent>
           <Dialog.Title as="h3" className="font-light text-xl">
-            Some transfers were not created
+            Transfers already exist
           </Dialog.Title>
-          <h2 className="mt-4 mb-2">
-            These transfers already exist and ready to be signed
-          </h2>
-          <ul className="mt-2 mb-4 p-2 flex flex-col gap-3 bg-gray-200 rounded-lg">
+          <ul className="my-4 p-2 flex flex-col gap-3 bg-gray-200 rounded-lg">
             {existingMst.map((tx) => (
               <li key={tx.id} className="flex items-center justify-between">
                 <span>{tx.wallet.name}</span>

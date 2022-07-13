@@ -1,5 +1,5 @@
-/* eslint-disable promise/always-return */
-import React, { useCallback, useEffect, useState } from 'react';
+/* eslint-disable promise/always-return,consistent-return */
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 import { useHistory, useParams } from 'react-router';
 import { format } from 'date-fns';
@@ -35,14 +35,18 @@ import {
   decodeCallData,
   getApprovals,
   updateTimepointFromBlockchain,
+  updateTransaction,
 } from '../../utils/transactions';
 import { copyToClipboard } from '../../utils/strings';
 import Fee from '../../ui/Fee';
 import Balance from '../../ui/Balance';
+import { useMatrix } from '../Providers/MatrixProvider';
+import { MstParams, OmniMstEvents } from '../../modules/types';
 
 const TransferDetails: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
   const history = useHistory();
+  const { notifications } = useMatrix();
+  const { id } = useParams<{ id: string }>();
 
   const [, setSignWith] = useRecoilState(signWithState);
   const networks = useRecoilValue(connectionState);
@@ -78,6 +82,23 @@ const TransferDetails: React.FC = () => {
         availableWallets.length > 0)) &&
     !isConfirmed;
 
+  const description = useMemo(() => {
+    if (!transaction || !notifications.length) return undefined;
+
+    const initNotification = notifications.find((notif) => {
+      const { salt, callHash } = notif.content as MstParams;
+      return (
+        notif.type === OmniMstEvents.INIT &&
+        callHash === transaction?.data.callHash &&
+        salt === transaction?.data.salt
+      );
+    });
+    if (!initNotification) return undefined;
+
+    return (initNotification.content as MstParams).description;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notifications.length, transaction]);
+
   useEffect(() => {
     setSignWith(undefined);
     setCurrentTransaction(undefined);
@@ -85,7 +106,7 @@ const TransferDetails: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    let intervalId: NodeJS.Timeout;
+    let timepointInterval: NodeJS.Timeout;
     if (transaction && Object.values(networks).length) {
       const currentConnection = Object.values(networks).find(
         (n) => n.network.chainId === transaction.chainId,
@@ -94,7 +115,7 @@ const TransferDetails: React.FC = () => {
       if (currentConnection) {
         setConnection(currentConnection);
         if (!transaction.blockHeight) {
-          intervalId = setInterval(
+          timepointInterval = setInterval(
             () => updateTimepointFromBlockchain(transaction, currentConnection),
             1000,
           );
@@ -103,7 +124,7 @@ const TransferDetails: React.FC = () => {
     }
 
     return () => {
-      clearInterval(intervalId);
+      clearInterval(timepointInterval);
     };
   }, [transaction, networks]);
 
@@ -203,6 +224,19 @@ const TransferDetails: React.FC = () => {
     [transaction, callData, connection],
   );
 
+  useEffect(() => {
+    if (!transaction || !connection || isConfirmed) return;
+
+    const updateInterval = setInterval(async () => {
+      const tx = await db.transactions.get(Number(id));
+      if (tx) updateTransaction(tx, connection);
+    }, 2000);
+
+    return () => {
+      clearInterval(updateInterval);
+    };
+  }, [connection, isConfirmed, transaction, id]);
+
   // Check this case
   useEffect(() => {
     if (transaction?.data.callData && !transaction?.data.amount) {
@@ -250,16 +284,18 @@ const TransferDetails: React.FC = () => {
                   <div className="flex justify-end text-black text-sm">
                     <Balance
                       asset={currentAsset}
-                      wallet={transaction.wallet}
                       connection={connection}
+                      walletAddress={getAddressFromWallet(
+                        transaction.wallet,
+                        network,
+                      )}
                     />
                   </div>
                 </div>
               )}
             </div>
           </div>
-          <div className="text-sm text-gray-500">Operations details:</div>
-
+          <div className="text-sm text-gray-500">Operation details:</div>
           {transaction && (
             <div className="inline">
               {transaction.data.amount && (
@@ -277,6 +313,14 @@ const TransferDetails: React.FC = () => {
                 </>
               )}
             </div>
+          )}
+          {isMultisigTransfer && description && (
+            <>
+              <div className="text-sm text-gray-500 mt-2">
+                Operation description:
+              </div>
+              <div className="text-md leading-none">{description}</div>
+            </>
           )}
           {isMultisigTransfer && (
             <>
@@ -329,8 +373,12 @@ const TransferDetails: React.FC = () => {
                       ? TransactionType.MULTISIG_TRANSFER
                       : TransactionType.TRANSFER
                   }
+                  walletAddress={getAddressFromWallet(
+                    transaction.wallet,
+                    network,
+                  )}
+                  threshold={(transaction.wallet as MultisigWallet).threshold}
                   transaction={transaction}
-                  wallet={transaction.wallet}
                   connection={connection}
                   address={transaction.data.address}
                   amount={transaction.data.amount}
