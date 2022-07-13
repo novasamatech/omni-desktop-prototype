@@ -11,18 +11,34 @@ Polkadot&Kusama ecosystem Enterprise Desktop application.
 The Omni Desktop application proof of concept application was developed in order to:
 1. Check if it's possible to work with multiple Substrate networks in one desktop application.
 2. Check if it's possible to verify the parachain data based on relay-chain data.
-3. Try to use [https://github.com/paritytech/substrate-connect](Substrate Connect) technology.
-4. Try to use [https://github.com/paritytech/parity-signer](Parity Signer) mobile application for signing transactions.
-5. Try to use [https://matrix.org/](Matrix) standard for providing MST UX.
+3. Try to use [Substrate Connect](https://github.com/paritytech/substrate-connect) as a light client.
+4. Try to use [Parity Signer](https://github.com/paritytech/parity-signer) mobile application for signing transactions.
+5. Try to use [Matrix](https://matrix.org/) standard as an application-layer data exchange protocol.
 
 ## Key features
 
 1. Add and manage wallets for Substrate networks.
 2. Show wallet balances for multiple Substrate networks.
 3. Token transfers in multiple Substrate networks.
-4. MST account management.
-5. MST creation and signing.
-6. MST account and transactions interaction with Matrix standard.
+4. Multisig account management.
+5. Multisig creation and signing.
+6. Multisig account and transactions interaction with Matrix standard.
+
+# How to use the application
+## Install the application
+There are two options for the application installation:
+1. Download the [latest application release](https://github.com/nova-wallet/omni-desktop-prototype/releases/tag/v1.0.0) for your operating system. And proceed with installation.
+2. Clone the repository and start the application from sources:
+```bash
+git clone https://github.com/nova-wallet/omni-desktop-prototype.git
+git checkout <latest tag>
+yarn
+yarn start
+```
+
+## Tutorial
+The [Omni application tutorial](tutorial.md) describes how to use key proof of
+concept application features.
 
 # Development
 
