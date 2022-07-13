@@ -27,7 +27,7 @@ The Omni Desktop application proof of concept application was developed in order
 # How to use the application
 ## Install the application
 There are two options for the application installation:
-1. Download the [latest application release](https://github.com/nova-wallet/omni-desktop-prototype/releases/tag/v1.0.0) for your operating system. And proceed with installation.
+1. Download the [latest application release](https://github.com/nova-wallet/omni-desktop-prototype/releases/latest) for your operating system. And proceed with installation.
 2. Clone the repository and start the application from sources:
 ```bash
 git clone https://github.com/nova-wallet/omni-desktop-prototype.git
